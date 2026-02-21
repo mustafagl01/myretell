@@ -269,7 +269,9 @@
             "type": "manual",
             "instructions": "Verify code uses 'with client.agent.v1.connect() as connection:' pattern and has all 4 event handlers registered"
           },
-          "status": "pending"
+          "status": "completed",
+          "notes": "Implemented context manager connection pattern with all 4 event handlers registered before start_listening(). Commit 590300c created.",
+          "updated_at": "2026-02-21T02:57:48.886189+00:00"
         },
         {
           "id": "subtask-4-3",
@@ -293,7 +295,9 @@
             "type": "manual",
             "instructions": "Verify event handlers use connection.on(EventType.OPEN, on_open) pattern and are called before start_listening()"
           },
-          "status": "pending"
+          "status": "completed",
+          "notes": "Implemented on_close to log connection closure with code and reason. Implemented on_error to log error details. Verified all 4 handlers (OPEN, MESSAGE, CLOSE, ERROR) are registered before start_listening(). Commit a0d47f4 created.",
+          "updated_at": "2026-02-21T03:01:00.000000+00:00"
         }
       ]
     },
@@ -546,12 +550,13 @@
   "planStatus": "in_progress",
   "xstateState": "coding",
   "executionPhase": "coding",
-  "updated_at": "2026-02-21T02:54:09.830Z",
+  "updated_at": "2026-02-21T02:58:48.003Z",
   "created_at": "2026-02-21T02:26:02.650Z",
   "lastEvent": {
     "eventId": "9b8ad20a-d451-49c5-bbf0-f86e775ca996",
     "sequence": 0,
     "type": "PLANNING_COMPLETE",
     "timestamp": "2026-02-21T02:39:25.446683+00:00"
-  }
+  },
+  "last_updated": "2026-02-21T02:57:48.886189+00:00"
 }

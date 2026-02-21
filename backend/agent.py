@@ -4,7 +4,9 @@ Deepgram Voice Agent Configuration Module
 This module provides agent settings and configuration for the Deepgram Voice Agent V1 SDK.
 """
 
-from deepgram.extensions.types.sockets import AgentV1SettingsMessage
+import time
+import threading
+from deepgram.extensions.types.sockets import AgentV1SettingsMessage, AgentV1ControlMessage
 
 
 def get_agent_settings():
@@ -47,3 +49,42 @@ def get_agent_settings():
         greeting="Hello! How can I help you today?"
     )
     return settings
+
+
+def keep_alive_loop(connection, stop_event, interval=8):
+    """
+    Send KeepAlive control messages periodically to maintain WebSocket connection.
+
+    This function runs in a separate thread and sends KeepAlive messages every
+    8 seconds (by default) to prevent the WebSocket connection from timing out
+    during periods of silence or inactivity.
+
+    Args:
+        connection: Deepgram Agent V1 connection object
+        stop_event (threading.Event): Event to signal when to stop the loop
+        interval (int, optional): Seconds between KeepAlive messages. Defaults to 8.
+
+    Note:
+        - KeepAlive is NOT automatic in Deepgram SDK v5.x (breaking change)
+        - Server sends NO response to KeepAlive messages
+        - Only send during silence periods, not during active audio transmission
+
+    Example:
+        >>> stop_event = threading.Event()
+        >>> thread = threading.Thread(
+        ...     target=keep_alive_loop,
+        ...     args=(connection, stop_event)
+        ... )
+        >>> thread.start()
+        >>> # ... later when connection closes ...
+        >>> stop_event.set()
+        >>> thread.join()
+    """
+    while not stop_event.is_set():
+        try:
+            connection.send_control(AgentV1ControlMessage(type='KeepAlive'))
+            time.sleep(interval)
+        except Exception as e:
+            # Connection may be closed or error occurred
+            # Exit loop to prevent continuous errors
+            break
