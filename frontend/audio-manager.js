@@ -68,6 +68,7 @@ export class AudioManager {
     this.sampleRate = sampleRate;
     this.minBufferThreshold = minBufferThreshold;
     this.maxBufferThreshold = maxBufferThreshold;
+    this.volume = volume;
     this.onConversationStartedCallback = onConversationStarted;
     this.onConversationStoppedCallback = onConversationStopped;
     this.onAudioPlayingCallback = onAudioPlaying;
@@ -121,7 +122,7 @@ export class AudioManager {
 
       // Initialize audio player for playback
       this.audioPlayer = new AudioPlayer({
-        volume: volume,
+        volume: this.volume,
         onPlaybackStart: () => this._handlePlaybackStart(),
         onPlaybackEnd: () => this._handlePlaybackEnd(),
         onChunkComplete: () => this._handleChunkComplete(),
