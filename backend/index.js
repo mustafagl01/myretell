@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { createClient, AgentEvents } from '@deepgram/sdk';
+import { WebSocketHandler } from './websocket-handler.js';
 
 // Load environment variables from parent directory
 dotenv.config({ path: '../.env' });
@@ -237,19 +238,75 @@ app.get('/api/deepgram/status', (req, res) => {
 
 // ========== End Epic 2 ==========
 
-// Start server
-app.listen(PORT, () => {
+// ========== Epic 3: WebSocket Audio Relay ==========
+
+// Default agent configuration for WebSocket connections
+const defaultAgentConfig = {
+  tags: ['myvoiceagent', 'demo'],
+  agent: {
+    listen: {
+      provider: {
+        type: 'deepgram',
+        model: 'nova-3'
+      }
+    },
+    speak: {
+      provider: {
+        type: 'deepgram',
+        model: 'aura-2-thalia-en'
+      }
+    },
+    think: {
+      provider: {
+        type: 'open_ai',
+        model: 'gpt-4o-mini'
+      },
+      instructions: 'You are a helpful voice assistant. Be concise and friendly.'
+    },
+    greeting: 'Hello! How can I help you today?'
+  }
+};
+
+// Start server and initialize WebSocket handler
+const server = app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`);
   console.log(`Deepgram client ${deepgramClient ? 'initialized' : 'not configured'}`);
 });
 
+// Initialize WebSocket handler
+let wsHandler = null;
+try {
+  wsHandler = new WebSocketHandler({
+    server: server,
+    path: '/ws',
+    defaultAgentConfig: defaultAgentConfig
+  });
+  console.log(`WebSocket handler initialized on ws://localhost:${PORT}/ws`);
+} catch (error) {
+  console.error('Failed to initialize WebSocket handler:', error.message);
+}
+
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully...');
-  process.exit(0);
+  if (wsHandler) {
+    wsHandler.close();
+    console.log('WebSocket handler closed');
+  }
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
 });
 
 process.on('SIGINT', () => {
   console.log('SIGINT received, shutting down gracefully...');
-  process.exit(0);
+  if (wsHandler) {
+    wsHandler.close();
+    console.log('WebSocket handler closed');
+  }
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
 });
