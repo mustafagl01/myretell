@@ -46,7 +46,7 @@ export class AudioPlayer {
     } = options;
 
     this.overlapTime = overlapTime / 1000; // Convert to seconds
-    this.volume = Math.max(0, Math.min(1, volume)); // Clamp between 0 and 1
+    this.volume = Math.max(0, Math.min(1, volume ?? 1.0)); // Clamp between 0 and 1, with default
     this.onPlaybackStartCallback = onPlaybackStart;
     this.onPlaybackEndCallback = onPlaybackEnd;
     this.onChunkCompleteCallback = onChunkComplete;
