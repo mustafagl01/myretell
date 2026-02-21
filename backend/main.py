@@ -89,14 +89,21 @@ def on_close(connection, **kwargs):
     """
     Handle the WebSocket CLOSE event.
 
-    This event fires when the connection is closed. Perform cleanup here.
+    This event fires when the connection is closed. Log the closure
+    and perform any necessary cleanup.
 
     Args:
         connection: The Deepgram agent connection object
-        **kwargs: Additional event arguments
+        **kwargs: Additional event arguments including 'code' (close code)
+                  and 'reason' (close reason)
     """
-    # TODO: Implement cleanup in future subtasks
-    pass
+    close_code = kwargs.get("code")
+    close_reason = kwargs.get("reason")
+
+    if close_code:
+        print(f"Connection closed: code={close_code}, reason={close_reason}")
+    else:
+        print("Connection closed")
 
 
 def on_error(connection, **kwargs):
@@ -110,8 +117,10 @@ def on_error(connection, **kwargs):
         **kwargs: Additional event arguments including 'error' with error details
     """
     error = kwargs.get("error")
-    # TODO: Implement error handling in future subtasks
-    pass
+    if error:
+        print(f"Connection error: {error}")
+    else:
+        print("Connection error occurred")
 
 
 def main():
