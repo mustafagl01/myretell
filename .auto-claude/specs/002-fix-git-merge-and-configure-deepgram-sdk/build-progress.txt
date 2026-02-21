@@ -86,3 +86,28 @@ Quality Checklist:
 - [x] Verification command passes
 
 === END SESSION 2 ===
+
+=== SESSION 3 ===
+
+Subtask-2-1: Create backend/requirements.txt with dependencies
+Status: COMPLETED
+
+Implementation:
+- Created backend/requirements.txt with:
+  - deepgram-sdk>=3.0.0 (Deepgram Voice Agent V1 SDK)
+  - python-dotenv>=1.0.0 (Environment variable management)
+
+Verification Results:
+- File exists at backend/requirements.txt
+- Contains deepgram-sdk dependency
+- Contains python-dotenv dependency
+- Commit 3d156eb created successfully
+
+Quality Checklist:
+- [x] File created in correct location
+- [x] Contains all required dependencies
+- [x] Version constraints specified
+- [x] Clean commit with descriptive message
+- [x] Verification command passes
+
+=== END SESSION 3 ===
