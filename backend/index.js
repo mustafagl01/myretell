@@ -35,6 +35,53 @@ try {
   console.error('Failed to initialize Deepgram client:', error.message);
 }
 
+// Agent configuration with function calling tools
+const agentConfig = {
+  agent: {
+    think: {
+      model: 'gpt-4o-mini',
+      tools: [
+        {
+          name: 'get_time',
+          description: 'Get the current time in a specific timezone or local time',
+          parameters: {
+            type: 'object',
+            properties: {
+              timezone: {
+                type: 'string',
+                description: 'IANA timezone name (e.g., "America/New_York", "UTC"). If not provided, returns local time.'
+              }
+            },
+            required: []
+          }
+        },
+        {
+          name: 'get_weather',
+          description: 'Get current weather information for a location',
+          parameters: {
+            type: 'object',
+            properties: {
+              location: {
+                type: 'string',
+                description: 'City name or location (e.g., "San Francisco, CA")'
+              },
+              units: {
+                type: 'string',
+                description: 'Temperature units: "celsius" or "fahrenheit"',
+                enum: ['celsius', 'fahrenheit']
+              }
+            },
+            required: ['location']
+          }
+        }
+      ]
+    },
+    speak: {
+      model: 'aura-2-thalia-en'
+    }
+  }
+};
+
 // Middleware
 app.use(express.json());
 
@@ -52,7 +99,8 @@ app.get('/', (req, res) => {
   res.json({
     service: 'MyVoiceAgent Backend',
     status: 'running',
-    deepgramConfigured: !!deepgramClient
+    deepgramConfigured: !!deepgramClient,
+    toolsConfigured: agentConfig.agent.think.tools.length
   });
 });
 
@@ -60,14 +108,19 @@ app.get('/', (req, res) => {
 const server = app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`);
   console.log(`Deepgram client ${deepgramClient ? 'initialized' : 'not configured'}`);
+  console.log(`Agent configured with ${agentConfig.agent.think.tools.length} tools:`);
+  agentConfig.agent.think.tools.forEach(tool => {
+    console.log(`  - ${tool.name}: ${tool.description}`);
+  });
 });
 
-// Initialize WebSocket handler
+// Initialize WebSocket handler with agent configuration
 let wsHandler = null;
 try {
   wsHandler = new WebSocketHandler({
     server: server,
     path: '/ws',
+    defaultAgentConfig: agentConfig
   });
   console.log('WebSocket handler initialized on ws://localhost:' + PORT + '/ws');
 } catch (error) {

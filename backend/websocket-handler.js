@@ -22,9 +22,10 @@ export class WebSocketHandler {
    * @param {Object} options - Configuration options
    * @param {Object} options.server - HTTP server to attach WebSocket to
    * @param {string} options.path - WebSocket endpoint path (default: '/ws')
+   * @param {Object} options.defaultAgentConfig - Default agent configuration to apply on connect
    */
   constructor(options = {}) {
-    const { server, path = '/ws' } = options;
+    const { server, path = '/ws', defaultAgentConfig = null } = options;
 
     if (!server) {
       throw new Error('HTTP server is required for WebSocket attachment');
@@ -34,6 +35,7 @@ export class WebSocketHandler {
     this.path = path;
     this.wss = null;
     this.deepgramConnections = new Map(); // ws -> DeepgramConnection
+    this.defaultAgentConfig = defaultAgentConfig;
 
     // Initialize WebSocket server
     this._initialize();
@@ -86,8 +88,8 @@ export class WebSocketHandler {
       // Store the connection
       this.deepgramConnections.set(ws, deepgramConn);
 
-      // Connect to Deepgram
-      deepgramConn.connect().catch((error) => {
+      // Connect to Deepgram with default agent configuration
+      deepgramConn.connect(this.defaultAgentConfig || {}).catch((error) => {
         console.error('Failed to connect to Deepgram:', error.message);
         this._sendError(ws, {
           type: 'connection_failed',

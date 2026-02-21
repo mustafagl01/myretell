@@ -192,6 +192,48 @@ export class DeepgramConnection {
   }
 
   /**
+   * Send a function call response to Deepgram.
+   *
+   * This is used to return the result of a tool/function execution
+   * back to the agent after handling a FunctionCallRequest event.
+   *
+   * @param {Object} response - Function call response
+   * @param {string} response.function_call_id - The ID from the original request
+   * @param {string} response.output - The result/output as a JSON string
+   */
+  functionCallResponse(response) {
+    if (!this.isConnected || !this.agent) {
+      throw new Error('Not connected to Deepgram. Call connect() first.');
+    }
+
+    const { function_call_id, output } = response;
+
+    if (!function_call_id) {
+      throw new Error('function_call_id is required for function call response');
+    }
+
+    if (!output) {
+      throw new Error('output is required for function call response');
+    }
+
+    try {
+      this.agent.functionCallResponse({
+        function_call_id,
+        output,
+      });
+    } catch (error) {
+      if (this.onError) {
+        this.onError({
+          type: 'function_call_response_error',
+          message: error.message,
+          details: { function_call_id },
+        });
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Set up event handlers for the agent connection.
    * @private
    */
