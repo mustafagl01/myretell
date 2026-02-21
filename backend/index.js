@@ -38,6 +38,10 @@ try {
 app.use(express.json());
 
 // Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 app.get('/api/health', (req, res) => {
   res.status(200).send('OK');
 });
