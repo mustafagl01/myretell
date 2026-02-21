@@ -9,6 +9,9 @@ import os
 from dotenv import load_dotenv
 from deepgram import DeepgramClient
 from deepgram.core.events import EventType
+from deepgram.extensions.types.sockets import AgentV1ControlMessage
+
+from agent import get_agent_settings
 
 
 def initialize_deepgram_client():
@@ -43,22 +46,95 @@ def initialize_deepgram_client():
     return DeepgramClient(deepgram_api_key)
 
 
+def on_open(connection, **kwargs):
+    """
+    Handle the WebSocket OPEN event.
+
+    This event fires when the connection is established. Send agent settings
+    immediately after connection opens to configure the voice agent.
+
+    Args:
+        connection: The Deepgram agent connection object
+        **kwargs: Additional event arguments
+    """
+    settings = get_agent_settings()
+    connection.send_settings(settings)
+
+
+def on_message(connection, **kwargs):
+    """
+    Handle the WebSocket MESSAGE event.
+
+    This event receives both JSON control messages and binary audio data.
+    Check message type to determine handling approach.
+
+    Args:
+        connection: The Deepgram agent connection object
+        **kwargs: Additional event arguments including 'message' which may be
+                  a dict (JSON) or bytes (binary audio)
+    """
+    message = kwargs.get("message")
+
+    if isinstance(message, dict):
+        # Handle JSON control messages
+        # TODO: Implement JSON message handling in future subtasks
+        pass
+    elif isinstance(message, bytes):
+        # Handle binary audio data
+        # TODO: Implement audio handling in future subtasks
+        pass
+
+
+def on_close(connection, **kwargs):
+    """
+    Handle the WebSocket CLOSE event.
+
+    This event fires when the connection is closed. Perform cleanup here.
+
+    Args:
+        connection: The Deepgram agent connection object
+        **kwargs: Additional event arguments
+    """
+    # TODO: Implement cleanup in future subtasks
+    pass
+
+
+def on_error(connection, **kwargs):
+    """
+    Handle the WebSocket ERROR event.
+
+    This event fires when an error occurs on the connection.
+
+    Args:
+        connection: The Deepgram agent connection object
+        **kwargs: Additional event arguments including 'error' with error details
+    """
+    error = kwargs.get("error")
+    # TODO: Implement error handling in future subtasks
+    pass
+
+
 def main():
     """
     Main entry point for the Deepgram Voice Agent application.
 
-    This function demonstrates the initialization pattern. The actual
-    connection implementation will be added in subsequent subtasks.
+    Establishes WebSocket connection using context manager pattern,
+    registers event handlers, and starts listening for voice events.
     """
     try:
         # Initialize the Deepgram client with environment configuration
         client = initialize_deepgram_client()
-        print("Deepgram client initialized successfully")
 
-        # TODO: Connection implementation will be added in subtask-4-2
-        # with client.agent.v1.connect() as connection:
-        #     connection.send_settings(settings)
-        #     connection.start_listening()
+        # Use context manager for automatic connection cleanup
+        with client.agent.v1.connect() as connection:
+            # Register event handlers BEFORE calling start_listening()
+            connection.on(EventType.OPEN, on_open)
+            connection.on(EventType.MESSAGE, on_message)
+            connection.on(EventType.CLOSE, on_close)
+            connection.on(EventType.ERROR, on_error)
+
+            # Start the event loop
+            connection.start_listening()
 
     except ValueError as e:
         print(f"Configuration error: {e}")

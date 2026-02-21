@@ -245,7 +245,7 @@
             "command": "cd backend && python -c \"import main; print('main.py imports OK')\" 2>&1 || echo 'Import check'",
             "expected": "main.py imports OK"
           },
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "subtask-4-2",
@@ -546,7 +546,7 @@
   "planStatus": "in_progress",
   "xstateState": "coding",
   "executionPhase": "coding",
-  "updated_at": "2026-02-21T02:52:16.164Z",
+  "updated_at": "2026-02-21T02:54:09.830Z",
   "created_at": "2026-02-21T02:26:02.650Z",
   "lastEvent": {
     "eventId": "9b8ad20a-d451-49c5-bbf0-f86e775ca996",
