@@ -47,11 +47,23 @@
         }
       ],
       "status": "completed"
+    },
+    "subtask-2-2": {
+      "attempts": [
+        {
+          "session": 5,
+          "timestamp": "2026-02-21T02:49:35.807587+00:00",
+          "approach": "Implemented: Create backend/.env.example with environment template",
+          "success": true,
+          "error": null
+        }
+      ],
+      "status": "completed"
     }
   },
   "stuck_subtasks": [],
   "metadata": {
     "created_at": "2026-02-21T02:39:30.878597+00:00",
-    "last_updated": "2026-02-21T02:47:30.061543+00:00"
+    "last_updated": "2026-02-21T02:49:35.807587+00:00"
   }
 }
