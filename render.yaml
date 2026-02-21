@@ -5,11 +5,13 @@ services:
     buildCommand: cd backend && npm install
     startCommand: cd backend && npm start
     healthCheckPath: /api/health
-    nodeVersion: 18.17.0
+    nodeVersion: 18
     envVars:
       - key: DEEPGRAM_API_KEY
         sync: false
-      - key: OPENAI_API_KEY
+      - key: PORT
+        value: 3001
+      - key: RUBE_API_KEY
         sync: false
       - key: POSTGRES_URL
         sync: false

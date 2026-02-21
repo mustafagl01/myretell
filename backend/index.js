@@ -3,8 +3,8 @@ import dotenv from 'dotenv';
 import { createClient, AgentEvents } from '@deepgram/sdk';
 import { WebSocketHandler } from './websocket-handler.js';
 
-// Load environment variables from parent directory
-dotenv.config({ path: '../.env' });
+// Load environment variables
+dotenv.config();
 
 // Verify environment variables are loaded
 const requiredEnvVars = ['DEEPGRAM_API_KEY'];
@@ -37,6 +37,26 @@ try {
 
 // Middleware
 app.use(express.json());
+
+// CORS middleware - allow frontend to connect
+app.use((req, res, next) => {
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://myvoiceagent-frontend.vercel.app',
+    // Add your production frontend URL here
+  ];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin) || !origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

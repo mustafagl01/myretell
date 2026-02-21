@@ -31,12 +31,25 @@ const elements = {
 let audioManager = null;
 
 /**
+ * Get WebSocket URL based on environment
+ */
+function getWebSocketUrl() {
+  // Local development
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'ws://localhost:3001/ws';
+  }
+  // Production - use the deployed backend URL
+  // Update this when backend is deployed
+  return 'wss://myvoiceagent-backend.onrender.com/ws';
+}
+
+/**
  * Initialize the application
  */
 function init() {
   // Create audio manager
   audioManager = new AudioManager({
-    wsUrl: 'ws://localhost:3001/ws',
+    wsUrl: getWebSocketUrl(),
     sampleRate: 16000,
     minBufferThreshold: 3,
     maxBufferThreshold: 5,
