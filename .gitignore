@@ -8,3 +8,6 @@
 .worktrees/
 .security-key
 logs/security/
+
+# Environment variables with API keys
+.env
