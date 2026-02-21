@@ -5,8 +5,6 @@
  * the foundation for audio capture and playback in Epic 3.
  */
 
-console.log('Frontend initialized');
-
 // Placeholder for Epic 3: Audio capture and playback setup
 // This will be implemented in Epic 3 - Audio Streaming & Barge-in
 //
