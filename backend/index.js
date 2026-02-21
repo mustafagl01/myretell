@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { createClient } from '@deepgram/sdk';
+import { WebSocketHandler } from './websocket-handler.js';
 
 // Load environment variables
 dotenv.config();
@@ -38,6 +39,10 @@ try {
 app.use(express.json());
 
 // Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 app.get('/api/health', (req, res) => {
   res.status(200).send('OK');
 });
@@ -51,19 +56,46 @@ app.get('/', (req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
+// Start server and initialize WebSocket handler
+const server = app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`);
   console.log(`Deepgram client ${deepgramClient ? 'initialized' : 'not configured'}`);
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully...');
-  process.exit(0);
-});
+// Initialize WebSocket handler
+let wsHandler = null;
+try {
+  wsHandler = new WebSocketHandler({
+    server: server,
+    path: '/ws',
+  });
+  console.log('WebSocket handler initialized on ws://localhost:' + PORT + '/ws');
+} catch (error) {
+  console.error('Failed to initialize WebSocket handler:', error.message);
+}
 
-process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully...');
-  process.exit(0);
-});
+// Graceful shutdown
+const shutdown = (signal) => {
+  console.log(`${signal} received, shutting down gracefully...`);
+
+  // Close WebSocket handler
+  if (wsHandler) {
+    wsHandler.close();
+    console.log('WebSocket handler closed');
+  }
+
+  // Close HTTP server
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+
+  // Force exit after 10 seconds if graceful shutdown fails
+  setTimeout(() => {
+    console.error('Forced exit after timeout');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
