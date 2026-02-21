@@ -6,12 +6,13 @@ configuration and establishes WebSocket connections for real-time voice processi
 """
 
 import os
+import threading
 from dotenv import load_dotenv
 from deepgram import DeepgramClient
 from deepgram.core.events import EventType
 from deepgram.extensions.types.sockets import AgentV1ControlMessage
 
-from agent import get_agent_settings
+from agent import get_agent_settings, keep_alive_loop
 
 
 def initialize_deepgram_client():
@@ -52,6 +53,7 @@ def on_open(connection, **kwargs):
 
     This event fires when the connection is established. Send agent settings
     immediately after connection opens to configure the voice agent.
+    Also starts the keep_alive_loop thread to maintain the connection.
 
     Args:
         connection: The Deepgram agent connection object
@@ -59,6 +61,16 @@ def on_open(connection, **kwargs):
     """
     settings = get_agent_settings()
     connection.send_settings(settings)
+
+    # Start keep_alive_loop in a separate thread
+    # Store thread and stop_event in connection object for cleanup in on_close
+    connection._keep_alive_stop = threading.Event()
+    connection._keep_alive_thread = threading.Thread(
+        target=keep_alive_loop,
+        args=(connection, connection._keep_alive_stop),
+        daemon=True
+    )
+    connection._keep_alive_thread.start()
 
 
 def on_message(connection, **kwargs):
@@ -89,14 +101,21 @@ def on_close(connection, **kwargs):
     """
     Handle the WebSocket CLOSE event.
 
-    This event fires when the connection is closed. Log the closure
-    and perform any necessary cleanup.
+    This event fires when the connection is closed. Log the closure,
+    stop the keep_alive_loop thread, and perform any necessary cleanup.
 
     Args:
         connection: The Deepgram agent connection object
         **kwargs: Additional event arguments including 'code' (close code)
                   and 'reason' (close reason)
     """
+    # Stop keep_alive_loop thread if it exists
+    if hasattr(connection, '_keep_alive_stop') and connection._keep_alive_stop:
+        connection._keep_alive_stop.set()
+
+    if hasattr(connection, '_keep_alive_thread') and connection._keep_alive_thread:
+        connection._keep_alive_thread.join(timeout=2)
+
     close_code = kwargs.get("code")
     close_reason = kwargs.get("reason")
 
