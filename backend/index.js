@@ -1,12 +1,13 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { createClient } from '@deepgram/sdk';
+import authRoutes from './routes/auth.js';
 
 // Load environment variables
 dotenv.config();
 
 // Verify environment variables are loaded
-const requiredEnvVars = ['DEEPGRAM_API_KEY'];
+const requiredEnvVars = ['DEEPGRAM_API_KEY', 'JWT_SECRET'];
 const optionalEnvVars = ['POSTGRES_URL', 'PORT'];
 
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
@@ -41,6 +42,9 @@ app.use(express.json());
 app.get('/api/health', (req, res) => {
   res.status(200).send('OK');
 });
+
+// Auth routes
+app.use('/api/auth', authRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
