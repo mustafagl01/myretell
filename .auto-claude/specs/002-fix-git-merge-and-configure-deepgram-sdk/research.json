@@ -1,0 +1,192 @@
+{
+  "integrations_researched": [
+    {
+      "name": "Deepgram Voice Agent V1 SDK (Python)",
+      "type": "library",
+      "verified_package": {
+        "name": "deepgram-sdk",
+        "install_command": "pip install deepgram-sdk",
+        "version": ">=3.0.0 (v5.x recommended for Agent V1)",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [
+          "from deepgram import DeepgramClient",
+          "from deepgram.core.events import EventType",
+          "from deepgram.extensions.types.sockets import (",
+          "    AgentV1SettingsMessage, AgentV1Agent, AgentV1AudioConfig,",
+          "    AgentV1AudioInput, AgentV1AudioOutput, AgentV1Listen,",
+          "    AgentV1ListenProvider, AgentV1Think, AgentV1OpenAiThinkProvider,",
+          "    AgentV1SpeakProviderConfig, AgentV1DeepgramSpeakProvider,",
+          "    AgentV1ControlMessage, AgentV1MediaMessage",
+          ")"
+        ],
+        "initialization": "# Initialize client with API key\nclient = DeepgramClient(api_key=os.getenv(\"DEEPGRAM_API_KEY\"))\n\n# Establish agent connection as context manager\nwith client.agent.v1.connect() as connection:\n    # Configure and use connection\n    settings = AgentV1SettingsMessage(...)\n    connection.send_settings(settings)",
+        "key_functions": [
+          "DeepgramClient(api_key) - Initialize Deepgram client",
+          "client.agent.v1.connect() - Create Voice Agent V1 WebSocket connection",
+          "connection.send_settings(settings) - Apply agent configuration",
+          "connection.send_control(AgentV1ControlMessage(type='KeepAlive')) - Send keep-alive",
+          "connection.send_media(AgentV1MediaMessage(data=audio_bytes)) - Send audio",
+          "connection.on(EventType.OPEN, callback) - Register open handler",
+          "connection.on(EventType.MESSAGE, callback) - Register message handler",
+          "connection.on(EventType.CLOSE, callback) - Register close handler",
+          "connection.on(EventType.ERROR, callback) - Register error handler",
+          "connection.start_listening() - Start listening for audio input"
+        ],
+        "verified_against": "Context7 MCP: /websites/developers_deepgram + /deepgram/deepgram-python-sdk"
+      },
+      "configuration": {
+        "env_vars": [
+          "DEEPGRAM_API_KEY (required)",
+          "OPENAI_API_KEY (required for Think provider with OpenAI)"
+        ],
+        "agent_settings": {
+          "audio": {
+            "input": {
+              "encoding": "linear16",
+              "sample_rate": 24000 or 44100
+            },
+            "output": {
+              "encoding": "linear16",
+              "sample_rate": 24000,
+              "container": "wav"
+            }
+          },
+          "agent": {
+            "language": "en",
+            "listen": {
+              "provider": { "type": "deepgram", "model": "nova-3" },
+              "smart_format": true
+            },
+            "think": {
+              "provider": { "type": "open_ai", "model": "gpt-4o-mini" },
+              "prompt": "You are a friendly AI assistant.",
+              "temperature": 0.7
+            },
+            "speak": {
+              "provider": { "type": "deepgram", "model": "aura-2-thalia-en" }
+            },
+            "greeting": "Hello! How can I help you today?"
+          }
+        },
+        "config_files": [
+          ".env (for DEEPGRAM_API_KEY)"
+        ],
+        "dependencies": [
+          "deepgram-sdk (main package)",
+          "python-dotenv (for .env support, optional)"
+        ]
+      },
+      "infrastructure": {
+        "requires_docker": false,
+        "websocket_endpoint": "wss://agent.deepgram.com/v1/agent/connect",
+        "connection_type": "WebSocket with context manager pattern"
+      },
+      "gotchas": [
+        "In v5.x SDK, keep-alive is NO LONGER automatic - must manually send AgentV1ControlMessage(type='KeepAlive')",
+        "Recommended to send KeepAlive every 8 seconds during periods of no audio transmission",
+        "Must use context manager pattern: 'with client.agent.v1.connect() as connection:'",
+        "DEEPGRAM_API_KEY environment variable is required - client initialization will fail without it",
+        "AgentV1SettingsMessage must be sent after connection opens (listen for EventType.OPEN first)",
+        "Audio messages are binary bytes - use 'isinstance(message, bytes)' to detect audio data",
+        "For v5.x migration from v3.x: keepAlive changed from config option to manual control message",
+        "OpenAI API key also required if using OpenAI as Think provider",
+        "Connection.close() is handled automatically by context manager"
+      ],
+      "keepalive_implementation": {
+        "description": "Manual keep-alive control message for Agent V1 connections",
+        "code_pattern": "from deepgram.extensions.types.sockets import AgentV1ControlMessage\n\n# Send keep-alive message\nconnection.send_control(AgentV1ControlMessage(type='KeepAlive'))",
+        "recommended_interval": "Every 8 seconds during periods of no audio transmission",
+        "note": "Server does not send response to KeepAlive messages"
+      },
+      "research_sources": [
+        "Context7 MCP: /websites/developers_deepgram",
+        "Context7 MCP: /deepgram/deepgram-python-sdk",
+        "https://developers.deepgram.com/docs/voice-agent",
+        "https://developers.deepgram.com/docs/agent-keep-alive",
+        "https://github.com/deepgram/deepgram-python-sdk/blob/main/docs/Migrating-v3-to-v5.md"
+      ]
+    },
+    {
+      "name": "Git (Command-Line)",
+      "type": "infrastructure",
+      "verified_package": {
+        "name": "git",
+        "install_command": "System package manager (apt, brew, chocolatey, etc.)",
+        "version": "Any version supporting --allow-unrelated-histories",
+        "verified": true
+      },
+      "api_patterns": {
+        "commands": [
+          "git merge --allow-unrelated-histories <branch> - Force merge unrelated histories",
+          "git status - Check working tree status",
+          "git diff - Show changes",
+          "git log - View commit history",
+          "git push - Push changes to remote",
+          "git branch -D <branch> - Delete branch (force)"
+        ],
+        "verified_against": "Git documentation"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [
+          ".git/config (repository configuration)"
+        ]
+      },
+      "infrastructure": {
+        "requires_docker": false,
+        "command_line_tool": true
+      },
+      "gotchas": [
+        "--allow-unrelated-histories flag required when branches have no common commits",
+        "This situation typically occurs when: 1) Repository was re-initialized, 2) Branch from different repository was added",
+        "Merge conflicts may need manual resolution after force merge",
+        "GitHub PR UI cannot handle unrelated history merges - must use command line",
+        "After merge, need to push with 'git push' to update remote",
+        "Consider using 'git merge --allow-unrelated-histories --no-edit' to skip commit message prompt",
+        "Using '--allow-unrelated-histories' creates a merge commit combining both histories"
+      ],
+      "research_sources": [
+        "Git documentation: git-merge",
+        "https://git-scm.com/docs/git-merge"
+      ]
+    }
+  ],
+  "unverified_claims": [
+    {
+      "claim": "Exact Python package version for deepgram-sdk",
+      "reason": "Context7 confirms 'deepgram-sdk' package exists but web search quota exceeded to verify latest version on PyPI",
+      "risk_level": "low",
+      "mitigation": "Context7 confirms v5.x is current version with Agent V1 support, package name verified"
+    }
+  ],
+  "recommendations": [
+    "Use Python deepgram-sdk for Voice Agent V1 integration",
+    "KeepAlive should be sent every 8 seconds via AgentV1ControlMessage when not transmitting audio",
+    "Use context manager pattern ('with client.agent.v1.connect() as connection:') for automatic cleanup",
+    "Set DEEPGRAM_API_KEY in .env file before running the application",
+    "For unrelated history git merge, use 'git merge --allow-unrelated-histories <branch>' from command line",
+    "Register event handlers (OPEN, MESSAGE, CLOSE, ERROR) before calling start_listening()",
+    "Handle binary audio data separately from JSON messages in MESSAGE event handler"
+  ],
+  "context7_libraries_used": [
+    "/websites/developers_deepgram",
+    "/deepgram/deepgram-python-sdk"
+  ],
+  "implementation_notes": {
+    "git_merge": {
+      "purpose": "Merge branch with unrelated commit history into main",
+      "command": "git merge --allow-unrelated-histories <branch-name>",
+      "location": "Command line / terminal (NOT GitHub PR UI)",
+      "trigger": "Must complete before Epic 2 work begins"
+    },
+    "deepgram_sdk": {
+      "purpose": "Voice Agent V1 connection and keepAlive() implementation",
+      "package": "deepgram-sdk (Python)",
+      "install": "pip install deepgram-sdk",
+      "epic": "Epic 2: Connection & Configuration"
+    }
+  },
+  "created_at": "2026-02-21T01:30:00Z"
+}

@@ -1,0 +1,21 @@
+{
+  "sourceType": "manual",
+  "model": "opus",
+  "thinkingLevel": "high",
+  "isAutoProfile": true,
+  "phaseModels": {
+    "spec": "opus",
+    "planning": "sonnet",
+    "coding": "sonnet",
+    "qa": "haiku"
+  },
+  "phaseThinking": {
+    "spec": "high",
+    "planning": "high",
+    "coding": "low",
+    "qa": "low"
+  },
+  "baseBranch": "auto-claude/001-start-coding-from-epic-1-in-plan-md",
+  "useLocalBranch": true,
+  "fastMode": false
+}

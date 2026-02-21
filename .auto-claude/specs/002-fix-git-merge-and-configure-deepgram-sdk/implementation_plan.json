@@ -1,0 +1,555 @@
+{
+  "feature": "Fix Git merge and configure Deepgram SDK (Epic 2)",
+  "workflow_type": "feature",
+  "workflow_rationale": "This involves creating new Deepgram Voice Agent V1 functionality in Python, combined with a prerequisite Git infrastructure fix. The workflow follows dependency order: Git merge must complete first, then Python environment setup, then SDK installation, then implementation of agent connection and keepAlive.",
+  "phases": [
+    {
+      "id": "phase-1-git-merge",
+      "name": "Git Merge - Unrelated Histories",
+      "type": "setup",
+      "description": "Resolve Git merge conflict where master branch has no common history with main branch",
+      "depends_on": [],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-1-1",
+          "description": "Switch to main branch and verify state",
+          "service": "global",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "details": {
+            "steps": [
+              "git checkout main",
+              "git status",
+              "git log --oneline -5"
+            ]
+          },
+          "verification": {
+            "type": "command",
+            "command": "git branch --show-current",
+            "expected": "main"
+          },
+          "status": "completed"
+        },
+        {
+          "id": "subtask-1-2",
+          "description": "Execute force merge with unrelated histories",
+          "service": "global",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "details": {
+            "command": "git merge --allow-unrelated-histories master",
+            "notes": "This merges the Epic 1 work from master into main despite no common ancestor"
+          },
+          "verification": {
+            "type": "command",
+            "command": "git log --oneline --graph -10",
+            "expected": "merge commit"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-1-3",
+          "description": "Verify merge success and clean working directory",
+          "service": "global",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "details": {
+            "steps": [
+              "git status",
+              "Check for merge conflicts",
+              "Verify both commit histories are present"
+            ]
+          },
+          "verification": {
+            "type": "command",
+            "command": "git status --short | wc -l",
+            "expected": "0"
+          },
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase-2-python-setup",
+      "name": "Python Environment Setup",
+      "type": "implementation",
+      "description": "Create Python project structure and configuration files",
+      "depends_on": [
+        "phase-1-git-merge"
+      ],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-2-1",
+          "description": "Create backend/requirements.txt with dependencies",
+          "service": "backend",
+          "files_to_create": [
+            "backend/requirements.txt"
+          ],
+          "files_to_modify": [],
+          "patterns_from": [],
+          "details": {
+            "dependencies": [
+              "deepgram-sdk>=3.0.0",
+              "python-dotenv>=1.0.0"
+            ]
+          },
+          "verification": {
+            "type": "command",
+            "command": "test -f backend/requirements.txt && cat backend/requirements.txt",
+            "expected": "deepgram-sdk"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-2-2",
+          "description": "Create backend/.env.example with environment template",
+          "service": "backend",
+          "files_to_create": [
+            "backend/.env.example"
+          ],
+          "files_to_modify": [],
+          "patterns_from": [
+            ".env.example"
+          ],
+          "details": {
+            "variables": [
+              "DEEPGRAM_API_KEY=your_deepgram_api_key_here",
+              "OPENAI_API_KEY=your_openai_api_key_here"
+            ]
+          },
+          "verification": {
+            "type": "command",
+            "command": "test -f backend/.env.example && grep -q 'DEEPGRAM_API_KEY' backend/.env.example && echo 'OK'",
+            "expected": "OK"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-2-3",
+          "description": "Install Python dependencies",
+          "service": "backend",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "details": {
+            "command": "pip install -r backend/requirements.txt"
+          },
+          "verification": {
+            "type": "command",
+            "command": "python -c \"import deepgram; print('deepgram-sdk installed')\"",
+            "expected": "deepgram-sdk installed"
+          },
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase-3-agent-config",
+      "name": "Agent Configuration Module",
+      "type": "implementation",
+      "description": "Create agent.py with Deepgram settings and configuration",
+      "depends_on": [
+        "phase-2-python-setup"
+      ],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-3-1",
+          "description": "Create backend/agent.py with agent settings",
+          "service": "backend",
+          "files_to_create": [
+            "backend/agent.py"
+          ],
+          "files_to_modify": [],
+          "patterns_from": [],
+          "details": {
+            "imports": [
+              "from deepgram import DeepgramClient",
+              "from deepgram.extensions.types.sockets import AgentV1SettingsMessage"
+            ],
+            "settings": {
+              "listen": {
+                "provider": {
+                  "type": "deepgram",
+                  "model": "nova-3"
+                },
+                "smart_format": true
+              },
+              "think": {
+                "provider": {
+                  "type": "open_ai",
+                  "model": "gpt-4o-mini"
+                },
+                "prompt": "You are a friendly AI assistant.",
+                "temperature": 0.7
+              },
+              "speak": {
+                "provider": {
+                  "type": "deepgram",
+                  "model": "aura-2-thalia-en"
+                }
+              },
+              "greeting": "Hello! How can I help you today?"
+            }
+          },
+          "verification": {
+            "type": "command",
+            "command": "python -c \"from backend.agent import get_agent_settings; print('Settings imported')\"",
+            "expected": "Settings imported"
+          },
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase-4-main-entry",
+      "name": "Main Entry Point",
+      "type": "implementation",
+      "description": "Create backend/main.py with Deepgram connection setup",
+      "depends_on": [
+        "phase-3-agent-config"
+      ],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-4-1",
+          "description": "Create backend/main.py with environment loading",
+          "service": "backend",
+          "files_to_create": [
+            "backend/main.py"
+          ],
+          "files_to_modify": [],
+          "patterns_from": [],
+          "details": {
+            "imports": [
+              "import os",
+              "from dotenv import load_dotenv",
+              "from deepgram import DeepgramClient",
+              "from deepgram.core.events import EventType"
+            ],
+            "features": [
+              "Load environment variables from .env",
+              "Validate DEEPGRAM_API_KEY is present",
+              "Create DeepgramClient instance"
+            ]
+          },
+          "verification": {
+            "type": "command",
+            "command": "cd backend && python -c \"import main; print('main.py imports OK')\" 2>&1 || echo 'Import check'",
+            "expected": "main.py imports OK"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-4-2",
+          "description": "Implement context manager connection pattern",
+          "service": "backend",
+          "files_to_modify": [
+            "backend/main.py"
+          ],
+          "files_to_create": [],
+          "patterns_from": [],
+          "details": {
+            "pattern": "with client.agent.v1.connect() as connection:",
+            "event_handlers": [
+              "on_open - Send AgentV1SettingsMessage",
+              "on_message - Handle JSON and binary data",
+              "on_close - Cleanup",
+              "on_error - Error handling"
+            ]
+          },
+          "verification": {
+            "type": "manual",
+            "instructions": "Verify code uses 'with client.agent.v1.connect() as connection:' pattern and has all 4 event handlers registered"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-4-3",
+          "description": "Implement event handlers with correct registration order",
+          "service": "backend",
+          "files_to_modify": [
+            "backend/main.py"
+          ],
+          "files_to_create": [],
+          "patterns_from": [],
+          "details": {
+            "registration_order": "Handlers MUST be registered BEFORE start_listening()",
+            "handlers": {
+              "OPEN": "Send settings immediately after connection opens",
+              "MESSAGE": "Check if message is dict (JSON) or bytes (audio)",
+              "CLOSE": "Log closure and cleanup",
+              "ERROR": "Log error details"
+            }
+          },
+          "verification": {
+            "type": "manual",
+            "instructions": "Verify event handlers use connection.on(EventType.OPEN, on_open) pattern and are called before start_listening()"
+          },
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase-5-keepalive",
+      "name": "KeepAlive Implementation",
+      "type": "implementation",
+      "description": "Implement keepAlive() function to send KeepAlive control messages every 8 seconds",
+      "depends_on": [
+        "phase-4-main-entry"
+      ],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-5-1",
+          "description": "Create keepAlive() function in backend/agent.py",
+          "service": "backend",
+          "files_to_modify": [
+            "backend/agent.py"
+          ],
+          "files_to_create": [],
+          "patterns_from": [],
+          "details": {
+            "imports": [
+              "import time",
+              "import threading"
+            ],
+            "function": "def keep_alive_loop(connection, stop_event, interval=8):",
+            "behavior": "Send AgentV1ControlMessage(type='KeepAlive') every 8 seconds",
+            "notes": "Only send during silence periods - not during active audio transmission"
+          },
+          "verification": {
+            "type": "command",
+            "command": "python -c \"from backend.agent import keep_alive_loop; print('keep_alive_loop imported')\"",
+            "expected": "keep_alive_loop imported"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-5-2",
+          "description": "Integrate keepAlive into main.py connection loop",
+          "service": "backend",
+          "files_to_modify": [
+            "backend/main.py"
+          ],
+          "files_to_create": [],
+          "patterns_from": [],
+          "details": {
+            "integration": "Start keep_alive_loop thread after connection opens",
+            "cleanup": "Signal stop_event when connection closes"
+          },
+          "verification": {
+            "type": "manual",
+            "instructions": "Verify keep_alive_loop is started in OPEN handler and stopped in CLOSE handler"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-5-3",
+          "description": "Verify KeepAlive interval is 8 seconds (not 5)",
+          "service": "backend",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "details": {
+            "critical": "v5.x breaking change: KeepAlive must be every 8 seconds",
+            "test": "Check default interval parameter is 8"
+          },
+          "verification": {
+            "type": "command",
+            "command": "grep -n 'interval.*=.*8' backend/agent.py || grep -n 'def keep_alive.*8' backend/agent.py || grep -n 'sleep(8)' backend/agent.py",
+            "expected": "interval.*=.*8"
+          },
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase-6-integration",
+      "name": "Integration Verification",
+      "type": "integration",
+      "description": "Verify Git merge, Python environment, and Deepgram connection all work together",
+      "depends_on": [
+        "phase-5-keepalive"
+      ],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-6-1",
+          "description": "Verify Git merge completed successfully",
+          "service": "global",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "git log --oneline --graph --all -15 | grep -E 'merge|Merge' || git log --oneline -5",
+            "expected": "Shows merge commit or both histories"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-6-2",
+          "description": "Verify Deepgram SDK imports correctly",
+          "service": "backend",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "python -c \"from deepgram import DeepgramClient; from deepgram.extensions.types.sockets import AgentV1SettingsMessage, AgentV1ControlMessage; print('All imports OK')\"",
+            "expected": "All imports OK"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-6-3",
+          "description": "End-to-end verification of Epic 2 implementation",
+          "all_services": true,
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "e2e",
+            "steps": [
+              "Git history shows merged commits from both branches",
+              "backend/requirements.txt exists with deepgram-sdk",
+              "backend/.env.example documents DEEPGRAM_API_KEY and OPENAI_API_KEY",
+              "backend/agent.py has get_agent_settings() and keep_alive_loop()",
+              "backend/main.py imports all required modules",
+              "main.py uses context manager pattern: 'with client.agent.v1.connect()'",
+              "Event handlers registered before start_listening()",
+              "KeepAlive interval is 8 seconds"
+            ]
+          },
+          "status": "pending"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_phases": 6,
+    "total_subtasks": 17,
+    "services_involved": [
+      "backend",
+      "global"
+    ],
+    "parallelism": {
+      "max_parallel_phases": 1,
+      "parallel_groups": [],
+      "recommended_workers": 1,
+      "speedup_estimate": "Sequential execution required - Git merge blocks all other phases"
+    },
+    "startup_command": "source auto-claude/.venv/bin/activate && python auto-claude/run.py --spec 002 --parallel 1"
+  },
+  "verification_strategy": {
+    "risk_level": "medium",
+    "skip_validation": false,
+    "test_creation_phase": "post_implementation",
+    "test_types_required": [
+      "unit",
+      "integration"
+    ],
+    "security_scanning_required": false,
+    "staging_deployment_required": false,
+    "acceptance_criteria": [
+      "Git merge completes with both histories preserved",
+      "Deepgram SDK (deepgram-sdk) is installed and importable",
+      "backend/requirements.txt includes all dependencies",
+      "backend/.env.example documents required environment variables",
+      "Agent settings configured (nova-3, gpt-4o-mini, aura-2-thalia-en)",
+      "Context manager pattern used for connection",
+      "KeepAlive sends every 8 seconds via AgentV1ControlMessage",
+      "Event handlers registered before start_listening()"
+    ],
+    "verification_steps": [
+      {
+        "name": "Git History Check",
+        "command": "git log --oneline --graph -10",
+        "expected_outcome": "Shows merge commit with both branch histories",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "Python Imports Test",
+        "command": "python -c \"from deepgram import DeepgramClient; from deepgram.extensions.types.sockets import AgentV1SettingsMessage, AgentV1ControlMessage; print('OK')\"",
+        "expected_outcome": "OK",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "KeepAlive Interval Verification",
+        "command": "grep -n 'interval.*8\\|sleep(8)' backend/agent.py",
+        "expected_outcome": "Shows 8 second interval",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      }
+    ],
+    "reasoning": "Medium risk change: Git merge operation is destructive if done incorrectly, plus new external API integration (Deepgram WebSocket). Unit tests for configuration logic, integration tests for SDK connectivity. No auth/payment systems so security scan optional."
+  },
+  "qa_acceptance": {
+    "unit_tests": {
+      "required": true,
+      "commands": [
+        "python -m pytest tests/ -v"
+      ],
+      "minimum_coverage": null,
+      "notes": "Unit tests for keep_alive_loop interval, settings configuration, environment loading"
+    },
+    "integration_tests": {
+      "required": true,
+      "commands": [
+        "python -m pytest tests/integration/ -v"
+      ],
+      "services_to_test": [
+        "backend"
+      ],
+      "notes": "Test Deepgram client initialization and connection setup"
+    },
+    "e2e_tests": {
+      "required": false,
+      "commands": [],
+      "flows": [],
+      "notes": "E2E tests not applicable - no full user flow yet (audio streaming is Epic 3)"
+    },
+    "browser_verification": {
+      "required": false,
+      "pages": [],
+      "notes": "Not applicable - Epic 2 is backend-only"
+    },
+    "database_verification": {
+      "required": false,
+      "checks": [],
+      "notes": "Database setup is Epic 5 - not in scope"
+    },
+    "git_repository_verification": {
+      "required": true,
+      "checks": [
+        "git log shows merge commit",
+        "git status shows clean working directory",
+        "both branch histories present in log"
+      ]
+    }
+  },
+  "qa_signoff": null,
+  "status": "in_progress",
+  "planStatus": "in_progress",
+  "xstateState": "coding",
+  "executionPhase": "coding",
+  "updated_at": "2026-02-21T02:39:30.899Z",
+  "created_at": "2026-02-21T02:26:02.650Z",
+  "lastEvent": {
+    "eventId": "9b8ad20a-d451-49c5-bbf0-f86e775ca996",
+    "sequence": 0,
+    "type": "PLANNING_COMPLETE",
+    "timestamp": "2026-02-21T02:39:25.446683+00:00"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "task_description": "Fix Git merge (unrelated histories) then implement Epic 2: Deepgram Voice Agent V1 SDK connection and keepAlive() in Python",
+  "scoped_services": ["backend"],
+  "files_to_modify": [],
+  "files_to_create": [
+    "backend/main.py",
+    "backend/requirements.txt",
+    "backend/.env.example",
+    "backend/agent.py"
+  ],
+  "files_to_reference": [],
+  "patterns": {
+    "connection_pattern": "Use context manager: 'with client.agent.v1.connect() as connection:'",
+    "keepalive_pattern": "Send AgentV1ControlMessage(type='KeepAlive') every 8 seconds",
+    "event_handler_pattern": "Register handlers BEFORE calling start_listening()",
+    "settings_pattern": "Send AgentV1SettingsMessage in OPEN event handler"
+  },
+  "existing_implementations": {
+    "description": "Greenfield project - no existing Python code. Epic 1 was done in Node.js worktree but Epic 2 requires Python.",
+    "epic1_location": ".auto-claude/worktrees/tasks/001-start-coding-from-epic-1-in-plan-md/",
+    "tech_stack_change": "Epic 1 used Node.js + @deepgram/sdk. Epic 2 uses Python + deepgram-sdk per spec requirements.",
+    "relevant_files": []
+  },
+  "git_situation": {
+    "current_branch": "master",
+    "remote_branch": "origin/main",
+    "problem": "No common ancestor - unrelated commit histories",
+    "root_cause": "main branch starts with commit 46e5828, master starts with 5355519 - different initial commits",
+    "solution": "Must use 'git merge --allow-unrelated-histories' via terminal (not GitHub PR UI)",
+    "merge_command": "git checkout main && git merge --allow-unrelated-histories master"
+  },
+  "deepgram_sdk_patterns": {
+    "package": "deepgram-sdk (Python, v5.x recommended)",
+    "install": "pip install deepgram-sdk python-dotenv",
+    "imports": [
+      "from deepgram import DeepgramClient",
+      "from deepgram.core.events import EventType",
+      "from deepgram.extensions.types.sockets import AgentV1SettingsMessage, AgentV1ControlMessage"
+    ],
+    "connection": "with client.agent.v1.connect() as connection:",
+    "keepalive": "connection.send_control(AgentV1ControlMessage(type='KeepAlive')) every 8s",
+    "gotchas": [
+      "KeepAlive is NOT automatic in v5.x - must send manually",
+      "Event handlers MUST be registered before start_listening()",
+      "Server sends NO response to KeepAlive messages",
+      "Use isinstance(message, bytes) to detect binary audio"
+    ]
+  },
+  "environment_variables": {
+    "DEEPGRAM_API_KEY": "Required - already in .env",
+    "OPENAI_API_KEY": "Required if using OpenAI Think provider (gpt-4o-mini) - already in .env"
+  },
+  "created_at": "2026-02-21T02:31:46.729468",
+  "investigation_notes": {
+    "directories": "backend/ and frontend/ exist but are empty in master branch",
+    "epic1_worktree": "Epic 1 files exist in worktree with Node.js implementation",
+    "tech_stack_decision": "Spec explicitly requires Python for Epic 2 - different from Epic 1"
+  }
+}

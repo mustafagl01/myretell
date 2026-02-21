@@ -1,0 +1,4 @@
+{
+  "task_description": "PR oluştururken 'branch has no history in common with main' hatası alıyorum. Lütfen GitHub PR arayüzünü kullanma. Terminali aç ve komut satırı üzerinden mevcut dalı 'main' dalına git merge --allow-unrelated-histories komutuyla (veya uygun yöntemle) zorla birleştir.\n\nBu Git birleştirme işlemini başarıyla hallettikten hemen sonra plan.md içindeki Epic 2: Connection & Configuration görevine geç. Deepgram Voice Agent V1 SDK'sını kur, ayarları yap ve keepAlive() fonksiyonunu ekle.",
+  "workflow_type": "feature"
+}

@@ -1,0 +1,42 @@
+{
+  "project_root": "C:\\Users\\Pc\\Desktop\\myvoiceagent",
+  "project_type": "monorepo",
+  "services": {
+    "backend": {
+      "path": "./backend",
+      "tech_stack": ["python", "deepgram-sdk"],
+      "port": null,
+      "dev_command": "python backend/main.py",
+      "test_command": "pytest"
+    },
+    "frontend": {
+      "path": "./frontend",
+      "tech_stack": ["vite", "vanilla-js"],
+      "port": 5173,
+      "dev_command": "cd frontend && npm run dev",
+      "test_command": "npm test"
+    }
+  },
+  "infrastructure": {
+    "docker": false,
+    "database": "postgresql (Neon via Vercel Postgres)",
+    "env_source": ".env file in project root"
+  },
+  "conventions": {
+    "module_type": "Python ES6 imports for backend",
+    "linter": "TBD",
+    "formatter": "TBD",
+    "testing": "pytest"
+  },
+  "git_info": {
+    "current_branch": "master",
+    "remote_branch": "origin/main",
+    "has_common_ancestor": false,
+    "merge_required": true,
+    "merge_command": "git merge --allow-unrelated-histories"
+  },
+  "dependency_locations": {
+    "python": "pip install deepgram-sdk python-dotenv",
+    "node": "npm install"
+  }
+}

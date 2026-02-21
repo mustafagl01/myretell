@@ -1,0 +1,71 @@
+{
+  "complexity": "standard",
+  "workflow_type": "feature",
+  "confidence": 0.85,
+  "reasoning": "Task has two distinct parts: (1) Git merge is a simple operational command, (2) Epic 2 involves integrating Deepgram Voice Agent V1 SDK with WebSocket connections, configuration, and keepAlive implementation. Single external service integration requiring API research, but scope is contained to backend service with 3-5 estimated files.",
+
+  "analysis": {
+    "scope": {
+      "estimated_files": 5,
+      "estimated_services": 1,
+      "is_cross_cutting": false,
+      "notes": "Backend-focused implementation: server file for WebSocket connection, configuration file, keepAlive implementation, package.json update, possibly routes/controller file."
+    },
+    "integrations": {
+      "external_services": ["Deepgram Voice Agent API", "OpenAI API (for gpt-4o-mini)"],
+      "new_dependencies": ["@deepgram/sdk"],
+      "research_needed": true,
+      "notes": "Deepgram Voice Agent V1 SDK is a specific API (client.agent.v1.connect()) that requires documentation review. The SDK may already be installed from Epic 1, but Voice Agent API usage needs research."
+    },
+    "infrastructure": {
+      "docker_changes": false,
+      "database_changes": false,
+      "config_changes": true,
+      "notes": "Requires .env configuration for DEEPGRAM_API_KEY and OPENAI_API_KEY. No Docker or database changes needed."
+    },
+    "knowledge": {
+      "patterns_exist": false,
+      "research_required": true,
+      "unfamiliar_tech": ["Deepgram Voice Agent V1 SDK (client.agent.v1.connect())"],
+      "notes": "No existing WebSocket connection patterns in codebase. Deepgram's Voice Agent V1 API is specific and needs documentation review for proper implementation."
+    },
+    "risk": {
+      "level": "medium",
+      "concerns": [
+        "WebSocket connection stability and error handling",
+        "Proper keepAlive implementation to maintain connection",
+        "API key security in .env file",
+        "Deepgram API rate limits or connection limits"
+      ],
+      "notes": "External API dependency introduces risk of service unavailability. WebSocket connections require careful error handling. No security-critical data processing (audio only)."
+    }
+  },
+
+  "recommended_phases": [
+    "discovery",
+    "requirements",
+    "research",
+    "context",
+    "spec_writing",
+    "planning",
+    "validation"
+  ],
+
+  "flags": {
+    "needs_research": true,
+    "needs_self_critique": false,
+    "needs_infrastructure_setup": false
+  },
+
+  "validation_recommendations": {
+    "risk_level": "medium",
+    "skip_validation": false,
+    "minimal_mode": false,
+    "test_types_required": ["unit", "integration"],
+    "security_scan_required": false,
+    "staging_deployment_required": false,
+    "reasoning": "WebSocket connection with external API integration requires unit tests for connection logic and keepAlive functionality, plus integration tests to verify Deepgram API connectivity. No auth, payment, or sensitive user data involved - only audio streaming. Security scan optional as no credential handling beyond API keys in .env."
+  },
+
+  "created_at": "2025-02-21T02:30:00.000Z"
+}
