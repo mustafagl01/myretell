@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: myvoiceagent-backend
+    env: node
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    healthCheckPath: /api/health
+    nodeVersion: 18.17.0
+    envVars:
+      - key: DEEPGRAM_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: POSTGRES_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
