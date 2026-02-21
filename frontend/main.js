@@ -80,12 +80,26 @@ async function handleStart() {
     elements.startButton.textContent = 'Starting...';
     hideError();
 
+    // Check microphone permission first
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        // Just check permission, don't capture yet
+        const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+        if (permissionStatus.state === 'denied') {
+          throw new Error('Microphone permission denied. Please allow microphone access in your browser settings (click the lock icon in the address bar).');
+        }
+      } catch (permError) {
+        // Permissions API not supported, continue anyway
+        console.log('Permissions API not supported, continuing...');
+      }
+    }
+
     const success = await audioManager.startConversation();
 
     if (!success) {
       elements.startButton.disabled = false;
       elements.startButton.textContent = 'Start Conversation';
-      showError('Failed to start conversation. Please check your microphone permissions.');
+      showError('Failed to start. Please allow microphone access when prompted and ensure you are using HTTPS.');
     }
   } catch (error) {
     console.error('Error starting conversation:', error);
