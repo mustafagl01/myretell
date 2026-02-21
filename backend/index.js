@@ -5,6 +5,22 @@ import { createClient } from '@deepgram/sdk';
 // Load environment variables
 dotenv.config();
 
+// Verify environment variables are loaded
+const requiredEnvVars = ['DEEPGRAM_API_KEY'];
+const optionalEnvVars = ['POSTGRES_URL', 'PORT'];
+
+const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+if (missingVars.length > 0) {
+  console.error(`Missing required environment variables: ${missingVars.join(', ')}`);
+  process.exit(1);
+}
+
+console.log('Environment loaded successfully');
+console.log(`Required: DEEPGRAM_API_KEY (${process.env.DEEPGRAM_API_KEY ? '✓' : '✗'})`);
+if (process.env.POSTGRES_URL) {
+  console.log(`Optional: POSTGRES_URL (✓)`);
+}
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
