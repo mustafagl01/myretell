@@ -38,9 +38,8 @@ function getWebSocketUrl() {
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return 'ws://localhost:3001/ws';
   }
-  // Production - use the deployed backend URL
-  // Update this when backend is deployed
-  return 'wss://myvoiceagent-backend.onrender.com/ws';
+  // Production - deployed backend URL
+  return 'wss://myretell.onrender.com/ws';
 }
 
 /**
