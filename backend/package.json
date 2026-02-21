@@ -1,0 +1,25 @@
+{
+  "name": "myvoiceagent-backend",
+  "version": "1.0.0",
+  "description": "Backend service for Real-Time Voice AI Assistant using Deepgram Voice Agent SDK",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": [
+    "voice",
+    "ai",
+    "deepgram",
+    "websocket"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@deepgram/sdk": "^3.7.0",
+    "cross-fetch": "^4.0.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}
