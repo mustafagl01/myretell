@@ -26,6 +26,14 @@ const STT_OPTIONS = [
     { value: 'azure-speech', label: 'Azure Speech Neural (Soon)', disabled: true },
 ];
 
+const LANGUAGE_OPTIONS = [
+    { value: 'en', label: 'English' },
+    { value: 'tr', label: 'Türkçe' },
+    { value: 'de', label: 'Deutsch' },
+    { value: 'fr', label: 'Français' },
+    { value: 'es', label: 'Español' },
+];
+
 const LLM_OPTIONS = [
     // Google Gemini
     { value: 'gemini-3.0-flash', label: '⚡ Gemini 3.0 Flash (En Hızlı)' },
