@@ -4,6 +4,7 @@ import { createClient, AgentEvents } from '@deepgram/sdk';
 import { WebSocketHandler } from './websocket-handler.js';
 import authRoutes from './routes/auth.js';
 import stripeRoutes from './routes/stripe.js';
+import checkoutRoutes from './routes/checkout.js';
 
 // Load environment variables
 dotenv.config();
@@ -52,19 +53,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// Stripe webhook needs raw body
+// Stripe webhook needs raw body — must be registered BEFORE express.json()
 app.use('/api/stripe', stripeRoutes);
 
 // Regular JSON middleware for other routes
 app.use(express.json());
 
 // Routes
-import authRoutes from './routes/auth.js';
-import stripeRoutes from './routes/stripe.js';
-import checkoutRoutes from './routes/checkout.js';
-
 app.use('/api/auth', authRoutes);
-app.use('/api/stripe', stripeRoutes);
 app.use('/api/checkout', checkoutRoutes);
 
 app.get('/api/health', (req, res) => {
