@@ -6,27 +6,28 @@ import './Pricing.css';
 export const Pricing = ({ user, onLogout }) => {
     const [loading, setLoading] = useState(null);
     const [error, setError] = useState('');
-    const [customAmount, setCustomAmount] = useState(30);
+    const [customAmount, setCustomAmount] = useState(10);
 
     const customTopup = {
         min: 10,
         max: 300,
         step: 5,
-        minutesPerDollar: 4,
+        minutesPerDollar: 5,
     };
 
     const estimatedMinutes = customAmount * customTopup.minutesPerDollar;
+    const estimatedPerMinute = customAmount / estimatedMinutes;
 
     const tiers = [
         {
             name: 'FREE',
             price: 0,
-            minutes: '20 min',
-            desc: 'For testing and small projects',
+            minutes: 10,
+            desc: 'Deneme ve küçük testler için',
             icon: Star,
             features: [
                 '1 Voice Agent',
-                'Deepgram Aura TTS (Fast)',
+                'Economy stack (Deepgram + Gemini)',
                 'Gemini 2.0 Flash LLM',
                 'English Only',
                 'MyRetell Branding',
@@ -37,13 +38,13 @@ export const Pricing = ({ user, onLogout }) => {
         },
         {
             name: 'STARTER',
-            price: 29,
-            minutes: '150 min',
-            desc: 'Perfect for local businesses',
+            price: 19,
+            minutes: 100,
+            desc: 'Küçük ekipler için en iyi başlangıç',
             icon: Zap,
             features: [
                 '3 Voice Agents',
-                'ElevenLabs Turbo v3 TTS',
+                'Economy stack (Deepgram + Gemini)',
                 'Gemini 2.0 Flash LLM',
                 'English & Turkish Support',
                 'Remove Branding',
@@ -55,9 +56,9 @@ export const Pricing = ({ user, onLogout }) => {
         },
         {
             name: 'PRO',
-            price: 79,
-            minutes: '500 min',
-            desc: 'Best for scale & quality',
+            price: 49,
+            minutes: 300,
+            desc: 'Kalite ve ölçek için en popüler plan',
             icon: Rocket,
             features: [
                 '10 Voice Agents',
@@ -74,13 +75,13 @@ export const Pricing = ({ user, onLogout }) => {
         },
         {
             name: 'SCALE',
-            price: 199,
-            minutes: '1500 min',
-            desc: 'The ultimate enterprise tool',
+            price: 149,
+            minutes: 1000,
+            desc: 'Yüksek hacimli kullanım ve ekipler için',
             icon: Crown,
             features: [
-                '25 Voice Agents',
-                'All Premium Models (GPT-4o)',
+                'Unlimited Voice Agents',
+                'All Premium Models',
                 'Voice Cloning Included',
                 'All 99 Languages (Whisper)',
                 'Custom Integrations',
@@ -107,7 +108,7 @@ export const Pricing = ({ user, onLogout }) => {
                 body: JSON.stringify({
                     planName: tier.name,
                     amount: tier.price,
-                    credits: tier.minutes
+                    credits: `${tier.minutes} min`
                 }),
             });
 
@@ -154,7 +155,7 @@ export const Pricing = ({ user, onLogout }) => {
                 <header className="pricing-v2-header">
                     <span className="badge-promo">Best-of-Breed Technology Stack</span>
                     <h1>Choose Your Scale</h1>
-                    <p>Powered by Deepgram, ElevenLabs v3 and Gemini 2.0</p>
+                    <p>Top-up yerine dakika değeri odaklı şeffaf fiyatlandırma</p>
                 </header>
 
                 {error && <div className="pricing-error-v2">{error}</div>}
@@ -171,7 +172,8 @@ export const Pricing = ({ user, onLogout }) => {
                                     <span className="value">{tier.price}</span>
                                     <span className="period">/mo</span>
                                 </div>
-                                <div className="tier-minutes">{tier.minutes} per month</div>
+                                <div className="tier-minutes">{tier.minutes} minutes per month</div>
+                                <div className="tier-rate">${tier.price === 0 ? '0.00' : (tier.price / tier.minutes).toFixed(3)} / minute</div>
                                 <p className="tier-desc">{tier.desc}</p>
                             </div>
 
@@ -197,11 +199,12 @@ export const Pricing = ({ user, onLogout }) => {
                         <h2>Pay as you go credit top-up</h2>
                         <p>
                             Need flexible usage? Load any amount from ${customTopup.min} to ${customTopup.max} and use it over time.
-                            This option is intentionally a bit pricier than monthly bundles.
+                            Monthly plans offer better value per minute.
                         </p>
                     </div>
 
                     <div className="custom-topup-amount">${customAmount}</div>
+                    <div className="custom-topup-highlight">Get ~{estimatedMinutes} minutes for ${customAmount}</div>
                     <input
                         type="range"
                         min={customTopup.min}
@@ -214,7 +217,7 @@ export const Pricing = ({ user, onLogout }) => {
 
                     <div className="custom-topup-meta">
                         <span>Estimated usage: {estimatedMinutes} minutes</span>
-                        <span>Approx. ${(customAmount / estimatedMinutes).toFixed(2)} / min</span>
+                        <span>Approx. ${estimatedPerMinute.toFixed(2)} / min</span>
                     </div>
 
                     <button
