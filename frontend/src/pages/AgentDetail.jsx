@@ -26,20 +26,39 @@ const STT_OPTIONS = [
     { value: 'azure-speech', label: 'Azure Speech Neural (Soon)', disabled: true },
 ];
 
-const LANGUAGE_OPTIONS = [
-    { value: 'en', label: 'English' },
-    { value: 'tr', label: 'Türkçe' },
-    { value: 'de', label: 'Deutsch' },
-    { value: 'fr', label: 'Français' },
-    { value: 'es', label: 'Español' },
+const LLM_OPTIONS = [
+    // Google Gemini
+    { value: 'gemini-3.0-flash', label: '⚡ Gemini 3.0 Flash (En Hızlı)' },
+    { value: 'gemini-2.5-pro', label: '🧠 Gemini 2.5 Pro (Güçlü)' },
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (Dengeli)' },
+    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Ekonomik)' },
+    // OpenAI
+    { value: 'gpt-5.2', label: '🏆 GPT-5.2 (En Gelişmiş)' },
+    { value: 'gpt-5.1', label: 'GPT-5.1 (Premium)' },
+    { value: 'gpt-4.1', label: 'GPT-4.1 (Stabil)' },
+    { value: 'gpt-4o', label: 'GPT-4o (Standard)' },
+    { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Ekonomik)' },
+    // Anthropic Claude
+    { value: 'claude-sonnet-4.6', label: '✨ Claude Sonnet 4.6 (En İyi Kalite)' },
+    { value: 'claude-sonnet-4.5', label: 'Claude Sonnet 4.5 (Premium)' },
+    { value: 'claude-haiku-4', label: 'Claude Haiku 4 (Hızlı & Ucuz)' },
+    { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (Klasik)' },
+    // Meta Llama (Groq)
+    { value: 'llama-4-scout', label: '🦙 Llama 4 Scout (Groq - Ultra Hızlı)' },
+    { value: 'llama-3.3-70b', label: 'Llama 3.3 70B (Groq)' },
+    { value: 'llama-3.1-70b-versatile', label: 'Llama 3.1 70B (Groq - Klasik)' },
+    // Deepgram
+    { value: 'deepgram-default', label: '🆓 Deepgram Default (Ücretsiz Test)' },
 ];
 
-const LLM_OPTIONS = [
-    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Seçim: Hız+Fiyat)' },
-    { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (Best Quality)' },
-    { value: 'gpt-4o', label: 'OpenAI GPT-4o' },
-    { value: 'llama-3.1-70b-versatile', label: 'Llama 3.1 70B (Groq)' },
-    { value: 'deepgram-default', label: 'Deepgram Default (Testing)' },
+const LANGUAGE_OPTIONS = [
+    { value: 'tr', label: 'Turkish (TR)' },
+    { value: 'en', label: 'English (US)' },
+    { value: 'es', label: 'Spanish' },
+    { value: 'fr', label: 'French' },
+    { value: 'de', label: 'German' },
+    { value: 'it', label: 'Italian' },
+    { value: 'pt', label: 'Portuguese' },
 ];
 
 export const AgentDetail = ({ user, onLogout }) => {

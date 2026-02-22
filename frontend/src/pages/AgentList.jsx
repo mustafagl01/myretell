@@ -146,15 +146,32 @@ export const AgentList = ({ user, onLogout }) => {
                                             value={selectedAgent.llmModel}
                                             onChange={(e) => setSelectedAgent({ ...selectedAgent, llmModel: e.target.value })}
                                         >
-                                            <optgroup label="Recommended (Best-of-Breed)">
-                                                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Fastest)</option>
-                                                <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Best Quality)</option>
+                                            <optgroup label="⚡ Google Gemini">
+                                                <option value="gemini-3.0-flash">Gemini 3.0 Flash (En Hızlı)</option>
+                                                <option value="gemini-2.5-pro">Gemini 2.5 Pro (Güçlü)</option>
+                                                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Dengeli)</option>
+                                                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Ekonomik)</option>
                                             </optgroup>
-                                            <optgroup label="Standard Models">
-                                                <option value="gpt-4o">GPT-4o</option>
-                                                <option value="gpt-4o-mini">GPT-4o Mini</option>
-                                                <option value="llama-3.1-70b-versatile">Llama 3.1 70B (Groq)</option>
-                                                <option value="deepgram-default">Deepgram Default (Free)</option>
+                                            <optgroup label="🏆 OpenAI">
+                                                <option value="gpt-5.2">GPT-5.2 (En Gelişmiş)</option>
+                                                <option value="gpt-5.1">GPT-5.1 (Premium)</option>
+                                                <option value="gpt-4.1">GPT-4.1 (Stabil)</option>
+                                                <option value="gpt-4o">GPT-4o (Standard)</option>
+                                                <option value="gpt-4o-mini">GPT-4o Mini (Ekonomik)</option>
+                                            </optgroup>
+                                            <optgroup label="✨ Anthropic Claude">
+                                                <option value="claude-sonnet-4.6">Claude Sonnet 4.6 (En İyi Kalite)</option>
+                                                <option value="claude-sonnet-4.5">Claude Sonnet 4.5 (Premium)</option>
+                                                <option value="claude-haiku-4">Claude Haiku 4 (Hızlı & Ucuz)</option>
+                                                <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Klasik)</option>
+                                            </optgroup>
+                                            <optgroup label="🦙 Meta Llama (Groq)">
+                                                <option value="llama-4-scout">Llama 4 Scout (Ultra Hızlı)</option>
+                                                <option value="llama-3.3-70b">Llama 3.3 70B</option>
+                                                <option value="llama-3.1-70b-versatile">Llama 3.1 70B (Klasik)</option>
+                                            </optgroup>
+                                            <optgroup label="🆓 Deepgram">
+                                                <option value="deepgram-default">Deepgram Default (Ücretsiz Test)</option>
                                             </optgroup>
                                         </select>
                                     </div>
@@ -174,9 +191,12 @@ export const AgentList = ({ user, onLogout }) => {
                                         <label>TTS Engine (Premium Marketplace)</label>
                                         <select
                                             className="vapi-input"
-                                            value={selectedAgent.ttsModel || 'eleven_multilingual_v2'}
+                                            value={selectedAgent.ttsModel || 'deepgram'}
                                             onChange={(e) => setSelectedAgent({ ...selectedAgent, ttsModel: e.target.value })}
                                         >
+                                            <optgroup label="Deepgram (Stable & Fast)">
+                                                <option value="deepgram">Deepgram Aura 2 (Recommended)</option>
+                                            </optgroup>
                                             <optgroup label="ElevenLabs (Premium)">
                                                 <option value="eleven_turbo_v3">Turbo v3 (Best - 250ms)</option>
                                                 <option value="eleven_multilingual_v2">Multilingual v2 (Natural)</option>
@@ -184,9 +204,6 @@ export const AgentList = ({ user, onLogout }) => {
                                             <optgroup label="Specialty Providers (Coming Soon)">
                                                 <option value="playht_2_turbo" disabled>PlayHT 2.0 Turbo (Fast)</option>
                                                 <option value="azure-neural" disabled>Azure Speech Neural</option>
-                                            </optgroup>
-                                            <optgroup label="Budget Options">
-                                                <option value="deepgram-aura">Deepgram Aura 2 (Economy)</option>
                                             </optgroup>
                                         </select>
                                     </div>
@@ -233,8 +250,8 @@ export const AgentList = ({ user, onLogout }) => {
                                             value={selectedAgent.language}
                                             onChange={(e) => setSelectedAgent({ ...selectedAgent, language: e.target.value })}
                                         >
-                                            <option value="en">English (US)</option>
                                             <option value="tr">Turkish (TR)</option>
+                                            <option value="en">English (US)</option>
                                             <option value="es">Spanish</option>
                                             <option value="fr">French</option>
                                             <option value="de">German</option>
