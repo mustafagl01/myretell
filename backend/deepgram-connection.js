@@ -62,21 +62,40 @@ export class DeepgramConnection {
    */
   async connect(config = {}) {
     try {
-      // Create new agent connection using the explicit v1.connect() method
-      // Note: In SDK v3+, client.agent.v1.connect() is the recommended way to establish the WebSocket
-      this.agent = await this.client.agent.v1.connect();
+      // SDK v3.7.x: client.agent() returns an AgentLiveClient object
+      this.agent = this.client.agent();
 
-      // Set up event handlers
+      // Set up event handlers BEFORE establishing connection
       this._setupEventHandlers();
 
-      // Configure agent if settings provided
-      if (config && Object.keys(config).length > 0) {
-        // Log the config we're sending for debugging
-        console.log('Configuring Deepgram agent with:', JSON.stringify(config, null, 2));
-        this.agent.configure(config);
-      }
+      // Wait for connection to be established via setupConnection()
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Connection timeout: Failed to connect to Deepgram within 15 seconds'));
+        }, 15000);
 
-      this.isConnected = true;
+        this.agent.on(AgentEvents.Open, () => {
+          clearTimeout(timeout);
+          console.log('Deepgram WebSocket connection opened');
+          this.isConnected = true;
+
+          // Configure agent AFTER connection is open
+          if (config && Object.keys(config).length > 0) {
+            console.log('Configuring Deepgram agent with:', JSON.stringify(config, null, 2));
+            this.agent.configure(config);
+          }
+
+          resolve();
+        });
+
+        this.agent.on(AgentEvents.Error, (error) => {
+          clearTimeout(timeout);
+          reject(new Error(`Connection failed: ${error.message || JSON.stringify(error)}`));
+        });
+
+        // Initiate the WebSocket connection
+        this.agent.setupConnection();
+      });
     } catch (error) {
       this.isConnected = false;
       console.error('Deepgram connection error details:', error);

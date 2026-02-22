@@ -116,14 +116,13 @@ app.post('/api/deepgram/connect', async (req, res) => {
       return res.status(400).json({ error: 'Connection already exists' });
     }
 
-    // Use the explicit v1.connect() method which returns the connection
-    deepgramConnection = await deepgramClient.agent.v1.connect();
-
-    // Configure immediately after connection
-    deepgramConnection.configure(buildAgentConfig());
+    // SDK v3.7.x: client.agent() returns an AgentLiveClient
+    deepgramConnection = deepgramClient.agent();
 
     deepgramConnection.on(AgentEvents.Open, () => {
       console.log('Deepgram connection opened');
+      // Configure AFTER connection is open
+      deepgramConnection.configure(buildAgentConfig());
     });
 
     deepgramConnection.on(AgentEvents.SettingsApplied, () => {
@@ -168,6 +167,9 @@ app.post('/api/deepgram/connect', async (req, res) => {
     });
 
     keepAliveInterval = setInterval(keepAlive, 5000);
+
+    // Initiate the WebSocket connection AFTER all handlers are registered
+    deepgramConnection.setupConnection();
 
     res.json({
       success: true,
