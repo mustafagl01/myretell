@@ -145,15 +145,15 @@ export const AgentList = ({ user, onLogout }) => {
                                             value={selectedAgent.llmModel}
                                             onChange={(e) => setSelectedAgent({ ...selectedAgent, llmModel: e.target.value })}
                                         >
-                                            <optgroup label="Deepgram (Free)">
-                                                <option value="deepgram-default">Deepgram Default (Testing)</option>
-                                            </optgroup>
-                                            <optgroup label="External Models (Premium)">
+                                            <optgroup label="Recommended (Best-of-Breed)">
                                                 <option value="gemini-2.0-flash">Gemini 2.0 Flash (Fastest)</option>
-                                                <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Premium)</option>
-                                                <option value="gpt-4o-mini">GPT-4o Mini</option>
+                                                <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Best Quality)</option>
+                                            </optgroup>
+                                            <optgroup label="Standard Models">
                                                 <option value="gpt-4o">GPT-4o</option>
+                                                <option value="gpt-4o-mini">GPT-4o Mini</option>
                                                 <option value="llama-3.1-70b-versatile">Llama 3.1 70B (Groq)</option>
+                                                <option value="deepgram-default">Deepgram Default (Free)</option>
                                             </optgroup>
                                         </select>
                                     </div>
@@ -170,26 +170,40 @@ export const AgentList = ({ user, onLogout }) => {
                             {activeTab === 'voice' && (
                                 <div className="vapi-form-section">
                                     <div className="vapi-field">
-                                        <label>Select Provider & Voice</label>
+                                        <label>TTS Engine (Premium Marketplace)</label>
+                                        <select
+                                            className="vapi-input"
+                                            value={selectedAgent.ttsModel || 'eleven_multilingual_v2'}
+                                            onChange={(e) => setSelectedAgent({ ...selectedAgent, ttsModel: e.target.value })}
+                                        >
+                                            <optgroup label="ElevenLabs (Premium)">
+                                                <option value="eleven_turbo_v3">Turbo v3 (Best - 250ms)</option>
+                                                <option value="eleven_multilingual_v2">Multilingual v2 (Natural)</option>
+                                            </optgroup>
+                                            <optgroup label="Specialty Providers">
+                                                <option value="playht_2_turbo">PlayHT 2.0 Turbo (Fast)</option>
+                                                <option value="azure-neural">Azure Speech Neural</option>
+                                                <option value="deepgram-aura">Deepgram Aura 2 (Economy)</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                    <div className="vapi-field">
+                                        <label>Select Voice</label>
                                         <select
                                             className="vapi-input"
                                             value={selectedAgent.voice}
                                             onChange={(e) => setSelectedAgent({ ...selectedAgent, voice: e.target.value })}
                                         >
-                                            <optgroup label="Deepgram (Economy)">
-                                                <option value="aura-2-thalia-en">Thalia (English, Female)</option>
-                                                <option value="aura-2-orion-en">Orion (English, Male)</option>
+                                            <optgroup label="ElevenLabs">
+                                                <option value="cgS8vJhk66vDX8O6m62a">Serena (Female)</option>
+                                                <option value="nPczCAnBy9noDW9As69E">Brian (Male)</option>
+                                                <option value="pFZP5JQG7iQjIQuC4Bku">Lily (Female)</option>
                                             </optgroup>
-                                            <optgroup label="ElevenLabs (Premium)">
-                                                <option value="cgS8vJhk66vDX8O6m62a">Serena (ElevenLabs Premium - Female)</option>
-                                                <option value="nPczCAnBy9noDW9As69E">Brian (ElevenLabs Premium - Male)</option>
-                                                <option value="pFZP5JQG7iQjIQuC4Bku">Lily (ElevenLabs v3 - Natural)</option>
+                                            <optgroup label="Deepgram (Economy)">
+                                                <option value="aura-2-thalia-en">Thalia</option>
+                                                <option value="aura-2-orion-en">Orion</option>
                                             </optgroup>
                                         </select>
-                                    </div>
-                                    <div className="vapi-field">
-                                        <label>Voice Stability / Clarity (Coming Soon)</label>
-                                        <input type="range" className="vapi-range" disabled />
                                     </div>
                                 </div>
                             )}
@@ -197,14 +211,16 @@ export const AgentList = ({ user, onLogout }) => {
                             {activeTab === 'advanced' && (
                                 <div className="vapi-form-section">
                                     <div className="vapi-field">
-                                        <label>Transcriber Model (STT)</label>
+                                        <label>Transcriber Engine (STT)</label>
                                         <select
                                             className="vapi-input"
                                             value={selectedAgent.sttModel}
                                             onChange={(e) => setSelectedAgent({ ...selectedAgent, sttModel: e.target.value })}
                                         >
-                                            <option value="nova-3">Deepgram Nova-3 (Fastest)</option>
-                                            <option value="whisper-1">OpenAI Whisper-1 (Accurate)</option>
+                                            <option value="nova-3">Deepgram Nova-3 (Winner - 200ms)</option>
+                                            <option value="whisper-1">OpenAI Whisper v3 (Accuracy - 500ms)</option>
+                                            <option value="azure-speech">Azure Speech (Neural - 400ms)</option>
+                                            <option value="assembly-ai">AssemblyAI (Best - 300ms)</option>
                                         </select>
                                     </div>
                                     <div className="vapi-field">

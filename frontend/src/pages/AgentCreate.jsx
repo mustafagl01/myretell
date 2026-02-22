@@ -4,25 +4,35 @@ import { DashboardLayout } from '../components/DashboardLayout';
 import './AgentCreate.css';
 
 const LLM_OPTIONS = [
-    { value: 'deepgram-default', label: 'Deepgram Default (Free / Testing)', provider: 'deepgram' },
-    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Fastest)', provider: 'google' },
-    { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (Premium)', provider: 'anthropic' },
-    { value: 'gpt-4o-mini', label: 'GPT-4o Mini', provider: 'openai' },
-    { value: 'gpt-4o', label: 'GPT-4o', provider: 'openai' },
-    { value: 'llama-3.1-70b-versatile', label: 'Llama 3.1 70B (Ultra-fast)', provider: 'groq' },
+    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Seçim: Hız + Fiyat)', provider: 'google' },
+    { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (Premium: En İyi Kalite)', provider: 'anthropic' },
+    { value: 'gpt-4o', label: 'OpenAI GPT-4o (Standard)', provider: 'openai' },
+    { value: 'gpt-4o-mini', label: 'OpenAI GPT-4o-mini (Economy)', provider: 'openai' },
+    { value: 'llama-3.1-70b-versatile', label: 'Groq Llama 3.1 (Ultra-fast)', provider: 'groq' },
+    { value: 'deepgram-default', label: 'Deepgram Default (Test / Free)', provider: 'deepgram' },
 ];
 
 const STT_OPTIONS = [
-    { value: 'nova-3', label: 'Deepgram Nova-3 (Fastest)', provider: 'deepgram' },
-    { value: 'whisper-1', label: 'OpenAI Whisper-1 (Accurate)', provider: 'openai' },
+    { value: 'nova-3', label: 'Deepgram Nova-3 (Seçim: Gecikme + Kalite)', provider: 'deepgram' },
+    { value: 'whisper-1', label: 'OpenAI Whisper v3 (Alternatif: 99 Dil)', provider: 'openai' },
+    { value: 'azure-speech', label: 'Azure Speech Neural (Hız: 400ms)', provider: 'azure' },
+    { value: 'assembly-ai', label: 'AssemblyAI Best (Doğruluk: 94%)', provider: 'assembly' },
+];
+
+const STACK_TTS_OPTIONS = [
+    { value: 'eleven_turbo_v3', label: 'ElevenLabs Turbo v3 (Seçim: En Doğal)', provider: 'elevenlabs' },
+    { value: 'eleven_multilingual_v2', label: 'ElevenLabs Multilingual v2', provider: 'elevenlabs' },
+    { value: 'playht_2_turbo', label: 'PlayHT 2.0 Turbo (Hızlı: 350ms)', provider: 'playht' },
+    { value: 'aura-2-thalia-en', label: 'Deepgram Aura 2 (Budget: Çok Ucuz)', provider: 'deepgram' },
+    { value: 'azure-neural', label: 'Azure Neural (75 Dil)', provider: 'azure' },
 ];
 
 const VOICE_OPTIONS = [
+    { value: 'cgS8vJhk66vDX8O6m62a', label: 'Serena (Female) - ElevenLabs', provider: 'elevenlabs' },
+    { value: 'nPczCAnBy9noDW9As69E', label: 'Brian (Male) - ElevenLabs', provider: 'elevenlabs' },
+    { value: 'pFZP5JQG7iQjIQuC4Bku', label: 'Lily (Female) - ElevenLabs', provider: 'elevenlabs' },
     { value: 'aura-2-thalia-en', label: 'Thalia (Female) - Deepgram', provider: 'deepgram' },
     { value: 'aura-2-orion-en', label: 'Orion (Male) - Deepgram', provider: 'deepgram' },
-    { value: 'cgS8vJhk66vDX8O6m62a', label: 'Serena (Female) - ElevenLabs Premium', provider: 'elevenlabs' },
-    { value: 'nPczCAnBy9noDW9As69E', label: 'Brian (Male) - ElevenLabs Premium', provider: 'elevenlabs' },
-    { value: 'pFZP5JQG7iQjIQuC4Bku', label: 'Lily (Female) - ElevenLabs v3', provider: 'elevenlabs' },
 ];
 
 const LANGUAGE_OPTIONS = [
@@ -42,8 +52,9 @@ export const AgentCreate = ({ user, onLogout }) => {
     const [form, setForm] = useState({
         name: '',
         systemPrompt: '',
-        llmModel: 'deepgram-default', // Restored default
-        voice: 'aura-2-thalia-en',
+        llmModel: 'gemini-2.0-flash',
+        ttsModel: 'eleven_turbo_v3',
+        voice: 'cgS8vJhk66vDX8O6m62a',
         sttModel: 'nova-3',
         language: 'en',
         greeting: '',
@@ -165,13 +176,19 @@ export const AgentCreate = ({ user, onLogout }) => {
                             </select>
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Voice</label>
+                            <label className="form-label">TTS Engine (Seçim Tablosu)</label>
+                            <select className="form-select" value={form.ttsModel} onChange={(e) => handleChange('ttsModel', e.target.value)}>
+                                {STACK_TTS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Select Voice</label>
                             <select className="form-select" value={form.voice} onChange={(e) => handleChange('voice', e.target.value)}>
                                 {VOICE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Transcriber (STT)</label>
+                            <label className="form-label">Transcriber Engine (STT)</label>
                             <select className="form-select" value={form.sttModel} onChange={(e) => handleChange('sttModel', e.target.value)}>
                                 {STT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>

@@ -112,12 +112,18 @@ export class WebSocketHandler {
 
     // Check if it's an ElevenLabs voice ID (lengthy hash)
     if (agent.voice && agent.voice.length > 15 && !agent.voice.startsWith('aura')) {
+      // Map frontend ttsModel to ElevenLabs model_id
+      const elModel = agent.ttsModel === 'eleven_turbo_v3' ? 'eleven_turbo_v2_5' : 'eleven_multilingual_v2';
+
       speakProvider = {
         type: 'eleven_labs',
         voice_id: agent.voice,
-        model_id: 'eleven_multilingual_v2', // Use Multilingual v2 for better international support
+        model_id: elModel,
         ...(user?.elevenlabsApiKey && { api_key: user.elevenlabsApiKey })
       };
+    } else if (agent.ttsModel === 'azure-neural') {
+      // Placeholder for Azure TTS integration
+      speakProvider = { type: 'azure', model: 'neural' };
     }
 
     // STT Provider Logic
@@ -133,6 +139,8 @@ export class WebSocketHandler {
         model: 'whisper-1',
         ...(user?.openaiApiKey && { api_key: user.openaiApiKey })
       };
+    } else if (agent.sttModel === 'azure-speech') {
+      listenProvider = { type: 'azure', model: 'neural' };
     }
 
     return {

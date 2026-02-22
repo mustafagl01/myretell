@@ -5,35 +5,32 @@ import { useVoiceAssistant } from '../hooks/useVoiceAssistant';
 import './AgentDetail.css';
 
 const VOICE_OPTIONS = [
+    { value: 'cgS8vJhk66vDX8O6m62a', label: 'Serena (Female) - ElevenLabs' },
+    { value: 'nPczCAnBy9noDW9As69E', label: 'Brian (Male) - ElevenLabs' },
+    { value: 'pFZP5JQG7iQjIQuC4Bku', label: 'Lily (Female) - ElevenLabs' },
     { value: 'aura-2-thalia-en', label: 'Thalia (Female) - Deepgram' },
     { value: 'aura-2-orion-en', label: 'Orion (Male) - Deepgram' },
-    { value: 'cgS8vJhk66vDX8O6m62a', label: 'Serena (Female) - ElevenLabs Premium' },
-    { value: 'nPczCAnBy9noDW9As69E', label: 'Brian (Male) - ElevenLabs Premium' },
-    { value: 'pFZP5JQG7iQjIQuC4Bku', label: 'Lily (Female) - ElevenLabs v3' },
+];
+
+const TTS_MODEL_OPTIONS = [
+    { value: 'eleven_turbo_v3', label: 'ElevenLabs Turbo v3 (Winner)' },
+    { value: 'eleven_multilingual_v2', label: 'ElevenLabs Multilingual v2' },
+    { value: 'playht_2_turbo', label: 'PlayHT 2.0 Turbo (Fast)' },
+    { value: 'azure-neural', label: 'Azure Neural' },
 ];
 
 const STT_OPTIONS = [
-    { value: 'nova-3', label: 'Deepgram Nova-3 (Fastest)' },
-    { value: 'whisper-1', label: 'OpenAI Whisper-1 (Accurate)' },
-];
-
-const LANGUAGE_OPTIONS = [
-    { value: 'en', label: 'English (US)' },
-    { value: 'tr', label: 'Turkish (TR)' },
-    { value: 'es', label: 'Spanish' },
-    { value: 'fr', label: 'French' },
-    { value: 'de', label: 'German' },
-    { value: 'it', label: 'Italian' },
-    { value: 'pt', label: 'Portuguese' },
+    { value: 'nova-3', label: 'Deepgram Nova-3 (Winner - 200ms)' },
+    { value: 'whisper-1', label: 'OpenAI Whisper v3 (Best Accuracy)' },
+    { value: 'azure-speech', label: 'Azure Speech Neural (Hızlı)' },
 ];
 
 const LLM_OPTIONS = [
-    { value: 'deepgram-default', label: 'Deepgram Default (Free / Testing)' },
-    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Fastest)' },
-    { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (Premium)' },
-    { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-    { value: 'gpt-4o', label: 'GPT-4o' },
+    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Seçim: Hız+Fiyat)' },
+    { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (Best Quality)' },
+    { value: 'gpt-4o', label: 'OpenAI GPT-4o' },
     { value: 'llama-3.1-70b-versatile', label: 'Llama 3.1 70B (Groq)' },
+    { value: 'deepgram-default', label: 'Deepgram Default (Testing)' },
 ];
 
 export const AgentDetail = ({ user, onLogout }) => {
@@ -75,6 +72,7 @@ export const AgentDetail = ({ user, onLogout }) => {
                     voice: data.voice,
                     language: data.language || 'en',
                     sttModel: data.sttModel || 'nova-3',
+                    ttsModel: data.ttsModel || 'eleven_turbo_v3',
                     greeting: data.greeting || '',
                 });
             } else {
@@ -208,6 +206,12 @@ export const AgentDetail = ({ user, onLogout }) => {
                             <h3 className="form-card-title">LLM Model</h3>
                             <select className="form-select" value={editForm.llmModel} onChange={(e) => setEditForm(p => ({ ...p, llmModel: e.target.value }))}>
                                 {LLM_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </select>
+                        </div>
+                        <div className="form-card">
+                            <h3 className="form-card-title">TTS Engine</h3>
+                            <select className="form-select" value={editForm.ttsModel} onChange={(e) => setEditForm(p => ({ ...p, ttsModel: e.target.value }))}>
+                                {TTS_MODEL_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
                         <div className="form-card">
