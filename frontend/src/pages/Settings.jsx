@@ -8,6 +8,7 @@ export const Settings = ({ user, onLogout }) => {
         anthropicApiKey: '',
         googleApiKey: '',
         groqApiKey: '',
+        elevenlabsApiKey: '',
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -121,6 +122,17 @@ export const Settings = ({ user, onLogout }) => {
                                     placeholder="gsk_..."
                                     value={keys.groqApiKey}
                                     onChange={(e) => setKeys({ ...keys, groqApiKey: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">ElevenLabs API Key</label>
+                                <input
+                                    type="password"
+                                    className="vapi-input"
+                                    placeholder="your-elevenlabs-api-key"
+                                    value={keys.elevenlabsApiKey}
+                                    onChange={(e) => setKeys({ ...keys, elevenlabsApiKey: e.target.value })}
                                 />
                             </div>
 

@@ -3,26 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../components/DashboardLayout';
 import './AgentCreate.css';
 
-const VOICE_OPTIONS = [
-    { value: 'aura-2-thalia-en', label: 'Thalia (English, Female)' },
-    { value: 'aura-2-luna-en', label: 'Luna (English, Female)' },
-    { value: 'aura-2-stella-en', label: 'Stella (English, Female)' },
-    { value: 'aura-2-athena-en', label: 'Athena (English, Female)' },
-    { value: 'aura-2-hera-en', label: 'Hera (English, Female)' },
-    { value: 'aura-2-orion-en', label: 'Orion (English, Male)' },
-    { value: 'aura-2-arcas-en', label: 'Arcas (English, Male)' },
-    { value: 'aura-2-perseus-en', label: 'Perseus (English, Male)' },
+const LLM_OPTIONS = [
+    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Fastest)', provider: 'google' },
+    { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (Premium)', provider: 'anthropic' },
+    { value: 'gpt-4o-mini', label: 'GPT-4o Mini', provider: 'openai' },
+    { value: 'gpt-4o', label: 'GPT-4o', provider: 'openai' },
+    { value: 'llama-3.1-70b-versatile', label: 'Llama 3.1 70B (Ultra-fast)', provider: 'groq' },
 ];
 
-const LLM_OPTIONS = [
-    { value: 'deepgram-default', label: 'Deepgram Default (Fastest / Free)' },
-    { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Fast)' },
-    { value: 'gpt-4o', label: 'GPT-4o (High Quality)' },
-    { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo (Economy)' },
-    { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet' },
-    { value: 'claude-3-haiku', label: 'Claude 3 Haiku' },
-    { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-    { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
+const VOICE_OPTIONS = [
+    { value: 'aura-2-thalia-en', label: 'Thalia (Female) - Deepgram', provider: 'deepgram' },
+    { value: 'aura-2-orion-en', label: 'Orion (Male) - Deepgram', provider: 'deepgram' },
+    { value: 'cgS8vJhk66vDX8O6m62a', label: 'Serena (Female) - ElevenLabs', provider: 'elevenlabs' },
+    { value: 'nPczCAnBy9noDW9As69E', label: 'Brian (Male) - ElevenLabs', provider: 'elevenlabs' },
+    { value: 'pFZP5JQG7iQjIQuC4Bku', label: 'Lily (Female) - ElevenLabs v3', provider: 'elevenlabs' },
 ];
 
 const LANGUAGE_OPTIONS = [
@@ -40,7 +34,7 @@ export const AgentCreate = ({ user, onLogout }) => {
     const [form, setForm] = useState({
         name: '',
         systemPrompt: '',
-        llmModel: 'deepgram-default',
+        llmModel: 'gemini-2.0-flash',
         voice: 'aura-2-thalia-en',
         sttModel: 'nova-3',
         language: 'en',
@@ -52,13 +46,13 @@ export const AgentCreate = ({ user, onLogout }) => {
         setError('');
     };
 
-    const isFormValid = form.name.trim().length >= 3 && form.systemPrompt.trim().length >= 20;
+    const isFormValid = form.name.trim().length >= 3 && form.systemPrompt.trim().length >= 10;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!isFormValid) {
-            setError('System prompt must be at least 20 characters and Name at least 3.');
+            setError('System prompt must be at least 10 characters and Name at least 3.');
             return;
         }
 
@@ -111,14 +105,14 @@ export const AgentCreate = ({ user, onLogout }) => {
                             <label className="form-label">System Prompt</label>
                             <textarea
                                 className="form-textarea"
-                                placeholder="Define how the agent should behave. Minimum 20 characters..."
+                                placeholder="Define how the agent should behave. Minimum 10 characters..."
                                 value={form.systemPrompt}
                                 onChange={(e) => handleChange('systemPrompt', e.target.value)}
-                                minLength={20}
+                                minLength={10}
                                 required
                             />
-                            <span className={`char-count ${form.systemPrompt.length < 20 ? 'error' : 'success'}`}>
-                                {form.systemPrompt.length} characters (min 20)
+                            <span className={`char-count ${form.systemPrompt.length < 10 ? 'error' : 'success'}`}>
+                                {form.systemPrompt.length} characters (min 10)
                             </span>
                         </div>
                         <div className="form-group">

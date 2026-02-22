@@ -1,132 +1,232 @@
-.pricing-container {
-    min-height: 100vh;
-    padding: 6rem 2rem;
+.pricing-container-v2 {
     max-width: 1200px;
     margin: 0 auto;
+    padding: 3rem 1rem;
+    color: #fff;
+}
+
+.pricing-v2-header {
     text-align: center;
+    margin-bottom: 4rem;
 }
 
-.pricing-header h1 {
-    font-size: 3rem;
-    font-weight: 800;
-    margin-bottom: 1rem;
-}
-
-.pricing-header p {
-    color: var(--text-muted);
-    font-size: 1.25rem;
-    margin-bottom: 5rem;
-}
-
-.pricing-error {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid #ef4444;
-    color: #fca5a5;
-    padding: 1rem;
-    border-radius: 0.75rem;
-    margin-bottom: 3rem;
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.pricing-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 2.5rem;
-}
-
-.pricing-card {
-    background: var(--bg-card);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 2rem;
-    padding: 3rem 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    transition: transform 0.3s ease;
-}
-
-.pricing-card:hover {
-    transform: translateY(-10px);
-    border-color: var(--primary);
-}
-
-.pricing-card.popular {
-    border: 2px solid var(--primary);
-    background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.1), transparent);
-}
-
-.popular-badge {
-    position: absolute;
-    top: -15px;
-    background: var(--primary);
-    color: white;
-    padding: 0.25rem 1rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 700;
+.badge-promo {
+    background: rgba(99, 102, 241, 0.1);
+    color: #818cf8;
+    padding: 0.5rem 1rem;
+    border-radius: 99px;
+    font-size: 0.85rem;
+    font-weight: 600;
     text-transform: uppercase;
-}
-
-.pricing-card h3 {
-    font-size: 1.5rem;
-    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    display: inline-block;
     margin-bottom: 1.5rem;
 }
 
-.price-display .amount {
-    font-size: 3.5rem;
+.pricing-v2-header h1 {
+    font-size: 3rem;
     font-weight: 800;
-    color: var(--text-main);
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-.credit-line {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--accent);
+.pricing-v2-header p {
+    color: #94a3b8;
+    font-size: 1.1rem;
+}
+
+.pricing-grid-v2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-bottom: 4rem;
+}
+
+.tier-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.tier-card:hover {
+    transform: translateY(-8px);
+    border-color: #475569;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.tier-card.popular {
+    background: #0f172a;
+    border: 2px solid #6366f1;
+    transform: scale(1.05);
+    z-index: 10;
+}
+
+.tier-card.popular:hover {
+    transform: scale(1.05) translateY(-8px);
+}
+
+.popular-ribbon {
+    position: absolute;
+    top: 1rem;
+    right: -2rem;
+    background: #6366f1;
+    color: white;
+    padding: 0.25rem 3rem;
+    transform: rotate(45deg);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.tier-header {
     margin-bottom: 2rem;
 }
 
-.feature-list {
-    list-style: none;
-    margin-bottom: 3rem;
-    flex: 1;
+.tier-icon {
+    color: #6366f1;
+    margin-bottom: 1rem;
 }
 
-.feature-list li {
-    color: var(--text-muted);
-    margin-bottom: 0.75rem;
+.tier-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #818cf8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1.5rem;
+}
+
+.tier-price {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 0.5rem;
+}
+
+.tier-price .currency {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-right: 0.25rem;
+}
+
+.tier-price .value {
+    font-size: 3.5rem;
+    font-weight: 800;
+}
+
+.tier-price .period {
+    color: #64748b;
+    margin-left: 0.25rem;
+}
+
+.tier-minutes {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin-bottom: 1rem;
+}
+
+.tier-desc {
+    color: #94a3b8;
     font-size: 0.95rem;
+    line-height: 1.5;
 }
 
-.btn-checkout {
+.tier-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2.5rem 0;
+    flex-grow: 1;
+}
+
+.tier-features li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #cbd5e1;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.check-icon {
+    color: #10b981;
+    flex-shrink: 0;
+}
+
+.btn-tier-action {
     width: 100%;
     padding: 1rem;
-    border-radius: 1rem;
-    font-weight: 700;
+    border-radius: 0.75rem;
+    font-weight: 600;
     font-size: 1rem;
     cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.btn-plan-primary {
-    background: var(--primary);
-    color: white;
+    transition: all 0.2s;
     border: none;
 }
 
+.btn-plan-primary {
+    background: #6366f1;
+    color: white;
+}
+
 .btn-plan-primary:hover {
-    background: var(--primary-hover);
+    background: #4f46e5;
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
 }
 
 .btn-plan-outline {
-    background: none;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    color: var(--text-main);
+    background: transparent;
+    border: 1px solid #334155;
+    color: white;
 }
 
 .btn-plan-outline:hover {
-    border-color: var(--text-main);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: #475569;
+}
+
+.btn-plan-ghost {
+    background: rgba(255, 255, 255, 0.05);
+    color: #94a3b8;
+    cursor: default;
+}
+
+.pricing-footer-info {
+    text-align: center;
+    padding: 2rem;
+    background: rgba(30, 41, 59, 0.5);
+    border-radius: 1rem;
+    border: 1px dashed #334155;
+}
+
+.pricing-footer-info strong {
+    color: #818cf8;
+    cursor: pointer;
+}
+
+.pricing-error-v2 {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+@media (max-width: 1024px) {
+    .tier-card.popular {
+        transform: none;
+    }
+
+    .tier-card.popular:hover {
+        transform: translateY(-8px);
+    }
 }

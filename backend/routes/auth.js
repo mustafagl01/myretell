@@ -274,7 +274,7 @@ router.get('/me', authenticateToken, async (req, res) => {
 
 router.put('/keys', authenticateToken, async (req, res) => {
   try {
-    const { openaiApiKey, anthropicApiKey, googleApiKey, groqApiKey } = req.body;
+    const { openaiApiKey, anthropicApiKey, googleApiKey, groqApiKey, elevenlabsApiKey } = req.body;
 
     const updated = await prisma.user.update({
       where: { id: req.user.id },
@@ -282,7 +282,8 @@ router.put('/keys', authenticateToken, async (req, res) => {
         openaiApiKey,
         anthropicApiKey,
         googleApiKey,
-        groqApiKey
+        groqApiKey,
+        elevenlabsApiKey
       }
     });
 

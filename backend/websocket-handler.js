@@ -76,39 +76,48 @@ export class WebSocketHandler {
    * Build Deepgram agent config from a database Agent record.
    */
   _buildAgentConfigFromAgent(agent, user = null) {
-    const isDeepgramLlm = agent.llmModel === 'deepgram-default';
+    // LLM Provider Logic
+    let thinkProvider = null;
+    const model = agent.llmModel || 'gemini-2.0-flash';
 
-    let provider = null;
+    if (model.includes('gemini') || model.includes('google')) {
+      const geminiModel = model.includes('2.0') ? 'gemini-2.0-flash' : 'gemini-1.5-flash';
+      thinkProvider = {
+        type: 'google',
+        model: geminiModel,
+        ...(user?.googleApiKey && { api_key: user.googleApiKey })
+      };
+    } else if (model.includes('claude') || model.includes('anthropic')) {
+      thinkProvider = {
+        type: 'anthropic',
+        model: model.includes('sonnet') ? 'claude-3-5-sonnet-20240620' : 'claude-3-haiku-20240307',
+        ...(user?.anthropicApiKey && { api_key: user.anthropicApiKey })
+      };
+    } else if (model.includes('gpt') || model.includes('open_ai')) {
+      thinkProvider = {
+        type: 'open_ai',
+        model: model,
+        ...(user?.openaiApiKey && { api_key: user.openaiApiKey })
+      };
+    } else if (model.includes('groq') || model.includes('llama')) {
+      thinkProvider = {
+        type: 'groq',
+        model: model,
+        ...(user?.groqApiKey && { api_key: user.groqApiKey })
+      };
+    }
 
-    if (!isDeepgramLlm) {
-      if (agent.llmModel.startsWith('gpt')) {
-        provider = {
-          type: 'open_ai',
-          model: agent.llmModel,
-          ...(user?.openaiApiKey && { api_key: user.openaiApiKey })
-        };
-      } else if (agent.llmModel.startsWith('claude')) {
-        provider = {
-          type: 'anthropic',
-          model: agent.llmModel === 'claude-3-5-sonnet' ? 'claude-3-5-sonnet-20240620' : 'claude-3-haiku-20240307',
-          ...(user?.anthropicApiKey && { api_key: user.anthropicApiKey })
-        };
-      } else if (agent.llmModel.startsWith('gemini')) {
-        provider = {
-          type: 'google',
-          model: agent.llmModel,
-          ...(user?.googleApiKey && { api_key: user.googleApiKey })
-        };
-      } else if (agent.llmModel.startsWith('groq')) {
-        provider = {
-          type: 'groq',
-          model: agent.llmModel,
-          ...(user?.groqApiKey && { api_key: user.groqApiKey })
-        };
-      } else {
-        // Fallback to OpenAI mini
-        provider = { type: 'open_ai', model: 'gpt-4o-mini' };
-      }
+    // TTS Provider Logic
+    let speakProvider = { type: 'deepgram', model: agent.voice || 'aura-2-thalia-en' };
+
+    // Check if it's an ElevenLabs voice ID (lengthy hash)
+    if (agent.voice && agent.voice.length > 15 && !agent.voice.startsWith('aura')) {
+      speakProvider = {
+        type: 'eleven_labs',
+        voice_id: agent.voice,
+        model_id: 'eleven_turbo_v2_5',
+        ...(user?.elevenlabsApiKey && { api_key: user.elevenlabsApiKey })
+      };
     }
 
     return {
@@ -117,13 +126,19 @@ export class WebSocketHandler {
         output: { encoding: 'linear16', sample_rate: 16000, container: 'none' }
       },
       agent: {
-        listen: { provider: { type: 'deepgram', model: agent.sttModel || 'nova-3' } },
+        listen: {
+          provider: {
+            type: 'deepgram',
+            model: agent.sttModel || 'nova-3',
+            ...(agent.language && { language: agent.language })
+          }
+        },
         think: {
-          ...(provider ? { provider } : {}),
+          ...(thinkProvider ? { provider: thinkProvider } : {}),
           prompt: agent.systemPrompt,
           ...(agent.greeting && { greeting: agent.greeting }),
         },
-        speak: { provider: { type: 'deepgram', model: agent.voice || 'aura-2-thalia-en' } }
+        speak: { provider: speakProvider }
       }
     };
   }

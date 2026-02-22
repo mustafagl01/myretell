@@ -5,24 +5,19 @@ import { useVoiceAssistant } from '../hooks/useVoiceAssistant';
 import './AgentDetail.css';
 
 const VOICE_OPTIONS = [
-    { value: 'aura-2-thalia-en', label: 'Thalia (Female)' },
-    { value: 'aura-2-luna-en', label: 'Luna (Female)' },
-    { value: 'aura-2-stella-en', label: 'Stella (Female)' },
-    { value: 'aura-2-athena-en', label: 'Athena (Female)' },
-    { value: 'aura-2-hera-en', label: 'Hera (Female)' },
-    { value: 'aura-2-orion-en', label: 'Orion (Male)' },
-    { value: 'aura-2-arcas-en', label: 'Arcas (Male)' },
-    { value: 'aura-2-perseus-en', label: 'Perseus (Male)' },
+    { value: 'aura-2-thalia-en', label: 'Thalia (Female) - Deepgram' },
+    { value: 'aura-2-orion-en', label: 'Orion (Male) - Deepgram' },
+    { value: 'cgS8vJhk66vDX8O6m62a', label: 'Serena (Female) - ElevenLabs' },
+    { value: 'nPczCAnBy9noDW9As69E', label: 'Brian (Male) - ElevenLabs' },
+    { value: 'pFZP5JQG7iQjIQuC4Bku', label: 'Lily (Female) - ElevenLabs v3' },
 ];
 
 const LLM_OPTIONS = [
+    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Fastest)' },
+    { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (Premium)' },
     { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
     { value: 'gpt-4o', label: 'GPT-4o' },
-    { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
-    { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet' },
-    { value: 'claude-3-haiku', label: 'Claude 3 Haiku' },
-    { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-    { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
+    { value: 'llama-3.1-70b-versatile', label: 'Llama 3.1 70B (Groq)' },
 ];
 
 export const AgentDetail = ({ user, onLogout }) => {
