@@ -87,6 +87,11 @@ export class DeepgramConnection {
           reject(err);
         };
 
+        // ✅ Config'i setupConnection'dan ÖNCE ver (Deepgram SDK v3 requirement)
+        if (config && Object.keys(config).length > 0) {
+          this.agent.configure(config);
+        }
+
         // Initiate the WebSocket connection
         this.agent.setupConnection();
       });
@@ -247,13 +252,6 @@ export class DeepgramConnection {
     this.agent.on(AgentEvents.Open, () => {
       console.log('Deepgram WebSocket connection opened');
       this.isConnected = true;
-
-      // Configure agent AFTER connection is open
-      if (this._pendingConfig && Object.keys(this._pendingConfig).length > 0) {
-        console.log('Configuring Deepgram agent with:', JSON.stringify(this._pendingConfig, null, 2));
-        this.agent.configure(this._pendingConfig);
-        this._pendingConfig = null;
-      }
 
       if (this.onOpen) {
         this.onOpen();
