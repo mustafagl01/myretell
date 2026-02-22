@@ -76,6 +76,8 @@ export class WebSocketHandler {
    * Build Deepgram agent config from a database Agent record.
    */
   _buildAgentConfigFromAgent(agent) {
+    const isDeepgramLlm = agent.llmModel === 'deepgram-default';
+
     return {
       audio: {
         input: { encoding: 'linear16', sample_rate: 16000 },
@@ -84,7 +86,11 @@ export class WebSocketHandler {
       agent: {
         listen: { provider: { type: 'deepgram', model: agent.sttModel || 'nova-3' } },
         think: {
-          provider: { type: 'open_ai', model: agent.llmModel || 'gpt-4o-mini' },
+          ...(isDeepgramLlm ? {
+            // Let Deepgram decide its default for the region
+          } : {
+            provider: { type: 'open_ai', model: agent.llmModel || 'gpt-4o-mini' },
+          }),
           prompt: agent.systemPrompt,
           ...(agent.greeting && { greeting: agent.greeting }),
         },
