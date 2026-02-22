@@ -180,9 +180,11 @@ export const AgentList = ({ user, onLogout }) => {
                                                 <option value="eleven_turbo_v3">Turbo v3 (Best - 250ms)</option>
                                                 <option value="eleven_multilingual_v2">Multilingual v2 (Natural)</option>
                                             </optgroup>
-                                            <optgroup label="Specialty Providers">
-                                                <option value="playht_2_turbo">PlayHT 2.0 Turbo (Fast)</option>
-                                                <option value="azure-neural">Azure Speech Neural</option>
+                                            <optgroup label="Specialty Providers (Coming Soon)">
+                                                <option value="playht_2_turbo" disabled>PlayHT 2.0 Turbo (Fast)</option>
+                                                <option value="azure-neural" disabled>Azure Speech Neural</option>
+                                            </optgroup>
+                                            <optgroup label="Budget Options">
                                                 <option value="deepgram-aura">Deepgram Aura 2 (Economy)</option>
                                             </optgroup>
                                         </select>
@@ -219,8 +221,8 @@ export const AgentList = ({ user, onLogout }) => {
                                         >
                                             <option value="nova-3">Deepgram Nova-3 (Winner - 200ms)</option>
                                             <option value="whisper-1">OpenAI Whisper v3 (Accuracy - 500ms)</option>
-                                            <option value="azure-speech">Azure Speech (Neural - 400ms)</option>
-                                            <option value="assembly-ai">AssemblyAI (Best - 300ms)</option>
+                                            <option value="azure-speech" disabled>Azure Speech (Coming Soon)</option>
+                                            <option value="assembly-ai" disabled>AssemblyAI (Coming Soon)</option>
                                         </select>
                                     </div>
                                     <div className="vapi-field">

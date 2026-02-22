@@ -13,18 +13,18 @@ const LLM_OPTIONS = [
 ];
 
 const STT_OPTIONS = [
-    { value: 'nova-3', label: 'Deepgram Nova-3 (Seçim: Gecikme + Kalite)', provider: 'deepgram' },
+    { value: 'nova-3', label: 'Deepgram Nova-3 (Winner - 200ms)', provider: 'deepgram' },
     { value: 'whisper-1', label: 'OpenAI Whisper v3 (Alternatif: 99 Dil)', provider: 'openai' },
-    { value: 'azure-speech', label: 'Azure Speech Neural (Hız: 400ms)', provider: 'azure' },
-    { value: 'assembly-ai', label: 'AssemblyAI Best (Doğruluk: 94%)', provider: 'assembly' },
+    { value: 'azure-speech', label: 'Azure Speech Neural (Coming Soon)', provider: 'azure' },
+    { value: 'assembly-ai', label: 'AssemblyAI Best (Coming Soon)', provider: 'assembly' },
 ];
 
 const STACK_TTS_OPTIONS = [
     { value: 'eleven_turbo_v3', label: 'ElevenLabs Turbo v3 (Seçim: En Doğal)', provider: 'elevenlabs' },
     { value: 'eleven_multilingual_v2', label: 'ElevenLabs Multilingual v2', provider: 'elevenlabs' },
-    { value: 'playht_2_turbo', label: 'PlayHT 2.0 Turbo (Hızlı: 350ms)', provider: 'playht' },
-    { value: 'aura-2-thalia-en', label: 'Deepgram Aura 2 (Budget: Çok Ucuz)', provider: 'deepgram' },
-    { value: 'azure-neural', label: 'Azure Neural (75 Dil)', provider: 'azure' },
+    { value: 'playht_2_turbo', label: 'PlayHT 2.0 Turbo (Coming Soon)', provider: 'playht' },
+    { value: 'aura-2-thalia-en', label: 'Deepgram Aura 2 (Economy)', provider: 'deepgram' },
+    { value: 'azure-neural', label: 'Azure Neural (Coming Soon)', provider: 'azure' },
 ];
 
 const VOICE_OPTIONS = [

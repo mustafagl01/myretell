@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
  */
 router.post('/', async (req, res) => {
     try {
-        const { name, systemPrompt, voice, sttModel, llmModel, language, greeting } = req.body;
+        const { name, systemPrompt, voice, sttModel, ttsModel, llmModel, language, greeting } = req.body;
 
         if (!name || !name.trim()) {
             return res.status(400).json({ error: 'Agent name is required' });
@@ -60,6 +60,7 @@ router.post('/', async (req, res) => {
                 systemPrompt: systemPrompt.trim(),
                 voice: voice || 'aura-2-thalia-en',
                 sttModel: sttModel || 'nova-3',
+                ttsModel: ttsModel || 'eleven_multilingual_v2',
                 llmModel: llmModel || 'gpt-4o-mini',
                 language: language || 'en',
                 greeting: greeting?.trim() || null,
@@ -108,7 +109,7 @@ router.get('/:id', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
     try {
-        const { name, systemPrompt, voice, sttModel, llmModel, language, greeting, status } = req.body;
+        const { name, systemPrompt, voice, sttModel, ttsModel, llmModel, language, greeting, status } = req.body;
 
         // Verify ownership
         const existing = await prisma.agent.findFirst({
@@ -130,6 +131,7 @@ router.put('/:id', async (req, res) => {
                 ...(systemPrompt && { systemPrompt: systemPrompt.trim() }),
                 ...(voice && { voice }),
                 ...(sttModel && { sttModel }),
+                ...(ttsModel && { ttsModel }),
                 ...(llmModel && { llmModel }),
                 ...(language && { language }),
                 ...(greeting !== undefined && { greeting: greeting?.trim() || null }),

@@ -15,14 +15,15 @@ const VOICE_OPTIONS = [
 const TTS_MODEL_OPTIONS = [
     { value: 'eleven_turbo_v3', label: 'ElevenLabs Turbo v3 (Winner)' },
     { value: 'eleven_multilingual_v2', label: 'ElevenLabs Multilingual v2' },
-    { value: 'playht_2_turbo', label: 'PlayHT 2.0 Turbo (Fast)' },
-    { value: 'azure-neural', label: 'Azure Neural' },
+    { value: 'playht_2_turbo', label: 'PlayHT 2.0 Turbo (Soon)', disabled: true },
+    { value: 'azure-neural', label: 'Azure Neural (Soon)', disabled: true },
+    { value: 'deepgram', label: 'Deepgram Aura (Default)' },
 ];
 
 const STT_OPTIONS = [
     { value: 'nova-3', label: 'Deepgram Nova-3 (Winner - 200ms)' },
     { value: 'whisper-1', label: 'OpenAI Whisper v3 (Best Accuracy)' },
-    { value: 'azure-speech', label: 'Azure Speech Neural (Hızlı)' },
+    { value: 'azure-speech', label: 'Azure Speech Neural (Soon)', disabled: true },
 ];
 
 const LLM_OPTIONS = [
@@ -211,7 +212,7 @@ export const AgentDetail = ({ user, onLogout }) => {
                         <div className="form-card">
                             <h3 className="form-card-title">TTS Engine</h3>
                             <select className="form-select" value={editForm.ttsModel} onChange={(e) => setEditForm(p => ({ ...p, ttsModel: e.target.value }))}>
-                                {TTS_MODEL_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                                {TTS_MODEL_OPTIONS.map(o => <option key={o.value} value={o.value} disabled={o.disabled}>{o.label}</option>)}
                             </select>
                         </div>
                         <div className="form-card">
@@ -223,7 +224,7 @@ export const AgentDetail = ({ user, onLogout }) => {
                         <div className="form-card">
                             <h3 className="form-card-title">Transcriber (STT)</h3>
                             <select className="form-select" value={editForm.sttModel} onChange={(e) => setEditForm(p => ({ ...p, sttModel: e.target.value }))}>
-                                {STT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                                {STT_OPTIONS.map(o => <option key={o.value} value={o.value} disabled={o.disabled}>{o.label}</option>)}
                             </select>
                         </div>
                         <div className="form-card">
