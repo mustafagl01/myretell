@@ -6,10 +6,10 @@ import { WebSocketHandler } from './websocket-handler.js';
 // Load environment variables
 dotenv.config();
 
-// Verify environment variables are loaded
+// Verify environment variables
 const requiredEnvVars = ['DEEPGRAM_API_KEY'];
-
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
 if (missingVars.length > 0) {
   console.error(`Missing required environment variables: ${missingVars.join(', ')}`);
   process.exit(1);
@@ -69,7 +69,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// ========== Deepgram Agent Config (Google Gemini 2.0 Flash as LLM) ==========
+// ========== Deepgram Agent Config (Google Gemini as LLM) ==========
 
 const buildAgentConfig = () => ({
   tags: ['myvoiceagent', 'demo'],
@@ -88,15 +88,15 @@ const buildAgentConfig = () => ({
     },
     think: {
       provider: {
-        type: 'custom',
-        url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+        type: 'google',
         model: 'gemini-2.0-flash',
-        headers: [
-          {
-            key: 'Authorization',
-            value: `Bearer ${process.env.GOOGLE_API_KEY}`
-          }
-        ]
+        temperature: 0.7
+      },
+      endpoint: {
+        url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+        headers: {
+          authorization: `Bearer ${process.env.GOOGLE_API_KEY}`
+        }
       },
       instructions: 'You are a helpful voice assistant. Be concise and friendly.'
     },
@@ -104,7 +104,7 @@ const buildAgentConfig = () => ({
   }
 });
 
-// Store active connection and keep-alive interval
+// Store active connection and keep-alive
 let deepgramConnection = null;
 let keepAliveInterval = null;
 
