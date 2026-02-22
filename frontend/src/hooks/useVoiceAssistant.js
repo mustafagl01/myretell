@@ -1,18 +1,24 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AudioManager } from '../../_legacy/audio-manager.js';
 
-const getWsUrl = () => {
-    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-        return 'wss://myretell.onrender.com/ws';
+const getWsUrl = (agentId) => {
+    const base = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+        ? 'wss://myretell.onrender.com/ws'
+        : 'ws://localhost:3001/ws';
+
+    if (agentId) {
+        return `${base}?agentId=${agentId}`;
     }
-    return 'ws://localhost:3001/ws';
+    return base;
 };
 
 export const useVoiceAssistant = (options = {}) => {
     const {
-        wsUrl = getWsUrl(),
+        agentId = null,
         sampleRate = 16000,
     } = options;
+
+    const wsUrl = getWsUrl(agentId);
 
     const [isActive, setIsActive] = useState(false);
     const [connectionState, setConnectionState] = useState('disconnected');

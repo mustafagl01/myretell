@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -20,6 +17,26 @@ model User {
   creditBalance CreditBalance?
   sessions      UsageSession[]
   transactions  Transaction[]
+  agents        Agent[]
+}
+
+model Agent {
+  id           String         @id @default(uuid())
+  userId       String
+  name         String
+  systemPrompt String         @db.Text
+  voice        String         @default("aura-2-thalia-en")
+  sttModel     String         @default("nova-3")
+  llmModel     String         @default("gpt-4o-mini")
+  language     String         @default("en")
+  greeting     String?
+  status       String         @default("active")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions     UsageSession[]
+
+  @@index([userId])
 }
 
 model CreditBalance {
@@ -33,26 +50,29 @@ model CreditBalance {
 model UsageSession {
   id              String    @id @default(uuid())
   userId          String
-  startTime       DateTime
+  agentId         String?
+  startTime       DateTime  @default(now())
   endTime         DateTime?
   durationSeconds Int?
-  creditsDeducted Int?
+  creditsUsed     Int?
   status          String    @default("active")
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent           Agent?    @relation(fields: [agentId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+  @@index([agentId])
 }
 
 model Transaction {
-  id              String    @id @default(uuid())
+  id              String   @id @default(uuid())
   userId          String
-  amount          Decimal   @db.Decimal(10, 2)
+  amount          Decimal  @db.Decimal(10, 2)
   creditsAdded    Int
   type            String
-  stripePaymentId String?   @unique
-  stripeSessionId String?   @unique
-  createdAt       DateTime  @default(now())
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripePaymentId String?  @unique
+  stripeSessionId String?  @unique
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }

@@ -5,6 +5,7 @@ import { WebSocketHandler } from './websocket-handler.js';
 import authRoutes from './routes/auth.js';
 import stripeRoutes from './routes/stripe.js';
 import checkoutRoutes from './routes/checkout.js';
+import agentRoutes from './routes/agents.js';
 
 // Load environment variables
 dotenv.config();
@@ -62,6 +63,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/checkout', checkoutRoutes);
+app.use('/api/agents', agentRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).send('OK');

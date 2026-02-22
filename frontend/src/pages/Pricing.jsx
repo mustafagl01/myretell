@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { DashboardLayout } from '../components/DashboardLayout';
 import './Pricing.css';
 
-export const Pricing = () => {
+export const Pricing = ({ user, onLogout }) => {
     const [loading, setLoading] = useState(null);
     const [error, setError] = useState('');
 
@@ -63,40 +64,42 @@ export const Pricing = () => {
     };
 
     return (
-        <div className="pricing-container">
-            <header className="pricing-header">
-                <h1>Refill Your Credits</h1>
-                <p>Choose the pack that fits your voice assistant's scale</p>
-            </header>
+        <DashboardLayout user={user} onLogout={onLogout} title="Credits & Plans">
+            <div className="pricing-wrapper">
+                <header className="pricing-header">
+                    <h2>Refill Your Credits</h2>
+                    <p>Choose the pack that fits your voice assistant's scale</p>
+                </header>
 
-            {error && <div className="pricing-error">{error}</div>}
+                {error && <div className="pricing-error">{error}</div>}
 
-            <div className="pricing-grid">
-                {plans.map((plan, idx) => (
-                    <div key={idx} className={`pricing-card ${plan.popular ? 'popular' : ''}`}>
-                        {plan.popular && <div className="popular-badge">Most Popular</div>}
-                        <h3>{plan.name}</h3>
-                        <div className="price-display">
-                            <span className="amount">${plan.price}</span>
+                <div className="pricing-grid">
+                    {plans.map((plan, idx) => (
+                        <div key={idx} className={`pricing-card ${plan.popular ? 'popular' : ''}`}>
+                            {plan.popular && <div className="popular-badge">Most Popular</div>}
+                            <h3>{plan.name}</h3>
+                            <div className="price-display">
+                                <span className="amount">${plan.price}</span>
+                            </div>
+                            <div className="credit-line">{plan.credits} of talk time</div>
+
+                            <ul className="feature-list">
+                                {plan.features.map((f, i) => (
+                                    <li key={i}>{f}</li>
+                                ))}
+                            </ul>
+
+                            <button
+                                className={`btn-checkout ${plan.btnClass}`}
+                                onClick={() => handleCheckout(plan)}
+                                disabled={loading === plan.name}
+                            >
+                                {loading === plan.name ? 'Processing...' : 'Get Credits'}
+                            </button>
                         </div>
-                        <div className="credit-line">{plan.credits} of talk time</div>
-
-                        <ul className="feature-list">
-                            {plan.features.map((f, i) => (
-                                <li key={i}>{f}</li>
-                            ))}
-                        </ul>
-
-                        <button
-                            className={`btn-checkout ${plan.btnClass}`}
-                            onClick={() => handleCheckout(plan)}
-                            disabled={loading === plan.name}
-                        >
-                            {loading === plan.name ? 'Processing...' : 'Get Credits'}
-                        </button>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
-        </div>
+        </DashboardLayout>
     );
 };

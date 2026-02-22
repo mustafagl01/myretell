@@ -32,8 +32,7 @@ export const Register = ({ onRegister }) => {
                 throw new Error(data.message || 'Registration failed');
             }
 
-            localStorage.setItem('token', data.token);
-            onRegister(data.user);
+            onRegister(data);
         } catch (err) {
             setError(err.message);
         } finally {

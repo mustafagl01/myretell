@@ -5,10 +5,7 @@ import { DeepgramConnection } from './deepgram-connection.js';
 
 /**
  * WebSocketHandler manages WebSocket connections for audio relay.
- *
- * Protocol:
- * - Frontend → Backend: Binary audio chunks (raw PCM/linear16)
- * - Backend → Frontend: JSON messages with type and data
+ * Now supports per-agent dynamic configuration.
  */
 export class WebSocketHandler {
   constructor(options = {}) {
@@ -21,9 +18,9 @@ export class WebSocketHandler {
     this.server = server;
     this.path = path;
     this.wss = null;
-    this.deepgramConnections = new Map(); // ws -> DeepgramConnection
-    this.audioQueues = new Map(); // ws -> audio queue (while connecting)
-    this.connectionReady = new Map(); // ws -> boolean
+    this.deepgramConnections = new Map();
+    this.audioQueues = new Map();
+    this.connectionReady = new Map();
     this.defaultAgentConfig = defaultAgentConfig;
 
     this._initialize();
@@ -46,12 +43,60 @@ export class WebSocketHandler {
 
   _handleConnection(ws, req) {
     const clientIp = req.socket.remoteAddress;
-    console.log(`WebSocket client connected: ${clientIp}`);
 
-    // Initialize audio queue for this connection
+    // Extract agentId from query params
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const agentId = url.searchParams.get('agentId');
+
+    console.log(`WebSocket client connected: ${clientIp}, agentId: ${agentId || 'default'}`);
+
+    // Store agentId on ws
+    ws.agentId = agentId;
+
     this.audioQueues.set(ws, []);
     this.connectionReady.set(ws, false);
 
+    // Don't create Deepgram connection yet - wait for authentication
+    ws.on('message', (data, isBinary) => {
+      this._handleClientMessage(ws, data, isBinary);
+    });
+
+    ws.on('close', (code, reason) => {
+      console.log(`WebSocket client disconnected: ${clientIp} (code: ${code})`);
+      this._handleClientDisconnect(ws);
+    });
+
+    ws.on('error', (error) => {
+      console.error(`WebSocket client error: ${clientIp}:`, error.message);
+      this._handleClientDisconnect(ws);
+    });
+  }
+
+  /**
+   * Build Deepgram agent config from a database Agent record.
+   */
+  _buildAgentConfigFromAgent(agent) {
+    return {
+      audio: {
+        input: { encoding: 'linear16', sample_rate: 16000 },
+        output: { encoding: 'linear16', sample_rate: 16000, container: 'none' }
+      },
+      agent: {
+        listen: { provider: { type: 'deepgram', model: agent.sttModel || 'nova-3' } },
+        think: {
+          provider: { type: 'open_ai', model: agent.llmModel || 'gpt-4o-mini' },
+          prompt: agent.systemPrompt,
+          ...(agent.greeting && { greeting: agent.greeting }),
+        },
+        speak: { provider: { type: 'deepgram', model: agent.voice || 'aura-2-thalia-en' } }
+      }
+    };
+  }
+
+  /**
+   * Start Deepgram connection with the given config.
+   */
+  _startDeepgramConnection(ws, config) {
     let deepgramConn = null;
 
     try {
@@ -65,8 +110,7 @@ export class WebSocketHandler {
 
       this.deepgramConnections.set(ws, deepgramConn);
 
-      // Connect to Deepgram (async)
-      deepgramConn.connect(this.defaultAgentConfig || {}).then(() => {
+      deepgramConn.connect(config).then(() => {
         console.log('Deepgram connection ready, flushing audio queue');
         this.connectionReady.set(ws, true);
         this._flushAudioQueue(ws);
@@ -84,46 +128,29 @@ export class WebSocketHandler {
         type: 'initialization_error',
         message: error.message,
       });
-      ws.close();
-      return;
     }
-
-    ws.on('message', (data, isBinary) => {
-      this._handleClientMessage(ws, data, isBinary);
-    });
-
-    ws.on('close', (code, reason) => {
-      console.log(`WebSocket client disconnected: ${clientIp} (code: ${code})`);
-      this._handleClientDisconnect(ws);
-    });
-
-    ws.on('error', (error) => {
-      console.error(`WebSocket client error: ${clientIp}:`, error.message);
-      this._handleClientDisconnect(ws);
-    });
   }
 
   async _handleClientMessage(ws, data, isBinary) {
     const deepgramConn = this.deepgramConnections.get(ws);
 
-    if (!deepgramConn) {
-      this._sendError(ws, {
-        type: 'connection_error',
-        message: 'Deepgram connection not established',
-      });
-      return;
-    }
-
     try {
       if (isBinary) {
-        // Binary audio from frontend
+        if (!deepgramConn) {
+          // Queue audio until connected
+          const queue = this.audioQueues.get(ws);
+          if (queue) {
+            queue.push(data);
+            if (queue.length > 100) queue.shift();
+          }
+          return;
+        }
+
         const isReady = this.connectionReady.get(ws);
 
         if (isReady) {
-          // Connection ready, send immediately
           deepgramConn.sendAudio(data);
         } else {
-          // Not ready yet, queue the audio
           const queue = this.audioQueues.get(ws);
           if (queue) {
             queue.push(data);
@@ -131,7 +158,6 @@ export class WebSocketHandler {
           }
         }
       } else {
-        // JSON control message
         const message = JSON.parse(data.toString());
         await this._handleJsonMessage(ws, message, deepgramConn);
       }
@@ -144,16 +170,11 @@ export class WebSocketHandler {
     }
   }
 
-  /**
-   * Flush queued audio when Deepgram connection is ready
-   */
   _flushAudioQueue(ws) {
     const deepgramConn = this.deepgramConnections.get(ws);
     const queue = this.audioQueues.get(ws);
 
-    if (!deepgramConn || !queue || queue.length === 0) {
-      return;
-    }
+    if (!deepgramConn || !queue || queue.length === 0) return;
 
     console.log(`Flushing ${queue.length} queued audio chunks`);
 
@@ -177,13 +198,13 @@ export class WebSocketHandler {
         break;
 
       case 'Configure':
-        if (data && deepgramConn.connected) {
+        if (data && deepgramConn?.connected) {
           deepgramConn.configure(data);
         }
         break;
 
       case 'KeepAlive':
-        deepgramConn.keepAlive();
+        if (deepgramConn) deepgramConn.keepAlive();
         break;
 
       case 'Ping':
@@ -211,7 +232,7 @@ export class WebSocketHandler {
 
       if (!user) throw new Error('User not found');
 
-      if (user.creditBalance.balance <= 0) {
+      if (!user.creditBalance || Number(user.creditBalance.balance) <= 0) {
         this._sendError(ws, { type: 'insufficient_credits', message: 'Please refill your credits' });
         ws.close();
         return;
@@ -221,9 +242,33 @@ export class WebSocketHandler {
       ws.user = user;
       ws.sessionStartTime = Date.now();
 
+      // Determine agent config
+      let agentConfig = this.defaultAgentConfig;
+
+      if (ws.agentId) {
+        const agent = await prisma.agent.findFirst({
+          where: { id: ws.agentId, userId: user.id }
+        });
+
+        if (agent) {
+          agentConfig = this._buildAgentConfigFromAgent(agent);
+          ws.agentRecord = agent;
+          console.log(`Using agent config: "${agent.name}" for user ${user.email}`);
+        } else {
+          console.warn(`Agent ${ws.agentId} not found for user ${user.id}, using default config`);
+        }
+      }
+
+      // NOW start Deepgram connection with the right config
+      this._startDeepgramConnection(ws, agentConfig);
+
       this._sendJson(ws, {
         type: 'Authenticated',
-        data: { email: user.email, balance: user.creditBalance.balance }
+        data: {
+          email: user.email,
+          balance: user.creditBalance.balance,
+          agentName: ws.agentRecord?.name || 'Default'
+        }
       });
       console.log(`User ${user.email} authenticated on WebSocket`);
 
@@ -290,7 +335,7 @@ export class WebSocketHandler {
     // SaaS: Track session duration and deduct credits
     if (ws.user && ws.sessionStartTime) {
       const durationSeconds = Math.ceil((Date.now() - ws.sessionStartTime) / 1000);
-      const creditsToDeduct = Math.max(1, Math.ceil(durationSeconds / 60)); // Min 1 credit per session
+      const creditsToDeduct = Math.max(1, Math.ceil(durationSeconds / 60));
 
       console.log(`Deducting ${creditsToDeduct} credits from user ${ws.user.email} for ${durationSeconds}s session`);
 
@@ -303,6 +348,7 @@ export class WebSocketHandler {
           prisma.usageSession.create({
             data: {
               userId: ws.user.id,
+              agentId: ws.agentRecord?.id || null,
               durationSeconds,
               creditsUsed: creditsToDeduct,
               status: 'completed'

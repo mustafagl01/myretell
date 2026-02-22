@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Login } from './pages/Auth/Login';
 import { Register } from './pages/Auth/Register';
-import { Dashboard } from './pages/Dashboard';
+import { AgentList } from './pages/AgentList';
+import { AgentCreate } from './pages/AgentCreate';
+import { AgentDetail } from './pages/AgentDetail';
+import { CallHistory } from './pages/CallHistory';
+import { Analytics } from './pages/Analytics';
 import { Pricing } from './pages/Pricing';
 import './index.css';
 
@@ -11,49 +15,60 @@ function App() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Check for existing session
+        const token = localStorage.getItem('token');
         const savedUser = localStorage.getItem('user');
-        if (savedUser) {
-            setUser(JSON.parse(savedUser));
+        if (token && savedUser) {
+            try {
+                setUser(JSON.parse(savedUser));
+            } catch {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+            }
         }
         setLoading(false);
     }, []);
 
-    const handleAuthSuccess = (userData) => {
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
+    const handleAuthSuccess = (data) => {
+        setUser(data.user);
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
     };
 
     const handleLogout = () => {
         setUser(null);
-        localStorage.removeItem('user');
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
     };
 
-    if (loading) return null;
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0a0a0f', color: '#6b6b80' }}>
+                Loading...
+            </div>
+        );
+    }
 
     return (
         <Router>
             <div className="app-container">
                 <Routes>
                     {/* Public Routes */}
-                    <Route path="/login" element={
-                        !user ? <Login onLogin={handleAuthSuccess} /> : <Navigate to="/dashboard" />
-                    } />
-                    <Route path="/register" element={
-                        !user ? <Register onRegister={handleAuthSuccess} /> : <Navigate to="/dashboard" />
-                    } />
+                    <Route path="/login" element={!user ? <Login onLogin={handleAuthSuccess} /> : <Navigate to="/agents" />} />
+                    <Route path="/register" element={!user ? <Register onRegister={handleAuthSuccess} /> : <Navigate to="/agents" />} />
 
                     {/* Protected Routes */}
-                    <Route path="/dashboard" element={
-                        user ? <Dashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" />
-                    } />
-                    <Route path="/pricing" element={
-                        user ? <Pricing /> : <Navigate to="/login" />
-                    } />
+                    <Route path="/agents" element={user ? <AgentList user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+                    <Route path="/agents/create" element={user ? <AgentCreate user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+                    <Route path="/agents/:id" element={user ? <AgentDetail user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+                    <Route path="/history" element={user ? <CallHistory user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+                    <Route path="/analytics" element={user ? <Analytics user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+                    <Route path="/pricing" element={user ? <Pricing user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+
+                    {/* Dashboard redirects to agents list */}
+                    <Route path="/dashboard" element={<Navigate to="/agents" />} />
 
                     {/* Default Route */}
-                    <Route path="/" element={<Navigate to="/dashboard" />} />
+                    <Route path="/" element={<Navigate to={user ? "/agents" : "/login"} />} />
                 </Routes>
             </div>
         </Router>

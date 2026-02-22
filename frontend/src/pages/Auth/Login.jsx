@@ -25,8 +25,7 @@ export const Login = ({ onLogin }) => {
                 throw new Error(data.message || 'Login failed');
             }
 
-            localStorage.setItem('token', data.token);
-            onLogin(data.user);
+            onLogin(data);
         } catch (err) {
             setError(err.message);
         } finally {
