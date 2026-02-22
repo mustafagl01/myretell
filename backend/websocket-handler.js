@@ -75,8 +75,41 @@ export class WebSocketHandler {
   /**
    * Build Deepgram agent config from a database Agent record.
    */
-  _buildAgentConfigFromAgent(agent) {
+  _buildAgentConfigFromAgent(agent, user = null) {
     const isDeepgramLlm = agent.llmModel === 'deepgram-default';
+
+    let provider = null;
+
+    if (!isDeepgramLlm) {
+      if (agent.llmModel.startsWith('gpt')) {
+        provider = {
+          type: 'open_ai',
+          model: agent.llmModel,
+          ...(user?.openaiApiKey && { api_key: user.openaiApiKey })
+        };
+      } else if (agent.llmModel.startsWith('claude')) {
+        provider = {
+          type: 'anthropic',
+          model: agent.llmModel === 'claude-3-5-sonnet' ? 'claude-3-5-sonnet-20240620' : 'claude-3-haiku-20240307',
+          ...(user?.anthropicApiKey && { api_key: user.anthropicApiKey })
+        };
+      } else if (agent.llmModel.startsWith('gemini')) {
+        provider = {
+          type: 'google',
+          model: agent.llmModel,
+          ...(user?.googleApiKey && { api_key: user.googleApiKey })
+        };
+      } else if (agent.llmModel.startsWith('groq')) {
+        provider = {
+          type: 'groq',
+          model: agent.llmModel,
+          ...(user?.groqApiKey && { api_key: user.groqApiKey })
+        };
+      } else {
+        // Fallback to OpenAI mini
+        provider = { type: 'open_ai', model: 'gpt-4o-mini' };
+      }
+    }
 
     return {
       audio: {
@@ -86,11 +119,7 @@ export class WebSocketHandler {
       agent: {
         listen: { provider: { type: 'deepgram', model: agent.sttModel || 'nova-3' } },
         think: {
-          ...(isDeepgramLlm ? {
-            // Let Deepgram decide its default for the region
-          } : {
-            provider: { type: 'open_ai', model: agent.llmModel || 'gpt-4o-mini' },
-          }),
+          ...(provider ? { provider } : {}),
           prompt: agent.systemPrompt,
           ...(agent.greeting && { greeting: agent.greeting }),
         },
@@ -257,7 +286,7 @@ export class WebSocketHandler {
         });
 
         if (agent) {
-          agentConfig = this._buildAgentConfigFromAgent(agent);
+          agentConfig = this._buildAgentConfigFromAgent(agent, user);
           ws.agentRecord = agent;
           console.log(`Using agent config: "${agent.name}" for user ${user.email}`);
         } else {

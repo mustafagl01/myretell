@@ -265,11 +265,31 @@ router.get('/me', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Don't send password hash
     const { passwordHash, ...userWithoutPassword } = user;
     res.json(userWithoutPassword);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+router.put('/keys', authenticateToken, async (req, res) => {
+  try {
+    const { openaiApiKey, anthropicApiKey, googleApiKey, groqApiKey } = req.body;
+
+    const updated = await prisma.user.update({
+      where: { id: req.user.id },
+      data: {
+        openaiApiKey,
+        anthropicApiKey,
+        googleApiKey,
+        groqApiKey
+      }
+    });
+
+    res.json({ success: true, message: 'API keys updated successfully' });
+  } catch (error) {
+    console.error('Update keys error:', error);
+    res.status(500).json({ error: 'Failed to update API keys' });
   }
 });
 

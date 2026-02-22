@@ -17,8 +17,12 @@ const VOICE_OPTIONS = [
 const LLM_OPTIONS = [
     { value: 'deepgram-default', label: 'Deepgram Default (Fastest / Free)' },
     { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Fast)' },
-    { value: 'gpt-4o', label: 'GPT-4o (Best Quality)' },
+    { value: 'gpt-4o', label: 'GPT-4o (High Quality)' },
     { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo (Economy)' },
+    { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet' },
+    { value: 'claude-3-haiku', label: 'Claude 3 Haiku' },
+    { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
+    { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
 ];
 
 const LANGUAGE_OPTIONS = [
@@ -48,8 +52,16 @@ export const AgentCreate = ({ user, onLogout }) => {
         setError('');
     };
 
+    const isFormValid = form.name.trim().length >= 3 && form.systemPrompt.trim().length >= 20;
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!isFormValid) {
+            setError('System prompt must be at least 20 characters and Name at least 3.');
+            return;
+        }
+
         setSaving(true);
         setError('');
         try {
@@ -66,10 +78,10 @@ export const AgentCreate = ({ user, onLogout }) => {
             if (res.ok) {
                 navigate(`/agents/${data.id}`);
             } else {
-                setError(data.error || 'Failed to create agent');
+                setError(data.error || data.message || 'Failed to create agent');
             }
         } catch (err) {
-            setError('Network error. Please try again.');
+            setError('Network error. Please check your connection.');
         } finally {
             setSaving(false);
         }
@@ -89,25 +101,32 @@ export const AgentCreate = ({ user, onLogout }) => {
                                 placeholder="e.g. My Helpful Assistant"
                                 value={form.name}
                                 onChange={(e) => handleChange('name', e.target.value)}
+                                minLength={3}
+                                maxLength={50}
                                 required
                             />
+                            <span className="char-count">{form.name.length}/50</span>
                         </div>
                         <div className="form-group">
                             <label className="form-label">System Prompt</label>
                             <textarea
                                 className="form-textarea"
-                                placeholder="Instructions for the agent..."
+                                placeholder="Define how the agent should behave. Minimum 20 characters..."
                                 value={form.systemPrompt}
                                 onChange={(e) => handleChange('systemPrompt', e.target.value)}
+                                minLength={20}
                                 required
                             />
+                            <span className={`char-count ${form.systemPrompt.length < 20 ? 'error' : 'success'}`}>
+                                {form.systemPrompt.length} characters (min 20)
+                            </span>
                         </div>
                         <div className="form-group">
                             <label className="form-label">Greeting (Optional)</label>
                             <input
                                 type="text"
                                 className="form-input"
-                                placeholder="Hello, I am your agent..."
+                                placeholder="e.g. Hello, I am your voice assistant. How can I help?"
                                 value={form.greeting}
                                 onChange={(e) => handleChange('greeting', e.target.value)}
                             />
@@ -118,7 +137,8 @@ export const AgentCreate = ({ user, onLogout }) => {
                 <div className="form-sidebar">
                     <div className="form-card">
                         <h3 className="form-card-title">LLM Model</h3>
-                        <div className="model-options">
+                        <p className="form-card-desc">Choose the brain of your agent.</p>
+                        <div className="model-options" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                             {LLM_OPTIONS.map(opt => (
                                 <label key={opt.value} className={`model-option ${form.llmModel === opt.value ? 'selected' : ''}`}>
                                     <input
@@ -150,7 +170,7 @@ export const AgentCreate = ({ user, onLogout }) => {
                         </div>
                     </div>
 
-                    <div className="form-actions">
+                    <div className="form-actions-sidebar">
                         <button type="submit" className="btn-create" disabled={saving}>
                             {saving ? 'Creating...' : '+ Create Agent'}
                         </button>
@@ -158,9 +178,10 @@ export const AgentCreate = ({ user, onLogout }) => {
                             Cancel
                         </button>
                     </div>
+
+                    {error && <div className="form-error" style={{ marginTop: '1rem' }}>{error}</div>}
                 </div>
             </form>
-            {error && <div className="form-error-sticky">{error}</div>}
         </DashboardLayout>
     );
 };

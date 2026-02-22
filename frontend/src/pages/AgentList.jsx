@@ -71,7 +71,11 @@ export const AgentList = ({ user, onLogout }) => {
                                     onClick={() => setSelectedAgent(a)}
                                 >
                                     <span className="item-name">{a.name}</span>
-                                    <span className="item-meta">{a.llmModel === 'deepgram-default' ? 'deepgram' : 'openai'} · {a.voice.split('-')[1]}</span>
+                                    <span className="item-meta">
+                                        {a.llmModel.startsWith('gpt') ? 'openai' :
+                                            a.llmModel.startsWith('claude') ? 'anthropic' :
+                                                a.llmModel.startsWith('gemini') ? 'google' : 'deepgram'} · {a.voice.split('-')[1]}
+                                    </span>
                                 </div>
                             ))}
                     </div>
@@ -133,6 +137,22 @@ export const AgentList = ({ user, onLogout }) => {
                                                 value={selectedAgent.greeting || ''}
                                                 onChange={(e) => setSelectedAgent({ ...selectedAgent, greeting: e.target.value })}
                                             />
+                                        </div>
+                                        <div className="vapi-field">
+                                            <label>LLM Model</label>
+                                            <select
+                                                className="vapi-input"
+                                                value={selectedAgent.llmModel}
+                                                onChange={(e) => setSelectedAgent({ ...selectedAgent, llmModel: e.target.value })}
+                                            >
+                                                <option value="deepgram-default">Deepgram Default (Fastest)</option>
+                                                <option value="gpt-4o-mini">GPT-4o Mini</option>
+                                                <option value="gpt-4o">GPT-4o</option>
+                                                <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+                                                <option value="claude-3-haiku">Claude 3 Haiku</option>
+                                                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                                                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                                            </select>
                                         </div>
                                         <div className="vapi-field">
                                             <label>System Prompt</label>

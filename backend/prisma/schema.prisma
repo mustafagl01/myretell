@@ -8,16 +8,20 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  passwordHash  String?
-  googleId      String?        @unique
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  creditBalance CreditBalance?
-  sessions      UsageSession[]
-  transactions  Transaction[]
-  agents        Agent[]
+  id              String         @id @default(uuid())
+  email           String         @unique
+  passwordHash    String?
+  googleId        String?        @unique
+  openaiApiKey    String?
+  anthropicApiKey String?
+  googleApiKey    String?
+  groqApiKey      String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  creditBalance   CreditBalance?
+  sessions        UsageSession[]
+  transactions    Transaction[]
+  agents          Agent[]
 }
 
 model Agent {
