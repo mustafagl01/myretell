@@ -77,9 +77,13 @@ export class WebSocketHandler {
    * Build Deepgram agent config from a database Agent record.
    */
   _buildAgentConfigFromAgent(agent, user = null) {
-    // LLM Provider Logic
-    let thinkProvider = null;
-    const model = agent.llmModel || 'gemini-2.0-flash';
+    // LLM Provider Logic - Default to Deepgram Native
+    let thinkProvider = {
+      type: 'deepgram',
+      model: 'llama-3-70b-instruct'
+    };
+
+    const model = agent.llmModel || 'llama-3-70b-instruct';
 
     if (model.includes('gemini') || model.includes('google')) {
       // Map to actual Gemini API model names
@@ -89,11 +93,13 @@ export class WebSocketHandler {
       else if (model.includes('2.5') && model.includes('flash')) geminiModel = 'gemini-2.5-flash';
       else if (model.includes('2.0')) geminiModel = 'gemini-2.0-flash';
 
-      thinkProvider = {
-        type: 'google',
-        model: geminiModel,
-        ...(user?.googleApiKey && { api_key: user.googleApiKey })
-      };
+      if (user?.googleApiKey) {
+        thinkProvider = {
+          type: 'google',
+          model: geminiModel,
+          api_key: user.googleApiKey
+        };
+      }
     } else if (model.includes('claude') || model.includes('anthropic')) {
       // Map to actual Anthropic API model names
       let claudeModel = 'claude-3-5-sonnet-20240620';
@@ -102,11 +108,13 @@ export class WebSocketHandler {
       else if (model.includes('haiku-4')) claudeModel = 'claude-haiku-4-20260101';
       else if (model.includes('3-5-sonnet') || model.includes('3.5')) claudeModel = 'claude-3-5-sonnet-20240620';
 
-      thinkProvider = {
-        type: 'anthropic',
-        model: claudeModel,
-        ...(user?.anthropicApiKey && { api_key: user.anthropicApiKey })
-      };
+      if (user?.anthropicApiKey) {
+        thinkProvider = {
+          type: 'anthropic',
+          model: claudeModel,
+          api_key: user.anthropicApiKey
+        };
+      }
     } else if (model.includes('gpt') || model.includes('open_ai')) {
       // Map to actual OpenAI API model names
       let openaiModel = model;
@@ -116,42 +124,30 @@ export class WebSocketHandler {
       else if (model === 'gpt-4o-mini') openaiModel = 'gpt-4o-mini';
       else if (model === 'gpt-4o') openaiModel = 'gpt-4o';
 
-      thinkProvider = {
-        type: 'open_ai',
-        model: openaiModel,
-        ...(user?.openaiApiKey && { api_key: user.openaiApiKey })
-      };
+      if (user?.openaiApiKey) {
+        thinkProvider = {
+          type: 'open_ai',
+          model: openaiModel,
+          api_key: user.openaiApiKey
+        };
+      }
     } else if (model.includes('groq') || model.includes('llama')) {
-      // Map to actual Groq API model names
-      let groqModel = model;
-      if (model.includes('4-scout')) groqModel = 'meta-llama/llama-4-scout-17b-16e-instruct';
-      else if (model.includes('3.3-70b')) groqModel = 'llama-3.3-70b-versatile';
-      else if (model.includes('3.1-70b')) groqModel = 'llama-3.1-70b-versatile';
+      if (user?.groqApiKey) {
+        // Map to actual Groq API model names
+        let groqModel = model;
+        if (model.includes('4-scout')) groqModel = 'meta-llama/llama-4-scout-17b-16e-instruct';
+        else if (model.includes('3.3-70b')) groqModel = 'llama-3.3-70b-versatile';
+        else if (model.includes('3.1-70b')) groqModel = 'llama-3.1-70b-versatile';
 
-      thinkProvider = {
-        type: 'groq',
-        model: groqModel,
-        ...(user?.groqApiKey && { api_key: user.groqApiKey })
-      };
+        thinkProvider = {
+          type: 'groq',
+          model: groqModel,
+          api_key: user.groqApiKey
+        };
+      }
     }
 
-    // --- API KEY VALIDATION & FALLBACK ---
-    // If external provider selected but no key, fallback to Deepgram native
-    if (thinkProvider && thinkProvider.type !== 'deepgram' && !thinkProvider.api_key) {
-      console.warn(`⚠️ [Config] LLM Provider ${thinkProvider.type} selected but no API key found. Falling back to Deepgram native.`);
-      thinkProvider = {
-        type: 'deepgram',
-        model: 'llama-3-70b-instruct'
-      };
-    } else if (!thinkProvider) {
-      // Default fallback
-      thinkProvider = {
-        type: 'deepgram',
-        model: 'llama-3-70b-instruct'
-      };
-    }
-
-    // TTS Provider Logic
+    // --- TTS Provider Logic ---
     let speakProvider;
     let speakModel = (agent.voice && agent.voice.startsWith('aura')) ? agent.voice : 'aura-2-thalia-en';
 
