@@ -6,6 +6,16 @@ import './Pricing.css';
 export const Pricing = ({ user, onLogout }) => {
     const [loading, setLoading] = useState(null);
     const [error, setError] = useState('');
+    const [customAmount, setCustomAmount] = useState(30);
+
+    const customTopup = {
+        min: 10,
+        max: 300,
+        step: 5,
+        minutesPerDollar: 4,
+    };
+
+    const estimatedMinutes = customAmount * customTopup.minutesPerDollar;
 
     const tiers = [
         {
@@ -110,6 +120,34 @@ export const Pricing = ({ user, onLogout }) => {
         }
     };
 
+    const handleCustomCheckout = async () => {
+        setLoading('CUSTOM_TOPUP');
+        setError('');
+
+        try {
+            const response = await fetch('/api/checkout/create-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    planName: 'Pay As You Go Credit Top-up',
+                    amount: customAmount,
+                    credits: `${estimatedMinutes} min estimated`,
+                    checkoutType: 'topup'
+                }),
+            });
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Checkout failed');
+            window.location.href = data.url;
+        } catch (err) {
+            setError(err.message);
+            setLoading(null);
+        }
+    };
+
     return (
         <DashboardLayout user={user} onLogout={onLogout} title="Credits & Plans">
             <div className="pricing-container-v2">
@@ -153,6 +191,40 @@ export const Pricing = ({ user, onLogout }) => {
                         </div>
                     ))}
                 </div>
+
+                <section className="custom-topup-card">
+                    <div className="custom-topup-header">
+                        <h2>Pay as you go credit top-up</h2>
+                        <p>
+                            Need flexible usage? Load any amount from ${customTopup.min} to ${customTopup.max} and use it over time.
+                            This option is intentionally a bit pricier than monthly bundles.
+                        </p>
+                    </div>
+
+                    <div className="custom-topup-amount">${customAmount}</div>
+                    <input
+                        type="range"
+                        min={customTopup.min}
+                        max={customTopup.max}
+                        step={customTopup.step}
+                        value={customAmount}
+                        onChange={(e) => setCustomAmount(Number(e.target.value))}
+                        className="custom-topup-slider"
+                    />
+
+                    <div className="custom-topup-meta">
+                        <span>Estimated usage: {estimatedMinutes} minutes</span>
+                        <span>Approx. ${(customAmount / estimatedMinutes).toFixed(2)} / min</span>
+                    </div>
+
+                    <button
+                        className="btn-tier-action btn-plan-primary"
+                        onClick={handleCustomCheckout}
+                        disabled={loading === 'CUSTOM_TOPUP'}
+                    >
+                        {loading === 'CUSTOM_TOPUP' ? 'Processing...' : `Top up $${customAmount}`}
+                    </button>
+                </section>
 
                 <div className="pricing-footer-info">
                     <p>Need more? <strong>Contact us</strong> for Enterprise custom pricing up to 5000+ minutes.</p>
