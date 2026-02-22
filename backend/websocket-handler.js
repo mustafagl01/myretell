@@ -212,8 +212,9 @@ export class WebSocketHandler {
 
       this.deepgramConnections.set(ws, deepgramConn);
 
+      console.log('[DEBUG] Full Deepgram config being sent:', JSON.stringify(config, null, 2));
       deepgramConn.connect(config).then(() => {
-        console.log('Deepgram connection ready, flushing audio queue');
+        console.log('[DEBUG] Deepgram connection ready, flushing audio queue');
         this.connectionReady.set(ws, true);
         this._flushAudioQueue(ws);
       }).catch((error) => {
@@ -383,6 +384,7 @@ export class WebSocketHandler {
   _onDeepgramAudio(ws, audioData) {
     try {
       const buffer = Buffer.isBuffer(audioData) ? audioData : Buffer.from(audioData);
+      console.log(`[DEBUG] Deepgram audio received: ${buffer.length} bytes`);
       const base64Audio = buffer.toString('base64');
 
       this._sendJson(ws, {
@@ -390,7 +392,7 @@ export class WebSocketHandler {
         data: base64Audio,
       });
     } catch (error) {
-      console.error('Error forwarding Deepgram audio:', error.message);
+      console.error('[DEBUG] Error forwarding Deepgram audio:', error.message);
     }
   }
 
@@ -418,11 +420,12 @@ export class WebSocketHandler {
   }
 
   _onDeepgramError(ws, error) {
-    console.error('Deepgram error:', error);
+    console.error('[DEBUG] Deepgram error:', JSON.stringify(error));
     this._sendError(ws, error);
   }
 
   _onDeepgramMessage(ws, message) {
+    console.log('[DEBUG] Deepgram message:', JSON.stringify(message).substring(0, 200));
     this._sendJson(ws, message);
   }
 
