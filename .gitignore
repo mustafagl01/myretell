@@ -1,11 +1,22 @@
-# Auto Claude data directory
-.auto-claude/
+# Dependencies
+node_modules/
 
-# Auto Claude generated files
+# Environment
+.env
+.env.local
+
+# Build output
+dist/
+
+# Auto Claude
+.auto-claude/
 .auto-claude-security.json
 .auto-claude-status
 .claude_settings.json
 .worktrees/
 .security-key
 logs/security/
-.env
+
+# IDE
+.vscode/
+.idea/
