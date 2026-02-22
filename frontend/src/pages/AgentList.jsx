@@ -54,7 +54,7 @@ export const AgentList = ({ user, onLogout }) => {
             {/* MIDDLE COLUMN: Assistants List */}
             <div className="agents-sidebar">
                 <div className="agents-sidebar-header">
-                    <button className="btn-primary" style={{ width: '100%' }} onClick={() => navigate('/agents/create')}>
+                    <button className="btn-save-vapi" style={{ width: '100%' }} onClick={() => navigate('/agents/create')}>
                         Create Assistant +
                     </button>
                     <div className="search-container">
@@ -144,11 +144,16 @@ export const AgentList = ({ user, onLogout }) => {
                                             value={selectedAgent.llmModel}
                                             onChange={(e) => setSelectedAgent({ ...selectedAgent, llmModel: e.target.value })}
                                         >
-                                            <option value="gemini-2.0-flash">Gemini 2.0 Flash (Fastest)</option>
-                                            <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Premium)</option>
-                                            <option value="gpt-4o-mini">GPT-4o Mini</option>
-                                            <option value="gpt-4o">GPT-4o</option>
-                                            <option value="llama-3.1-70b-versatile">Llama 3.1 70B (Groq)</option>
+                                            <optgroup label="Deepgram (Free)">
+                                                <option value="deepgram-default">Deepgram Default (Testing)</option>
+                                            </optgroup>
+                                            <optgroup label="External Models (Premium)">
+                                                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Fastest)</option>
+                                                <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Premium)</option>
+                                                <option value="gpt-4o-mini">GPT-4o Mini</option>
+                                                <option value="gpt-4o">GPT-4o</option>
+                                                <option value="llama-3.1-70b-versatile">Llama 3.1 70B (Groq)</option>
+                                            </optgroup>
                                         </select>
                                     </div>
                                     <div className="vapi-field">

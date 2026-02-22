@@ -4,6 +4,7 @@ import { DashboardLayout } from '../components/DashboardLayout';
 import './AgentCreate.css';
 
 const LLM_OPTIONS = [
+    { value: 'deepgram-default', label: 'Deepgram Default (Free / Testing)', provider: 'deepgram' },
     { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Fastest)', provider: 'google' },
     { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (Premium)', provider: 'anthropic' },
     { value: 'gpt-4o-mini', label: 'GPT-4o Mini', provider: 'openai' },
@@ -34,7 +35,7 @@ export const AgentCreate = ({ user, onLogout }) => {
     const [form, setForm] = useState({
         name: '',
         systemPrompt: '',
-        llmModel: 'gemini-2.0-flash',
+        llmModel: 'deepgram-default', // Restored default
         voice: 'aura-2-thalia-en',
         sttModel: 'nova-3',
         language: 'en',

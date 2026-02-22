@@ -13,6 +13,7 @@ const VOICE_OPTIONS = [
 ];
 
 const LLM_OPTIONS = [
+    { value: 'deepgram-default', label: 'Deepgram Default (Free / Testing)' },
     { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Fastest)' },
     { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (Premium)' },
     { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
