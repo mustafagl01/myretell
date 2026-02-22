@@ -86,12 +86,16 @@ const buildAgentConfig = () => ({
     output: { encoding: 'linear16', sample_rate: 16000, container: 'none' }
   },
   agent: {
-    listen: { provider: { type: 'deepgram', model: 'nova-3' } },
+    listen: { model: 'nova-2', provider: { type: 'deepgram' } },
     think: {
-      provider: { type: 'open_ai', model: 'gpt-4o-mini' },
-      prompt: 'You are a helpful and friendly AI voice assistant. Keep your responses concise and conversational.'
+      provider: { type: 'open_ai' },
+      model: 'gpt-4o-mini',
+      instructions: 'You are a helpful and friendly AI voice assistant. Keep your responses concise and conversational.'
     },
-    speak: { provider: { type: 'deepgram', model: 'aura-2-thalia-en' } }
+    speak: {
+      provider: { type: 'deepgram' },
+      model: 'aura-2-thalia-en'
+    }
   }
 });
 

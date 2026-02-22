@@ -136,47 +136,29 @@ export class WebSocketHandler {
 
     // TTS Provider Logic
     let speakProvider;
+    let speakModel = (agent.voice && agent.voice.startsWith('aura')) ? agent.voice : 'aura-2-thalia-en';
 
     if (agent.ttsModel === 'deepgram') {
-      // Explicitly requested Deepgram
-      speakProvider = {
-        type: 'deepgram',
-        model: (agent.voice && agent.voice.startsWith('aura')) ? agent.voice : 'aura-2-thalia-en'
-      };
+      speakProvider = { type: 'deepgram' };
     } else if (agent.voice && agent.voice.length > 15 && !agent.voice.startsWith('aura')) {
-      // It's an ElevenLabs voice ID (lengthy hash)
-      const elModel = (agent.ttsModel === 'eleven_turbo_v3') ? 'eleven_turbo_v2_5' : 'eleven_multilingual_v2';
-
+      const elModel = (agent.ttsModel === 'eleven_multilingual_v2') ? 'eleven_multilingual_v2' : 'eleven_turbo_v2_5';
       speakProvider = {
         type: 'eleven_labs',
         voice_id: agent.voice,
         model_id: elModel,
         ...(user?.elevenlabsApiKey && { api_key: user.elevenlabsApiKey })
       };
+      speakModel = null; // ElevenLabs uses voice_id/model_id inside provider
     } else {
-      // Ultimate Fallback to Deepgram Aura
-      speakProvider = {
-        type: 'deepgram',
-        model: (agent.voice && agent.voice.startsWith('aura')) ? agent.voice : 'aura-2-thalia-en'
-      };
+      speakProvider = { type: 'deepgram' };
     }
 
     // STT Provider Logic
-    let listenProvider;
-    if (agent.sttModel === 'whisper-1') {
-      listenProvider = {
-        type: 'open_ai',
-        model: 'whisper-1',
-        ...(user?.openaiApiKey && { api_key: user.openaiApiKey })
-      };
-    } else {
-      // Default to Deepgram for everything else (fallback for nova-3, azure-speech, assembly-ai)
-      listenProvider = {
-        type: 'deepgram',
-        model: 'nova-3',
-        ...(agent.language && { language: agent.language })
-      };
-    }
+    const listenConfig = {
+      model: 'nova-2', // Nova-2 is generally more stable for voice agent API
+      provider: { type: 'deepgram' },
+      ...(agent.language && { language: agent.language })
+    };
 
     return {
       audio: {
@@ -184,13 +166,20 @@ export class WebSocketHandler {
         output: { encoding: 'linear16', sample_rate: 16000, container: 'none' }
       },
       agent: {
-        listen: { provider: listenProvider },
+        listen: listenConfig,
         think: {
-          ...(thinkProvider ? { provider: thinkProvider } : {}),
-          prompt: agent.systemPrompt,
+          provider: {
+            type: thinkProvider.type,
+            ...(thinkProvider.api_key && { api_key: thinkProvider.api_key })
+          },
+          model: thinkProvider.model,
+          instructions: agent.systemPrompt,
           ...(agent.greeting && { greeting: agent.greeting }),
         },
-        speak: { provider: speakProvider }
+        speak: {
+          provider: speakProvider,
+          ...(speakModel && { model: speakModel })
+        }
       }
     };
   }
