@@ -18,7 +18,7 @@ async function main() {
             passwordHash: hashedPassword,
             creditBalance: {
                 create: {
-                    balance: 100 // 100 minutes of talk time
+                    balance: 10 // $10 initial balance
                 }
             }
         },

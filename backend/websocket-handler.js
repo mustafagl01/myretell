@@ -336,7 +336,7 @@ export class WebSocketHandler {
       if (!user) throw new Error('User not found');
 
       if (!user.creditBalance || Number(user.creditBalance.balance) <= 0) {
-        this._sendError(ws, { type: 'insufficient_credits', message: 'Please refill your credits' });
+        this._sendError(ws, { type: 'insufficient_balance', message: 'Please top up your balance' });
         ws.close();
         return;
       }
@@ -437,31 +437,36 @@ export class WebSocketHandler {
       this.deepgramConnections.delete(ws);
     }
 
-    // SaaS: Track session duration and deduct credits
+    // SaaS: Track session duration and deduct dollar balance at $0.20/minute
     if (ws.user && ws.sessionStartTime) {
       const durationSeconds = Math.ceil((Date.now() - ws.sessionStartTime) / 1000);
-      const creditsToDeduct = Math.max(1, Math.ceil(durationSeconds / 60));
+      const costToDeduct = Number(((durationSeconds / 60) * 0.2).toFixed(2));
 
-      console.log(`Deducting ${creditsToDeduct} credits from user ${ws.user.email} for ${durationSeconds}s session`);
+      console.log(`Deducting $${costToDeduct.toFixed(2)} from user ${ws.user.email} for ${durationSeconds}s session`);
 
       try {
+        const balanceRecord = await prisma.creditBalance.findUnique({ where: { userId: ws.user.id } });
+        const currentBalance = Number(balanceRecord?.balance || 0);
+        const nextBalance = Math.max(0, Number((currentBalance - costToDeduct).toFixed(2)));
+
         await prisma.$transaction([
-          prisma.creditBalance.update({
+          prisma.creditBalance.upsert({
             where: { userId: ws.user.id },
-            data: { balance: { decrement: creditsToDeduct } }
+            update: { balance: nextBalance },
+            create: { userId: ws.user.id, balance: nextBalance }
           }),
           prisma.usageSession.create({
             data: {
               userId: ws.user.id,
               agentId: ws.agentRecord?.id || null,
               durationSeconds,
-              creditsUsed: creditsToDeduct,
+              creditsUsed: costToDeduct,
               status: 'completed'
             }
           })
         ]);
       } catch (error) {
-        console.error('Failed to deduct credits on disconnect:', error.message);
+        console.error('Failed to deduct balance on disconnect:', error.message);
       }
     }
 

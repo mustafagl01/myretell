@@ -37,7 +37,7 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
         return () => clearInterval(interval);
     }, []);
 
-    const creditBalance = user?.creditBalance?.balance || 0;
+    const balance = Number(user?.creditBalance?.balance || 0);
 
     return (
         <div className="dashboard-layout">
@@ -68,7 +68,7 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                                 <rect x="2" y="5" width="20" height="14" rx="2" />
                                 <line x1="2" y1="10" x2="22" y2="10" />
                             </svg>
-                            Credits & Plans
+                            Balance & Plans
                         </button>
                     </nav>
                 </div>
@@ -139,7 +139,7 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                                 <circle cx="12" cy="12" r="10" />
                                 <polyline points="12 6 12 12 16 14" />
                             </svg>
-                            {creditBalance} min remaining
+                            ${balance.toFixed(2)} remaining
                         </div>
                         <button className="btn-upgrade" onClick={() => window.location.href = '/pricing'}>
                             Upgrade
@@ -156,8 +156,8 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                                 <span className="quick-stat-label">Credits</span>
                                 <div className="quick-stat-icon green">⏱</div>
                             </div>
-                            <div className="quick-stat-value">{creditBalance}</div>
-                            <span className="quick-stat-change">minutes available</span>
+                            <div className="quick-stat-value">${balance.toFixed(2)}</div>
+                            <span className="quick-stat-change">USD balance available</span>
                         </div>
                         <div className="quick-stat-card">
                             <div className="quick-stat-header">
@@ -261,7 +261,7 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                                         <div className="activity-item">
                                             <div className="activity-icon credit">💳</div>
                                             <div className="activity-content">
-                                                <div className="activity-text">Account created with {creditBalance} min free credits</div>
+                                                <div className="activity-text">Account created with $5.00 free balance</div>
                                                 <div className="activity-time">Today</div>
                                             </div>
                                         </div>
