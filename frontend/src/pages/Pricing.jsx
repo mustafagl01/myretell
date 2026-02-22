@@ -8,29 +8,23 @@ export const Pricing = ({ user, onLogout }) => {
     const [error, setError] = useState('');
     const [customAmount, setCustomAmount] = useState(10);
 
-    const customTopup = {
-        min: 10,
-        max: 300,
-        step: 5,
-        minutesPerDollar: 5,
-    };
-
-    const estimatedMinutes = customAmount * customTopup.minutesPerDollar;
-    const estimatedPerMinute = customAmount / estimatedMinutes;
+    // $0.20 per minute → $1 = 5 minutes
+    const RATE_PER_MINUTE = 0.20;
+    const estimatedMinutes = Math.floor(customAmount / RATE_PER_MINUTE);
 
     const tiers = [
         {
             name: 'FREE',
             price: 0,
-            minutes: 10,
+            balance: 2.00,  // $2.00 free = 10 min
             desc: 'Deneme ve küçük testler için',
             icon: Star,
             features: [
                 '1 Voice Agent',
+                '$2.00 free balance (~10 min)',
                 'Economy stack (Deepgram + Gemini)',
                 'Gemini 2.0 Flash LLM',
                 'English Only',
-                'MyRetell Branding',
                 'Community Support'
             ],
             btnText: 'Current Plan',
@@ -39,13 +33,13 @@ export const Pricing = ({ user, onLogout }) => {
         {
             name: 'STARTER',
             price: 19,
-            minutes: 100,
+            balance: 19.00,
             desc: 'Küçük ekipler için en iyi başlangıç',
             icon: Zap,
             features: [
                 '3 Voice Agents',
+                '$19.00 balance (~95 min)',
                 'Economy stack (Deepgram + Gemini)',
-                'Gemini 2.0 Flash LLM',
                 'English & Turkish Support',
                 'Remove Branding',
                 'Email Support'
@@ -57,15 +51,15 @@ export const Pricing = ({ user, onLogout }) => {
         {
             name: 'PRO',
             price: 49,
-            minutes: 300,
+            balance: 49.00,
             desc: 'Kalite ve ölçek için en popüler plan',
             icon: Rocket,
             features: [
                 '10 Voice Agents',
+                '$49.00 balance (~245 min)',
                 'ElevenLabs v3 (High Definition)',
                 'Claude 3.5 Sonnet Support',
                 '10+ Languages Included',
-                'Advanced Analytics',
                 'Full API Access',
                 'Priority Support'
             ],
@@ -76,11 +70,12 @@ export const Pricing = ({ user, onLogout }) => {
         {
             name: 'SCALE',
             price: 149,
-            minutes: 1000,
+            balance: 149.00,
             desc: 'Yüksek hacimli kullanım ve ekipler için',
             icon: Crown,
             features: [
                 'Unlimited Voice Agents',
+                '$149.00 balance (~745 min)',
                 'All Premium Models',
                 'Voice Cloning Included',
                 'All 99 Languages (Whisper)',
@@ -108,7 +103,7 @@ export const Pricing = ({ user, onLogout }) => {
                 body: JSON.stringify({
                     planName: tier.name,
                     amount: tier.price,
-                    credits: `${tier.minutes} min`
+                    credits: `$${tier.balance.toFixed(2)} balance`
                 }),
             });
 
@@ -133,9 +128,9 @@ export const Pricing = ({ user, onLogout }) => {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({
-                    planName: 'Pay As You Go Credit Top-up',
+                    planName: 'Pay As You Go Top-up',
                     amount: customAmount,
-                    credits: `${estimatedMinutes} min estimated`,
+                    credits: `$${customAmount.toFixed(2)} balance`,
                     checkoutType: 'topup'
                 }),
             });
@@ -153,9 +148,9 @@ export const Pricing = ({ user, onLogout }) => {
         <DashboardLayout user={user} onLogout={onLogout} title="Credits & Plans">
             <div className="pricing-container-v2">
                 <header className="pricing-v2-header">
-                    <span className="badge-promo">Best-of-Breed Technology Stack</span>
-                    <h1>Choose Your Scale</h1>
-                    <p>Top-up yerine dakika değeri odaklı şeffaf fiyatlandırma</p>
+                    <span className="badge-promo">$0.20 / minute — Simple, Transparent Pricing</span>
+                    <h1>Choose Your Plan</h1>
+                    <p>$1 paid = $1.00 balance. Usage billed at $0.20 per minute, pro-rated to the second.</p>
                 </header>
 
                 {error && <div className="pricing-error-v2">{error}</div>}
@@ -170,10 +165,10 @@ export const Pricing = ({ user, onLogout }) => {
                                 <div className="tier-price">
                                     <span className="currency">$</span>
                                     <span className="value">{tier.price}</span>
-                                    <span className="period">/mo</span>
+                                    <span className="period">{tier.price === 0 ? '' : '/mo'}</span>
                                 </div>
-                                <div className="tier-minutes">{tier.minutes} minutes per month</div>
-                                <div className="tier-rate">${tier.price === 0 ? '0.00' : (tier.price / tier.minutes).toFixed(3)} / minute</div>
+                                <div className="tier-minutes">~{Math.floor(tier.balance / RATE_PER_MINUTE)} minutes of usage</div>
+                                <div className="tier-rate">${RATE_PER_MINUTE.toFixed(2)} / minute</div>
                                 <p className="tier-desc">{tier.desc}</p>
                             </div>
 
@@ -196,28 +191,28 @@ export const Pricing = ({ user, onLogout }) => {
 
                 <section className="custom-topup-card">
                     <div className="custom-topup-header">
-                        <h2>Pay as you go credit top-up</h2>
+                        <h2>💳 Pay As You Go Top-up</h2>
                         <p>
-                            Need flexible usage? Load any amount from ${customTopup.min} to ${customTopup.max} and use it over time.
-                            Monthly plans offer better value per minute.
+                            Load any amount from $10 to $300. $1 paid = $1.00 balance.
+                            Usage is billed at <strong>$0.20/min</strong>, pro-rated to the second.
                         </p>
                     </div>
 
                     <div className="custom-topup-amount">${customAmount}</div>
-                    <div className="custom-topup-highlight">Get ~{estimatedMinutes} minutes for ${customAmount}</div>
+                    <div className="custom-topup-highlight">~{estimatedMinutes} minutes for ${customAmount}</div>
                     <input
                         type="range"
-                        min={customTopup.min}
-                        max={customTopup.max}
-                        step={customTopup.step}
+                        min={10}
+                        max={300}
+                        step={5}
                         value={customAmount}
                         onChange={(e) => setCustomAmount(Number(e.target.value))}
                         className="custom-topup-slider"
                     />
 
                     <div className="custom-topup-meta">
-                        <span>Estimated usage: {estimatedMinutes} minutes</span>
-                        <span>Approx. ${estimatedPerMinute.toFixed(2)} / min</span>
+                        <span>Estimated: ~{estimatedMinutes} minutes</span>
+                        <span>Rate: $0.20 / min</span>
                     </div>
 
                     <button
@@ -230,7 +225,7 @@ export const Pricing = ({ user, onLogout }) => {
                 </section>
 
                 <div className="pricing-footer-info">
-                    <p>Need more? <strong>Contact us</strong> for Enterprise custom pricing up to 5000+ minutes.</p>
+                    <p>Need more? <strong>Contact us</strong> for Enterprise custom pricing.</p>
                 </div>
             </div>
         </DashboardLayout>

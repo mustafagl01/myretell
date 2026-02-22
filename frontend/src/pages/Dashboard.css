@@ -61,7 +61,7 @@
     font-size: 1rem;
     color: white;
     flex-shrink: 0;
-    box-shadow: 
+    box-shadow:
         0 4px 20px rgba(99, 102, 241, 0.4),
         0 0 0 1px rgba(255, 255, 255, 0.15) inset;
     position: relative;
@@ -72,20 +72,27 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.35) 0%, transparent 50%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, transparent 50%);
 }
 
 .logo-icon::after {
     content: '';
     position: absolute;
     inset: -50%;
-    background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.25) 50%, transparent 60%);
+    background: linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.25) 50%, transparent 60%);
     animation: logo-shine 3s ease-in-out infinite;
 }
 
 @keyframes logo-shine {
-    0%, 100% { transform: translateX(-100%); }
-    50% { transform: translateX(100%); }
+
+    0%,
+    100% {
+        transform: translateX(-100%);
+    }
+
+    50% {
+        transform: translateX(100%);
+    }
 }
 
 .logo-text {
@@ -214,8 +221,17 @@
 }
 
 @keyframes badge-pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.8; transform: scale(1.05); }
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
 }
 
 /* Sidebar Footer / User Profile */
@@ -280,7 +296,7 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, transparent 50%);
 }
 
 .user-info {
@@ -342,7 +358,7 @@
     left: 260px;
     right: 0;
     height: 100%;
-    background: 
+    background:
         radial-gradient(ellipse 60% 40% at 70% 0%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
         radial-gradient(ellipse 50% 30% at 90% 100%, rgba(168, 85, 247, 0.04) 0%, transparent 50%);
     pointer-events: none;
@@ -399,7 +415,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
     opacity: 0;
     transition: opacity var(--transition-fast);
 }
@@ -439,7 +455,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 50%);
 }
 
 .btn-upgrade:hover {
@@ -479,7 +495,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 50%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
     opacity: 0;
     transition: opacity var(--transition-fast);
 }
@@ -526,7 +542,7 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
 }
 
 .quick-stat-icon.green {
@@ -644,8 +660,15 @@
 }
 
 @keyframes pulse-dot {
-    0%, 100% { box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
-    50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.8); }
+
+    0%,
+    100% {
+        box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+    }
+
+    50% {
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.8);
+    }
 }
 
 .agent-stage {
@@ -706,8 +729,17 @@
 }
 
 @keyframes ring-pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.1); opacity: 0.5; }
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 0.5;
+    }
 }
 
 .agent-avatar {
@@ -744,8 +776,17 @@
 }
 
 @keyframes glow-breathe {
-    0%, 100% { transform: scale(1); opacity: 0.6; }
-    50% { transform: scale(1.5); opacity: 1; }
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+
+    50% {
+        transform: scale(1.5);
+        opacity: 1;
+    }
 }
 
 /* Agent Controls */
@@ -774,20 +815,20 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 50%);
 }
 
 .btn-action.start {
     background: var(--gradient-primary);
     color: white;
-    box-shadow: 
+    box-shadow:
         0 6px 20px rgba(99, 102, 241, 0.4),
         0 0 0 1px rgba(255, 255, 255, 0.1) inset;
 }
 
 .btn-action.start:hover {
     transform: translateY(-3px);
-    box-shadow: 
+    box-shadow:
         0 10px 30px rgba(99, 102, 241, 0.5),
         0 0 0 1px rgba(255, 255, 255, 0.15) inset;
 }
@@ -959,7 +1000,7 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
 }
 
 .activity-icon.call {
@@ -1013,23 +1054,35 @@
 
 /* ─── Animations ─── */
 @keyframes fade-in {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.content-area > * {
+.content-area>* {
     animation: fade-in 0.5s ease;
 }
 
-.content-area > *:nth-child(2) { animation-delay: 0.08s; }
-.content-area > *:nth-child(3) { animation-delay: 0.16s; }
+.content-area>*:nth-child(2) {
+    animation-delay: 0.08s;
+}
+
+.content-area>*:nth-child(3) {
+    animation-delay: 0.16s;
+}
 
 /* ─── Responsive ─── */
 @media (max-width: 1100px) {
     .main-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .quick-stats {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -1039,16 +1092,114 @@
     .dashboard-layout {
         grid-template-columns: 1fr;
     }
-    
+
     .sidebar {
         display: none;
     }
-    
+
     .quick-stats {
         grid-template-columns: 1fr 1fr;
     }
-    
+
     .content-area {
         padding: 1rem;
     }
+}
+
+/* ─── Live Session Cost Meter ─── */
+.session-live-meter {
+    margin: 1rem auto;
+    padding: 1rem 1.25rem;
+    background: rgba(16, 16, 24, 0.7);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 10px;
+    width: 100%;
+    max-width: 280px;
+    backdrop-filter: blur(10px);
+    animation: fadeInMeter 0.3s ease-out;
+}
+
+@keyframes fadeInMeter {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.meter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #e0e0ef;
+}
+
+.meter-row:last-of-type {
+    margin-bottom: 0;
+}
+
+.meter-label {
+    color: #9ca3af;
+}
+
+.meter-value {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.meter-row.cost-row {
+    font-weight: 700;
+    color: #fbbf24;
+    font-size: 1rem;
+}
+
+.meter-value.cost {
+    color: #fbbf24;
+    font-size: 1.1rem;
+}
+
+.meter-rate {
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.7rem;
+    color: #6b6b80;
+    text-align: center;
+    letter-spacing: 0.02em;
+}
+
+/* ─── User Balance in Sidebar ─── */
+.user-balance {
+    font-size: 0.7rem;
+    color: #6ee7b7;
+    font-weight: 600;
+}
+
+/* ─── Cost Cell in Tables ─── */
+.cost-cell {
+    font-weight: 600;
+    color: #fbbf24;
+    font-variant-numeric: tabular-nums;
+}
+
+.cost-value {
+    color: #6ee7b7 !important;
+}
+
+/* ─── Rate Info Bar ─── */
+.rate-info {
+    margin-top: 1.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: 8px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #a5b4fc;
 }

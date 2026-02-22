@@ -32,35 +32,32 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         const userId = session.client_reference_id;
         const amountTotal = session.amount_total / 100; // in dollars
 
-        // Map amount to credits (e.g., $10 = 60 min, $29 = 200 min, $99 = 1000 min)
-        let creditsToAdd = 0;
-        if (amountTotal >= 99) creditsToAdd = 1000;
-        else if (amountTotal >= 29) creditsToAdd = 200;
-        else if (amountTotal >= 10) creditsToAdd = 60;
+        // Dollar-based balance: $1 paid = $1.00 added to balance
+        // No more minutes/credits conversion — pure dollar balance
+        const balanceToAdd = amountTotal;
 
-        if (userId && creditsToAdd > 0) {
+        if (userId && balanceToAdd > 0) {
             try {
                 await prisma.$transaction([
-                    // 1. Update balance
+                    // 1. Add dollar amount to balance
                     prisma.creditBalance.update({
                         where: { userId },
-                        data: { balance: { increment: creditsToAdd } }
+                        data: { balance: { increment: balanceToAdd } }
                     }),
                     // 2. Log transaction
                     prisma.transaction.create({
                         data: {
                             userId,
                             amount: amountTotal,
-                            creditsAdded,
                             type: 'purchase',
                             stripeSessionId: session.id,
                             stripePaymentId: session.payment_intent
                         }
                     })
                 ]);
-                console.log(`Successfully added ${creditsToAdd} credits to user ${userId}`);
+                console.log(`Successfully added $${balanceToAdd.toFixed(2)} to user ${userId} balance`);
             } catch (error) {
-                console.error('Failed to update credits after purchase:', error.message);
+                console.error('Failed to update balance after purchase:', error.message);
             }
         }
     }

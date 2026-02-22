@@ -437,31 +437,40 @@ export class WebSocketHandler {
       this.deepgramConnections.delete(ws);
     }
 
-    // SaaS: Track session duration and deduct credits
+    // SaaS: Track session duration and deduct dollar cost
     if (ws.user && ws.sessionStartTime) {
-      const durationSeconds = Math.ceil((Date.now() - ws.sessionStartTime) / 1000);
-      const creditsToDeduct = Math.max(1, Math.ceil(durationSeconds / 60));
+      const endTime = Date.now();
+      const durationSeconds = Math.ceil((endTime - ws.sessionStartTime) / 1000);
+      const durationMinutes = durationSeconds / 60;
 
-      console.log(`Deducting ${creditsToDeduct} credits from user ${ws.user.email} for ${durationSeconds}s session`);
+      // Cost calculation: $0.20 per minute (pro-rated to the second)
+      const COST_PER_MINUTE = 0.20;
+      const costAmount = durationMinutes * COST_PER_MINUTE;
+      const costRounded = Math.round(costAmount * 100) / 100; // Round to 2 decimals
+
+      console.log(`Session ended for ${ws.user.email}: ${durationSeconds}s = ${durationMinutes.toFixed(2)}min = $${costRounded}`);
 
       try {
         await prisma.$transaction([
           prisma.creditBalance.update({
             where: { userId: ws.user.id },
-            data: { balance: { decrement: creditsToDeduct } }
+            data: { balance: { decrement: costRounded } }
           }),
           prisma.usageSession.create({
             data: {
               userId: ws.user.id,
               agentId: ws.agentRecord?.id || null,
+              startTime: new Date(ws.sessionStartTime),
+              endTime: new Date(endTime),
               durationSeconds,
-              creditsUsed: creditsToDeduct,
+              costAmount: costRounded,
+              creditsUsed: Math.ceil(durationMinutes), // backward compat
               status: 'completed'
             }
           })
         ]);
       } catch (error) {
-        console.error('Failed to deduct credits on disconnect:', error.message);
+        console.error('Failed to deduct cost on disconnect:', error.message);
       }
     }
 
