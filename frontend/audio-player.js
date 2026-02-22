@@ -1,9 +1,13 @@
 /**
  * AudioPlayer handles Web Audio API playback with gapless scheduling.
+ *
+ * For Deepgram Voice Agent:
+ * - Raw Linear16 PCM input (no decodeAudioData needed)
+ * - Manual PCM → AudioBuffer conversion
+ * - Proper gapless scheduling with nextStartTime tracking
  */
 export class AudioPlayer {
   constructor(options = {}) {
-    // Use options.volume directly with fallback
     this.overlapTime = (options.overlapTime || 75) / 1000;
     this.volume = Math.max(0, Math.min(1, options.volume ?? 1.0));
     this.onPlaybackStartCallback = options.onPlaybackStart || null;
@@ -17,9 +21,9 @@ export class AudioPlayer {
     this.currentSource = null;
     this.gainNode = null;
 
-    // Playback scheduling
+    // Playback scheduling - FIX: Proper nextStartTime tracking
     this.scheduledSources = [];
-    this.nextStartTime = 0;
+    this.nextStartTime = 0; // Will be set to currentTime on first play
 
     // Check for browser support
     this._checkBrowserSupport();
@@ -28,179 +32,200 @@ export class AudioPlayer {
     this._initAudioContext();
   }
 
-  /**
-   * Check if the browser supports Web Audio API.
-   * @private
-   */
   _checkBrowserSupport() {
     if (typeof AudioContext === 'undefined' && typeof webkitAudioContext === 'undefined') {
-      throw new Error(
-        'Web Audio API is not supported in this browser. ' +
-        'Please use a modern browser (Chrome, Firefox, Safari, Edge).'
-      );
+      throw new Error('Web Audio API is not supported');
     }
   }
 
-  /**
-   * Initialize the AudioContext.
-   * @private
-   */
   _initAudioContext() {
     try {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       this.audioContext = new AudioContextClass();
-
-      // Create a gain node for volume control
       this.gainNode = this.audioContext.createGain();
       this.gainNode.gain.value = this.volume;
-
-      // Connect gain node to destination (speakers)
       this.gainNode.connect(this.audioContext.destination);
     } catch (error) {
       if (this.onErrorCallback) {
-        this.onErrorCallback(new Error(`Failed to initialize AudioContext: ${error.message}`));
+        this.onErrorCallback(new Error(`Failed to init AudioContext: ${error.message}`));
       }
     }
   }
 
-  /**
-   * Ensure AudioContext is running (not suspended).
-   */
   async ensureContextRunning() {
     if (!this.audioContext) {
       this._initAudioContext();
     }
-
     if (this.audioContext.state === 'suspended') {
       try {
         await this.audioContext.resume();
         return true;
       } catch (error) {
         if (this.onErrorCallback) {
-          this.onErrorCallback(new Error(`Failed to resume AudioContext: ${error.message}`));
+          this.onErrorCallback(new Error(`Failed to resume: ${error.message}`));
         }
         return false;
       }
     }
-
     return this.audioContext.state === 'running';
   }
 
   /**
-   * Decode binary audio data to AudioBuffer.
+   * FIX: Convert raw Linear16 PCM to AudioBuffer
+   * Deepgram Voice Agent sends raw Int16 PCM, not encoded audio
    */
-  async decodeAudioData(audioData) {
+  _pcmToAudioBuffer(pcmData, sampleRate = 16000) {
+    if (!this.audioContext) {
+      throw new Error('AudioContext not initialized');
+    }
+
+    // pcmData should be Int16Array or ArrayBuffer containing Int16
+    let int16Array;
+    if (pcmData instanceof ArrayBuffer) {
+      int16Array = new Int16Array(pcmData);
+    } else if (pcmData instanceof Int16Array) {
+      int16Array = pcmData;
+    } else if (pcmData instanceof Uint8Array) {
+      int16Array = new Int16Array(pcmData.buffer);
+    } else {
+      throw new Error('Invalid PCM data format');
+    }
+
+    // Convert Int16 to Float32 (-1.0 to 1.0)
+    const float32Array = new Float32Array(int16Array.length);
+    for (let i = 0; i < int16Array.length; i++) {
+      const int16 = int16Array[i];
+      float32Array[i] = int16 / 0x8000; // Convert to -1.0 to 1.0 range
+    }
+
+    // Create AudioBuffer from Float32 data
+    const audioBuffer = this.audioContext.createBuffer(
+      1, // mono
+      float32Array.length,
+      sampleRate
+    );
+    audioBuffer.getChannelData(0).set(float32Array);
+
+    return audioBuffer;
+  }
+
+  /**
+   * FIX: Proper gapless scheduling with nextStartTime tracking
+   */
+  scheduleBuffer(audioData, sampleRate = 16000) {
     if (!this.audioContext) {
       throw new Error('AudioContext not initialized');
     }
 
     try {
-      const audioBuffer = await this.audioContext.decodeAudioData(audioData.slice(0));
-      return audioBuffer;
+      // Convert PCM to AudioBuffer (no decodeAudioData - Deepgram sends raw PCM)
+      const audioBuffer = this._pcmToAudioBuffer(audioData, sampleRate);
+
+      const duration = audioBuffer.duration;
+      const startTime = this.nextStartTime || this.audioContext.currentTime;
+      const endTime = startTime + duration;
+
+      // Create source
+      const source = this.audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(this.gainNode);
+
+      // Schedule playback with overlap for seamless transition
+      source.start(startTime - this.overlapTime);
+
+      // Track this source
+      this.scheduledSources.push(source);
+
+      // FIX: Update nextStartTime properly
+      // If this is the first chunk, use currentTime + small offset
+      if (this.nextStartTime === 0) {
+        this.nextStartTime = this.audioContext.currentTime + 0.05;
+      } else {
+        this.nextStartTime = endTime;
+      }
+
+      // FIX: Call onChunkComplete when this chunk finishes
+      source.onended = () => {
+        if (this.onChunkCompleteCallback) {
+          this.onChunkCompleteCallback();
+        }
+      };
+
+      // Mark as playing if not already
+      if (!this.isPlaying && this.onPlaybackStartCallback) {
+        this.isPlaying = true;
+        this.onPlaybackStartCallback();
+      }
+
+      return { startTime, endTime };
     } catch (error) {
       if (this.onErrorCallback) {
-        this.onErrorCallback(new Error(`Failed to decode audio data: ${error.message}`));
+        this.onErrorCallback(new Error(`Failed to schedule buffer: ${error.message}`));
       }
       throw error;
     }
   }
 
   /**
-   * Play an audio buffer immediately.
+   * Play immediately (for first chunk or when queue is empty)
    */
-  async playBuffer(audioBuffer) {
+  async playBuffer(audioData, sampleRate = 16000) {
     if (!this.audioContext) {
       await this.ensureContextRunning();
     }
 
-    try {
-      const source = this.audioContext.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(this.gainNode);
-      source.start();
+    // Convert PCM to AudioBuffer
+    const audioBuffer = this._pcmToAudioBuffer(audioData, sampleRate);
 
-      if (this.onPlaybackStartCallback) {
-        this.onPlaybackStartCallback();
-      }
+    const source = this.audioContext.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(this.gainNode);
+    source.start();
 
-      source.onended = () => {
-        if (this.onPlaybackEndCallback) {
-          this.onPlaybackEndCallback();
-        }
-      };
-
+    if (!this.isPlaying && this.onPlaybackStartCallback) {
       this.isPlaying = true;
-      this.currentSource = source;
+      this.onPlaybackStartCallback();
+    }
 
-      return new Promise((resolve) => {
-        source.onended = () => {
+    return new Promise((resolve) => {
+      source.onended = () => {
+        if (this.onChunkCompleteCallback) {
+          this.onChunkCompleteCallback();
+        }
+        if (!this.scheduledSources.length) { // No more scheduled sources
           this.isPlaying = false;
           if (this.onPlaybackEndCallback) {
             this.onPlaybackEndCallback();
           }
-          resolve();
-        };
-      });
-    } catch (error) {
-      if (this.onErrorCallback) {
-        this.onErrorCallback(new Error(`Failed to play audio: ${error.message}`));
-      }
-      throw error;
-    }
+        }
+        resolve();
+      };
+    });
   }
 
-  /**
-   * Schedule an audio buffer for gapless playback.
-   */
-  scheduleBuffer(audioBuffer, when) {
-    if (!this.audioContext) {
-      throw new Error('AudioContext not initialized');
-    }
-
-    const startTime = when || this.audioContext.currentTime;
-    const source = this.audioContext.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(this.gainNode);
-    source.start(startTime);
-
-    this.scheduledSources.push(source);
-    this.isPlaying = true;
-
-    return startTime;
-  }
-
-  /**
-   * Stop all currently playing audio.
-   */
   stop() {
     if (this.currentSource) {
       try {
         this.currentSource.stop();
-      } catch (e) {
-        // Source already stopped
-      }
+      } catch (e) {}
       this.currentSource = null;
     }
 
     this.scheduledSources.forEach(source => {
       try {
         source.stop();
-      } catch (e) {
-        // Source already stopped
-      }
+      } catch (e) {}
     });
 
     this.scheduledSources = [];
     this.isPlaying = false;
+    this.nextStartTime = 0;
 
     if (this.onPlaybackEndCallback) {
       this.onPlaybackEndCallback();
     }
   }
 
-  /**
-   * Set the playback volume.
-   */
   setVolume(volume) {
     this.volume = Math.max(0, Math.min(1, volume));
     if (this.gainNode) {
@@ -208,9 +233,6 @@ export class AudioPlayer {
     }
   }
 
-  /**
-   * Get the current playback state.
-   */
   get playing() {
     return this.isPlaying;
   }
