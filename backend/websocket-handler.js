@@ -130,7 +130,8 @@ export class WebSocketHandler {
     if (agent.sttModel === 'whisper-1') {
       listenProvider = {
         type: 'open_ai',
-        model: 'whisper-1'
+        model: 'whisper-1',
+        ...(user?.openaiApiKey && { api_key: user.openaiApiKey })
       };
     }
 
