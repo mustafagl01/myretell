@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { AudioManager } from '../../_legacy/audio-manager.js';
+import { AudioManager } from '../audio/AudioManager.js';
 
 const getWsUrl = (agentId) => {
     const base = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
@@ -30,7 +30,6 @@ export const useVoiceAssistant = (options = {}) => {
     useEffect(() => {
         const token = localStorage.getItem('token');
 
-        // Initialize AudioManager
         audioManagerRef.current = new AudioManager({
             wsUrl,
             token,
