@@ -459,6 +459,8 @@ export class WebSocketHandler {
             data: {
               userId: ws.user.id,
               agentId: ws.agentRecord?.id || null,
+              startTime: new Date(ws.sessionStartTime),
+              endTime: new Date(endTime),
               durationSeconds,
               creditsUsed: costToDeduct,
               status: 'completed'

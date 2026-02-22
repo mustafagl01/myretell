@@ -167,7 +167,7 @@ export const Pricing = ({ user, onLogout }) => {
                                 <div className="tier-price">
                                     <span className="currency">$</span>
                                     <span className="value">{tier.price}</span>
-                                    <span className="period">/mo</span>
+                                    <span className="period">{tier.price === 0 ? '' : '/mo'}</span>
                                 </div>
                                 <div className="tier-minutes">${tier.monthlyBalance.toFixed(2)} balance/month</div>
                                 <div className="tier-rate">Usage rate: ${tier.rate.toFixed(2)} / minute</div>
@@ -201,9 +201,9 @@ export const Pricing = ({ user, onLogout }) => {
                     <div className="custom-topup-highlight">Your balance becomes ${projectedBalance.toFixed(2)}</div>
                     <input
                         type="range"
-                        min={customTopup.min}
-                        max={customTopup.max}
-                        step={customTopup.step}
+                        min={10}
+                        max={300}
+                        step={5}
                         value={customAmount}
                         onChange={(e) => setCustomAmount(Number(e.target.value))}
                         className="custom-topup-slider"

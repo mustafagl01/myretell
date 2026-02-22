@@ -12,13 +12,11 @@ export const CallHistory = ({ user, onLogout }) => {
 
     const fetchSessions = async () => {
         try {
-            // Fetch all agents to get their sessions
             const res = await fetch('/api/agents', {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             if (res.ok) {
                 const agents = await res.json();
-                // Fetch detail for each agent to get sessions
                 const allSessions = [];
                 for (const agent of agents) {
                     const detailRes = await fetch(`/api/agents/${agent.id}`, {
@@ -33,7 +31,6 @@ export const CallHistory = ({ user, onLogout }) => {
                         }
                     }
                 }
-                // Sort by date descending
                 allSessions.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
                 setSessions(allSessions);
             }
@@ -44,8 +41,15 @@ export const CallHistory = ({ user, onLogout }) => {
         }
     };
 
-    const totalMinutes = sessions.reduce((acc, s) => acc + (s.durationSeconds ? Math.ceil(s.durationSeconds / 60) : 0), 0);
-    const totalCredits = sessions.reduce((acc, s) => acc + (s.creditsUsed || 0), 0);
+    const formatDuration = (seconds) => {
+        if (!seconds) return '—';
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}m ${secs}s`;
+    };
+
+    const totalMinutes = sessions.reduce((acc, s) => acc + (s.durationSeconds ? s.durationSeconds / 60 : 0), 0);
+    const totalCost = sessions.reduce((acc, s) => acc + (s.costAmount ? parseFloat(s.costAmount) : 0), 0);
 
     return (
         <DashboardLayout user={user} onLogout={onLogout} title="Call History">
@@ -56,12 +60,12 @@ export const CallHistory = ({ user, onLogout }) => {
                     <span className="history-stat-value">{sessions.length}</span>
                 </div>
                 <div className="history-stat-card">
-                    <span className="history-stat-label">Total Minutes</span>
-                    <span className="history-stat-value">{totalMinutes}</span>
+                    <span className="history-stat-label">Total Duration</span>
+                    <span className="history-stat-value">{totalMinutes.toFixed(1)} min</span>
                 </div>
                 <div className="history-stat-card">
-                    <span className="history-stat-label">Credits Used</span>
-                    <span className="history-stat-value">{totalCredits}</span>
+                    <span className="history-stat-label">Total Spent</span>
+                    <span className="history-stat-value cost-value">${totalCost.toFixed(2)}</span>
                 </div>
             </div>
 
@@ -84,7 +88,7 @@ export const CallHistory = ({ user, onLogout }) => {
                                 <th>Agent</th>
                                 <th>Date</th>
                                 <th>Duration</th>
-                                <th>Credits Used</th>
+                                <th>Cost</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -95,8 +99,10 @@ export const CallHistory = ({ user, onLogout }) => {
                                         <span className="agent-tag">{s.agentName || 'Default'}</span>
                                     </td>
                                     <td>{new Date(s.startTime).toLocaleString()}</td>
-                                    <td>{s.durationSeconds ? `${Math.ceil(s.durationSeconds / 60)} min` : '—'}</td>
-                                    <td>{s.creditsUsed || 0}</td>
+                                    <td>{formatDuration(s.durationSeconds)}</td>
+                                    <td className="cost-cell">
+                                        ${s.costAmount ? parseFloat(s.costAmount).toFixed(2) : '0.00'}
+                                    </td>
                                     <td><span className={`status-badge ${s.status}`}>{s.status}</span></td>
                                 </tr>
                             ))}
@@ -104,6 +110,11 @@ export const CallHistory = ({ user, onLogout }) => {
                     </table>
                 </div>
             )}
+
+            {/* Rate info */}
+            <div className="rate-info">
+                <span>💡 Rate: $0.20 per minute (pro-rated to the second)</span>
+            </div>
         </DashboardLayout>
     );
 };

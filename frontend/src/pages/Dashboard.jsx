@@ -5,6 +5,8 @@ import './Dashboard.css';
 export const Dashboard = ({ user: initialUser, onLogout }) => {
     const [user, setUser] = React.useState(initialUser);
     const [activePage, setActivePage] = React.useState('agent');
+    const [sessionDuration, setSessionDuration] = React.useState(0);
+    const [sessionCost, setSessionCost] = React.useState(0);
     const {
         isActive,
         connectionState,
@@ -77,7 +79,7 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                 <div className="nav-section">
                     <div className="nav-section-label">Monitor</div>
                     <nav className="nav-menu">
-                        <button className="nav-item">
+                        <button className="nav-item" onClick={() => window.location.href = '/call-history'}>
                             <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                             </svg>
@@ -121,7 +123,7 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                         <div className="avatar">{user?.email?.[0]?.toUpperCase() || 'U'}</div>
                         <div className="user-info">
                             <span className="user-email">{user?.email}</span>
-                            <span className="user-plan">Free Plan</span>
+                            <span className="user-balance">${creditBalance.toFixed(2)} balance</span>
                         </div>
                         <button className="btn-logout" onClick={onLogout}>✕</button>
                     </div>
@@ -137,12 +139,12 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                         <div className="credit-pill" onClick={() => window.location.href = '/pricing'}>
                             <svg className="credit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <circle cx="12" cy="12" r="10" />
-                                <polyline points="12 6 12 12 16 14" />
+                                <path d="M12 6v6l4 2" />
                             </svg>
                             ${balance.toFixed(2)} remaining
                         </div>
                         <button className="btn-upgrade" onClick={() => window.location.href = '/pricing'}>
-                            Upgrade
+                            Top Up
                         </button>
                     </div>
                 </div>
@@ -153,8 +155,8 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                     <div className="quick-stats">
                         <div className="quick-stat-card">
                             <div className="quick-stat-header">
-                                <span className="quick-stat-label">Credits</span>
-                                <div className="quick-stat-icon green">⏱</div>
+                                <span className="quick-stat-label">Balance</span>
+                                <div className="quick-stat-icon green">💰</div>
                             </div>
                             <div className="quick-stat-value">${balance.toFixed(2)}</div>
                             <span className="quick-stat-change">USD balance available</span>
@@ -176,16 +178,16 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                                 <span className="quick-stat-label">Model</span>
                                 <div className="quick-stat-icon purple">🧠</div>
                             </div>
-                            <div className="quick-stat-value" style={{ fontSize: '1.125rem', marginTop: '0.25rem' }}>Nova-2</div>
+                            <div className="quick-stat-value" style={{ fontSize: '1.125rem', marginTop: '0.25rem' }}>Nova-3</div>
                             <span className="quick-stat-change" style={{ color: '#c4b5fd' }}>Deepgram</span>
                         </div>
                         <div className="quick-stat-card">
                             <div className="quick-stat-header">
-                                <span className="quick-stat-label">Latency</span>
-                                <div className="quick-stat-icon amber">📡</div>
+                                <span className="quick-stat-label">Est. Minutes</span>
+                                <div className="quick-stat-icon amber">⏱</div>
                             </div>
-                            <div className="quick-stat-value">~120</div>
-                            <span className="quick-stat-change" style={{ color: '#fcd34d' }}>ms avg</span>
+                            <div className="quick-stat-value">{Math.floor(creditBalance / 0.20)}</div>
+                            <span className="quick-stat-change" style={{ color: '#fcd34d' }}>min remaining</span>
                         </div>
                     </div>
 
@@ -217,6 +219,25 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                                     </div>
                                 </div>
 
+                                {/* Real-time session meter */}
+                                {isActive && (
+                                    <div className="session-live-meter">
+                                        <div className="meter-row">
+                                            <span className="meter-label">⏱ Duration:</span>
+                                            <span className="meter-value">{formatTime(sessionDuration)}</span>
+                                        </div>
+                                        <div className="meter-row cost-row">
+                                            <span className="meter-label">💰 Cost:</span>
+                                            <span className="meter-value cost">${sessionCost.toFixed(2)}</span>
+                                        </div>
+                                        <div className="meter-row">
+                                            <span className="meter-label">💵 Remaining:</span>
+                                            <span className="meter-value">${(creditBalance - sessionCost).toFixed(2)}</span>
+                                        </div>
+                                        <div className="meter-rate">$0.20 per minute</div>
+                                    </div>
+                                )}
+
                                 <div className="agent-controls">
                                     {!isActive ? (
                                         <button className="btn-action start" onClick={start}>
@@ -240,7 +261,7 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                                 </div>
                                 <div className="meta-item">
                                     <span className="meta-label">STT Engine</span>
-                                    <span className="meta-value">Deepgram Nova-2</span>
+                                    <span className="meta-value">Deepgram Nova-3</span>
                                 </div>
                                 <div className="meta-item">
                                     <span className="meta-label">TTS Engine</span>
@@ -253,7 +274,7 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                         <div className="activity-panel">
                             <div className="activity-header">
                                 <span className="activity-title">Recent Activity</span>
-                                <button className="activity-filter">View All</button>
+                                <button className="activity-filter" onClick={() => window.location.href = '/call-history'}>View All</button>
                             </div>
                             <div className="activity-list">
                                 {user?.creditBalance ? (
@@ -268,7 +289,7 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                                         <div className="activity-item">
                                             <div className="activity-icon system">⚙️</div>
                                             <div className="activity-content">
-                                                <div className="activity-text">Voice Agent configured — Nova-2 STT + Aura TTS</div>
+                                                <div className="activity-text">Voice Agent configured — Nova-3 STT + Aura TTS</div>
                                                 <div className="activity-time">Today</div>
                                             </div>
                                         </div>
