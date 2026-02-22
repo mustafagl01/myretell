@@ -1,9 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AudioManager } from '../../_legacy/audio-manager.js';
 
+const getWsUrl = () => {
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+        return 'wss://myretell.onrender.com/ws';
+    }
+    return 'ws://localhost:3001/ws';
+};
+
 export const useVoiceAssistant = (options = {}) => {
     const {
-        wsUrl = 'ws://localhost:3001/ws',
+        wsUrl = getWsUrl(),
         sampleRate = 16000,
     } = options;
 

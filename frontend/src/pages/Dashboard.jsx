@@ -102,7 +102,7 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                     </div>
                     <div className="stat-card">
                         <span className="stat-label">Model</span>
-                        <span className="stat-value">gpt-4o-mini</span>
+                        <span className="stat-value">Deepgram Nova</span>
                     </div>
                     <div className="stat-card">
                         <span className="stat-label">Latency</span>
