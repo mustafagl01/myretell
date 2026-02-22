@@ -17,7 +17,6 @@ if (missingVars.length > 0) {
 
 console.log('Environment loaded successfully');
 console.log(`DEEPGRAM_API_KEY: ${process.env.DEEPGRAM_API_KEY ? '✓' : '✗'}`);
-console.log(`GOOGLE_API_KEY: ${process.env.GOOGLE_API_KEY ? '✓' : '✗'}`);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -35,7 +34,7 @@ try {
 // Middleware
 app.use(express.json());
 
-// CORS middleware
+// CORS
 app.use((req, res, next) => {
   const allowedOrigins = [
     'http://localhost:5173',
@@ -55,7 +54,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.status(200).send('OK');
 });
@@ -65,40 +63,24 @@ app.get('/', (req, res) => {
     service: 'MyVoiceAgent Backend',
     status: 'running',
     deepgramConfigured: !!deepgramClient,
-    llm: 'Deepgram Built-in'
+    llm: 'Deepgram Default'
   });
 });
 
-// ========== Deepgram Agent Config (Deepgram Built-in LLM) ==========
+// ========== Deepgram Agent Config ==========
 
-// Default agent configuration for WebSocket connections
-// Using Deepgram's built-in LLM (no API key needed for testing)
+// Minimal config - Deepgram will use default LLM when think is omitted
 const buildAgentConfig = () => ({
-  tags: ['myvoiceagent', 'demo'],
   agent: {
     listen: {
-      provider: {
-        type: 'deepgram',
-        model: 'nova-3'
-      }
+      model: 'nova-3'
     },
     speak: {
-      provider: {
-        type: 'deepgram',
-        model: 'aura-2-thalia-en'
-      }
-    },
-    think: {
-      provider: {
-        type: 'deepgram'  // Use Deepgram's built-in LLM
-      },
-      instructions: 'You are a helpful voice assistant. Be concise and friendly. Keep responses short and conversational.'
-    },
-    greeting: 'Hello! How can I help you today?'
+      model: 'aura-2-thalia-en'
+    }
   }
 });
 
-// Store active connection and keep-alive
 let deepgramConnection = null;
 let keepAliveInterval = null;
 
@@ -106,9 +88,8 @@ function keepAlive() {
   if (deepgramConnection) {
     try {
       deepgramConnection.keepAlive();
-      console.log('Keep-alive signal sent');
     } catch (error) {
-      console.error('Error sending keep-alive:', error.message);
+      console.error('Keep-alive error:', error.message);
     }
   }
 }
@@ -125,16 +106,16 @@ app.post('/api/deepgram/connect', async (req, res) => {
     deepgramConnection = deepgramClient.agent();
 
     deepgramConnection.on(AgentEvents.Open, () => {
-      console.log('Deepgram agent connection opened');
+      console.log('Deepgram connection opened');
       deepgramConnection.configure(buildAgentConfig());
     });
 
     deepgramConnection.on(AgentEvents.SettingsApplied, () => {
-      console.log('Agent configuration applied successfully');
+      console.log('Settings applied');
     });
 
     deepgramConnection.on(AgentEvents.Welcome, (data) => {
-      console.log('Welcome event, request_id:', data.request_id);
+      console.log('Welcome:', data.request_id);
     });
 
     deepgramConnection.on(AgentEvents.ConversationText, (data) => {
@@ -142,7 +123,7 @@ app.post('/api/deepgram/connect', async (req, res) => {
     });
 
     deepgramConnection.on(AgentEvents.UserStartedSpeaking, () => {
-      console.log('User started speaking...');
+      console.log('User speaking...');
     });
 
     deepgramConnection.on(AgentEvents.AgentThinking, (data) => {
@@ -150,19 +131,19 @@ app.post('/api/deepgram/connect', async (req, res) => {
     });
 
     deepgramConnection.on(AgentEvents.AgentStartedSpeaking, (data) => {
-      console.log('Agent started speaking (latency:', data.total_latency, 'ms)');
+      console.log('Agent speaking (latency:', data.total_latency, 'ms)');
     });
 
     deepgramConnection.on(AgentEvents.AgentAudioDone, () => {
-      console.log('Agent finished speaking');
+      console.log('Agent done speaking');
     });
 
     deepgramConnection.on(AgentEvents.Error, (error) => {
-      console.error('Deepgram agent error:', error);
+      console.error('Deepgram error:', error);
     });
 
     deepgramConnection.on(AgentEvents.Close, () => {
-      console.log('Deepgram agent connection closed');
+      console.log('Connection closed');
       if (keepAliveInterval) {
         clearInterval(keepAliveInterval);
         keepAliveInterval = null;
@@ -174,15 +155,15 @@ app.post('/api/deepgram/connect', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Deepgram agent connection initiated',
+      message: 'Deepgram agent initiated',
       configuration: {
-        stt_model: 'nova-3',
-        llm_model: 'deepgram',
-        tts_model: 'aura-2-thalia-en'
+        stt: 'nova-3',
+        llm: 'deepgram-default',
+        tts: 'aura-2-thalia-en'
       }
     });
   } catch (error) {
-    console.error('Error connecting to Deepgram agent:', error);
+    console.error('Connection error:', error);
     res.status(500).json({ error: 'Failed to connect', details: error.message });
   }
 });
@@ -206,18 +187,15 @@ app.post('/api/deepgram/disconnect', (req, res) => {
 app.get('/api/deepgram/status', (req, res) => {
   res.json({
     connected: !!deepgramConnection,
-    keepAliveActive: !!keepAliveInterval,
-    llm: 'deepgram'
+    keepAliveActive: !!keepAliveInterval
   });
 });
 
-// ========== WebSocket Server ==========
-
-const defaultAgentConfig = buildAgentConfig();
+// ========== WebSocket ==========
 
 const server = app.listen(PORT, () => {
-  console.log(`Backend server running on port ${PORT}`);
-  console.log(`LLM: Deepgram Built-in`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`LLM: Deepgram Default`);
 });
 
 let wsHandler = null;
@@ -225,11 +203,11 @@ try {
   wsHandler = new WebSocketHandler({
     server: server,
     path: '/ws',
-    defaultAgentConfig: defaultAgentConfig
+    defaultAgentConfig: buildAgentConfig()
   });
-  console.log(`WebSocket handler initialized on /ws`);
+  console.log(`WebSocket ready on /ws`);
 } catch (error) {
-  console.error('Failed to initialize WebSocket handler:', error.message);
+  console.error('WebSocket init failed:', error.message);
 }
 
 process.on('SIGTERM', () => {
