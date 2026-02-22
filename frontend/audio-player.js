@@ -110,7 +110,8 @@ export class AudioPlayer {
   }
 
   /**
-   * FIX: Proper gapless scheduling with nextStartTime tracking
+   * Schedule audio buffer for gapless playback.
+   * Simple approach: first chunk plays NOW, subsequent chunks play after previous ends.
    */
   scheduleBuffer(audioData, sampleRate = 16000) {
     if (!this.audioContext) {
@@ -121,8 +122,22 @@ export class AudioPlayer {
       // Convert PCM to AudioBuffer (no decodeAudioData - Deepgram sends raw PCM)
       const audioBuffer = this._pcmToAudioBuffer(audioData, sampleRate);
 
+      if (!audioBuffer || audioBuffer.length === 0) {
+        console.warn('Empty audio buffer, skipping');
+        return null;
+      }
+
       const duration = audioBuffer.duration;
-      const startTime = this.nextStartTime || this.audioContext.currentTime;
+      const now = this.audioContext.currentTime;
+
+      // Determine start time: if nextStartTime is in the past or not set, start now
+      let startTime;
+      if (this.nextStartTime > now) {
+        startTime = this.nextStartTime;
+      } else {
+        startTime = now;
+      }
+
       const endTime = startTime + duration;
 
       // Create source
@@ -130,39 +145,51 @@ export class AudioPlayer {
       source.buffer = audioBuffer;
       source.connect(this.gainNode);
 
-      // Schedule playback with overlap for seamless transition
-      source.start(startTime - this.overlapTime);
+      // Start playback
+      source.start(startTime);
 
       // Track this source
       this.scheduledSources.push(source);
 
-      // FIX: Update nextStartTime properly
-      // If this is the first chunk, use currentTime + small offset
-      if (this.nextStartTime === 0) {
-        this.nextStartTime = this.audioContext.currentTime + 0.05;
-      } else {
-        this.nextStartTime = endTime;
-      }
+      // Update nextStartTime for seamless scheduling of next chunk
+      this.nextStartTime = endTime;
 
-      // FIX: Call onChunkComplete when this chunk finishes
+      // Call onChunkComplete when this chunk finishes
       source.onended = () => {
+        // Remove from tracked sources
+        const idx = this.scheduledSources.indexOf(source);
+        if (idx > -1) this.scheduledSources.splice(idx, 1);
+
         if (this.onChunkCompleteCallback) {
           this.onChunkCompleteCallback();
+        }
+
+        // If no more sources, mark as not playing
+        if (this.scheduledSources.length === 0) {
+          this.isPlaying = false;
+          if (this.onPlaybackEndCallback) {
+            this.onPlaybackEndCallback();
+          }
         }
       };
 
       // Mark as playing if not already
-      if (!this.isPlaying && this.onPlaybackStartCallback) {
+      if (!this.isPlaying) {
         this.isPlaying = true;
-        this.onPlaybackStartCallback();
+        if (this.onPlaybackStartCallback) {
+          this.onPlaybackStartCallback();
+        }
       }
+
+      console.log('Audio scheduled: start=' + startTime.toFixed(3) + ', duration=' + duration.toFixed(3) + ', samples=' + audioBuffer.length);
 
       return { startTime, endTime };
     } catch (error) {
+      console.error('scheduleBuffer error:', error);
       if (this.onErrorCallback) {
-        this.onErrorCallback(new Error(`Failed to schedule buffer: ${error.message}`));
+        this.onErrorCallback(new Error('Failed to schedule buffer: ' + error.message));
       }
-      throw error;
+      return null;
     }
   }
 
@@ -207,14 +234,14 @@ export class AudioPlayer {
     if (this.currentSource) {
       try {
         this.currentSource.stop();
-      } catch (e) {}
+      } catch (e) { }
       this.currentSource = null;
     }
 
     this.scheduledSources.forEach(source => {
       try {
         source.stop();
-      } catch (e) {}
+      } catch (e) { }
     });
 
     this.scheduledSources = [];

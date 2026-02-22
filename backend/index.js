@@ -71,6 +71,17 @@ app.get('/', (req, res) => {
 
 // Update config to match Deepgram Voice Agent V1 schema with provider wrappers
 const buildAgentConfig = () => ({
+  audio: {
+    input: {
+      encoding: 'linear16',
+      sample_rate: 16000
+    },
+    output: {
+      encoding: 'linear16',
+      sample_rate: 16000,
+      container: 'none'
+    }
+  },
   agent: {
     listen: {
       provider: {

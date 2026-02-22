@@ -187,15 +187,14 @@ export class AudioManager {
         throw new Error('Invalid audio data format');
       }
 
-      // FIX: Do NOT use decodeAudioData — Deepgram sends raw PCM, not encoded audio.
-      // Send raw ArrayBuffer directly to audioPlayer which handles PCM → AudioBuffer.
-      this.audioQueue.enqueue(audioArrayBuffer);
+      console.log('Audio data received:', audioArrayBuffer.byteLength, 'bytes');
 
-      if (!this.audioPlayer.playing && !this.audioQueue.isEmpty()) {
-        this._scheduleNextChunk();
-      }
+      // Schedule directly to AudioPlayer for immediate playback
+      // Don't use queue for now - schedule all chunks directly for gapless playback
+      this.audioPlayer.scheduleBuffer(audioArrayBuffer, this.sampleRate);
     } catch (error) {
-      this._handleError(new Error(`Failed to process audio data: ${error.message}`));
+      console.error('Failed to process audio data:', error);
+      this._handleError(new Error('Failed to process audio data: ' + error.message));
     }
   }
 
