@@ -1,0 +1,132 @@
+.pricing-container {
+    min-height: 100vh;
+    padding: 6rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.pricing-header h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+}
+
+.pricing-header p {
+    color: var(--text-muted);
+    font-size: 1.25rem;
+    margin-bottom: 5rem;
+}
+
+.pricing-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid #ef4444;
+    color: #fca5a5;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    margin-bottom: 3rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2.5rem;
+}
+
+.pricing-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 2rem;
+    padding: 3rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    transition: transform 0.3s ease;
+}
+
+.pricing-card:hover {
+    transform: translateY(-10px);
+    border-color: var(--primary);
+}
+
+.pricing-card.popular {
+    border: 2px solid var(--primary);
+    background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.1), transparent);
+}
+
+.popular-badge {
+    position: absolute;
+    top: -15px;
+    background: var(--primary);
+    color: white;
+    padding: 0.25rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.pricing-card h3 {
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+}
+
+.price-display .amount {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.credit-line {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 2rem;
+}
+
+.feature-list {
+    list-style: none;
+    margin-bottom: 3rem;
+    flex: 1;
+}
+
+.feature-list li {
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.btn-checkout {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 1rem;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-plan-primary {
+    background: var(--primary);
+    color: white;
+    border: none;
+}
+
+.btn-plan-primary:hover {
+    background: var(--primary-hover);
+}
+
+.btn-plan-outline {
+    background: none;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+}
+
+.btn-plan-outline:hover {
+    border-color: var(--text-main);
+}

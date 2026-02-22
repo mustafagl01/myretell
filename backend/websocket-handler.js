@@ -1,4 +1,6 @@
 import { WebSocketServer } from 'ws';
+import jwt from 'jsonwebtoken';
+import prisma from './config/prisma.js';
 import { DeepgramConnection } from './deepgram-connection.js';
 
 /**
@@ -99,17 +101,9 @@ export class WebSocketHandler {
       console.error(`WebSocket client error: ${clientIp}:`, error.message);
       this._handleClientDisconnect(ws);
     });
-
-    this._sendJson(ws, {
-      type: 'Welcome',
-      data: {
-        message: 'Connected to MyVoiceAgent WebSocket',
-        status: 'connected',
-      },
-    });
   }
 
-  _handleClientMessage(ws, data, isBinary) {
+  async _handleClientMessage(ws, data, isBinary) {
     const deepgramConn = this.deepgramConnections.get(ws);
 
     if (!deepgramConn) {
@@ -133,16 +127,13 @@ export class WebSocketHandler {
           const queue = this.audioQueues.get(ws);
           if (queue) {
             queue.push(data);
-            // Limit queue size to prevent memory issues (max 5 seconds @ 16kHz)
-            if (queue.length > 100) {
-              queue.shift(); // Remove oldest
-            }
+            if (queue.length > 100) queue.shift();
           }
         }
       } else {
         // JSON control message
         const message = JSON.parse(data.toString());
-        this._handleJsonMessage(ws, message, deepgramConn);
+        await this._handleJsonMessage(ws, message, deepgramConn);
       }
     } catch (error) {
       console.error('Error handling client message:', error.message);
@@ -177,10 +168,14 @@ export class WebSocketHandler {
     }
   }
 
-  _handleJsonMessage(ws, message, deepgramConn) {
+  async _handleJsonMessage(ws, message, deepgramConn) {
     const { type, data } = message;
 
     switch (type) {
+      case 'Authenticate':
+        await this._handleAuthentication(ws, data);
+        break;
+
       case 'Configure':
         if (data && deepgramConn.connected) {
           deepgramConn.configure(data);
@@ -200,9 +195,46 @@ export class WebSocketHandler {
     }
   }
 
+  async _handleAuthentication(ws, data) {
+    const { token } = data;
+    if (!token) {
+      this._sendError(ws, { type: 'auth_error', message: 'Token required' });
+      return;
+    }
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.userId },
+        include: { creditBalance: true }
+      });
+
+      if (!user) throw new Error('User not found');
+
+      if (user.creditBalance.balance <= 0) {
+        this._sendError(ws, { type: 'insufficient_credits', message: 'Please refill your credits' });
+        ws.close();
+        return;
+      }
+
+      // Store user info and start time
+      ws.user = user;
+      ws.sessionStartTime = Date.now();
+
+      this._sendJson(ws, {
+        type: 'Authenticated',
+        data: { email: user.email, balance: user.creditBalance.balance }
+      });
+      console.log(`User ${user.email} authenticated on WebSocket`);
+
+    } catch (error) {
+      console.error('WebSocket Auth Error:', error.message);
+      this._sendError(ws, { type: 'auth_error', message: 'Invalid token' });
+    }
+  }
+
   _onDeepgramAudio(ws, audioData) {
     try {
-      // Ensure audioData is a Buffer before converting to base64
       const buffer = Buffer.isBuffer(audioData) ? audioData : Buffer.from(audioData);
       const base64Audio = buffer.toString('base64');
 
@@ -247,7 +279,7 @@ export class WebSocketHandler {
     this._sendJson(ws, message);
   }
 
-  _handleClientDisconnect(ws) {
+  async _handleClientDisconnect(ws) {
     const deepgramConn = this.deepgramConnections.get(ws);
 
     if (deepgramConn) {
@@ -255,11 +287,37 @@ export class WebSocketHandler {
       this.deepgramConnections.delete(ws);
     }
 
-    // Clean up queue and ready state
+    // SaaS: Track session duration and deduct credits
+    if (ws.user && ws.sessionStartTime) {
+      const durationSeconds = Math.ceil((Date.now() - ws.sessionStartTime) / 1000);
+      const creditsToDeduct = Math.max(1, Math.ceil(durationSeconds / 60)); // Min 1 credit per session
+
+      console.log(`Deducting ${creditsToDeduct} credits from user ${ws.user.email} for ${durationSeconds}s session`);
+
+      try {
+        await prisma.$transaction([
+          prisma.creditBalance.update({
+            where: { userId: ws.user.id },
+            data: { balance: { decrement: creditsToDeduct } }
+          }),
+          prisma.usageSession.create({
+            data: {
+              userId: ws.user.id,
+              durationSeconds,
+              creditsUsed: creditsToDeduct,
+              status: 'completed'
+            }
+          })
+        ]);
+      } catch (error) {
+        console.error('Failed to deduct credits on disconnect:', error.message);
+      }
+    }
+
     this.audioQueues.delete(ws);
     this.connectionReady.delete(ws);
 
-    ws.close();
+    if (ws.readyState === 1) ws.close();
   }
 
   _sendJson(ws, data) {

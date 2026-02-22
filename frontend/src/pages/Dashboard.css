@@ -1,0 +1,285 @@
+.dashboard-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 100vh;
+    background: var(--bg-dark);
+}
+
+.sidebar {
+    background: var(--bg-card);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.logo {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 800;
+    background: linear-gradient(to right, #818cf8, #c084fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 3rem;
+}
+
+.nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.nav-menu a {
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.nav-menu a:hover,
+.nav-menu a.active {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--text-main);
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    background: var(--primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.email {
+    font-size: 0.875rem;
+    color: var(--text-main);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.btn-logout {
+    background: none;
+    border: none;
+    color: #ef4444;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    text-align: left;
+}
+
+/* Dashboard Main Area */
+.dashboard-main {
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dashboard-header h2 {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.credit-badge {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid var(--accent);
+    padding: 0.5rem 1.25rem;
+    border-radius: 9999px;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.credit-badge .label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.credit-badge .value {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+/* Agent Stage */
+.agent-stage {
+    flex: 1;
+    background: var(--bg-card);
+    border-radius: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.agent-status {
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: #64748b;
+    border-radius: 50%;
+}
+
+.agent-status.active {
+    color: var(--accent);
+}
+
+.agent-status.active .status-dot {
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+}
+
+.visualizer-container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 3rem;
+}
+
+.agent-avatar {
+    width: 120px;
+    height: 120px;
+    z-index: 2;
+}
+
+.avatar-svg .outer-circle {
+    fill: none;
+    stroke: var(--primary);
+    stroke-width: 2;
+    opacity: 0.3;
+}
+
+.avatar-svg .inner-circle {
+    fill: var(--primary);
+}
+
+.voice-glow {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    background: var(--primary);
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0;
+    transition: all 0.5s ease;
+}
+
+.voice-glow.playing {
+    opacity: 0.4;
+    transform: scale(1.5);
+    animation: breathe 2s infinite ease-in-out;
+}
+
+.btn-action {
+    padding: 1.25rem 4rem;
+    font-size: 1.5rem;
+    font-weight: 800;
+    border-radius: 9999px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: 'Outfit', sans-serif;
+}
+
+.btn-action.start {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-action.stop {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 2px solid #ef4444;
+}
+
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+}
+
+.stat-card {
+    background: var(--bg-card);
+    padding: 1.5rem;
+    border-radius: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.stat-value.connected {
+    color: var(--accent);
+}
+
+@keyframes breathe {
+
+    0%,
+    100% {
+        transform: scale(1.5);
+        opacity: 0.4;
+    }
+
+    50% {
+        transform: scale(1.8);
+        opacity: 0.6;
+    }
+}
