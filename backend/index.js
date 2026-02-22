@@ -44,7 +44,7 @@ app.use((req, res, next) => {
     'http://localhost:5173',
     'http://localhost:3000',
     'https://myvoiceagent-frontend.vercel.app',
-    // Add your production frontend URL here
+    'https://myretell.vercel.app', // Add production URL
   ];
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin) || !origin) {

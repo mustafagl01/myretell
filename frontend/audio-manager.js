@@ -27,6 +27,7 @@ import { AudioCapture } from './audio-capture.js';
 import { AudioQueue } from './audio-queue.js';
 import { AudioPlayer } from './audio-player.js';
 import { WebSocketClient } from './websocket-client.js';
+import { AudioProcessor } from './audio-processor.js';
 
 export class AudioManager {
   /**
@@ -82,6 +83,7 @@ export class AudioManager {
     this.isConversationActive = false;
     this.mediaRecorder = null;
     this.audioChunks = [];
+    this.audioProcessor = null; // For raw PCM capture
 
     // Initialize components
     this._initializeComponents();
@@ -200,6 +202,12 @@ export class AudioManager {
         this.mediaRecorder = null;
       }
 
+      // Stop AudioProcessor if active
+      if (this.audioProcessor && this.audioProcessor.processing) {
+        this.audioProcessor.stop();
+        this.audioProcessor = null;
+      }
+
       // Clear audio chunks
       this.audioChunks = [];
 
@@ -231,37 +239,23 @@ export class AudioManager {
    */
   _handleStreamReady(stream) {
     try {
-      // Create MediaRecorder to capture audio chunks
-      const mimeType = this._getSupportedMimeType();
-      this.mediaRecorder = new MediaRecorder(stream, {
-        mimeType: mimeType,
-        audioBitsPerSecond: 16000,
+      // Use AudioProcessor for raw PCM (Int16) output instead of MediaRecorder
+      // Deepgram Voice Agent expects raw Linear16 PCM, not WebM/Opus
+      this.audioProcessor = new AudioProcessor({
+        sampleRate: this.sampleRate,
+        onAudioData: (pcmData) => {
+          // Send raw PCM data to backend via WebSocket
+          this.wsClient.sendAudio(pcmData.buffer);
+        },
+        onError: (error) => {
+          this._handleError(new Error(`AudioProcessor error: ${error.message}`));
+        },
       });
 
-      // Collect audio chunks
-      this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          this.audioChunks.push(event.data);
-
-          // Send audio chunk to backend via WebSocket
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const arrayBuffer = reader.result;
-            this.wsClient.sendAudio(arrayBuffer);
-          };
-          reader.readAsArrayBuffer(event.data);
-        }
-      };
-
-      // Handle recording errors
-      this.mediaRecorder.onerror = (event) => {
-        this._handleError(new Error(`MediaRecorder error: ${event.error}`));
-      };
-
-      // Start recording with 100ms chunks for low latency
-      this.mediaRecorder.start(100);
+      // Start processing audio
+      this.audioProcessor.start(stream);
     } catch (error) {
-      this._handleError(new Error(`Failed to setup MediaRecorder: ${error.message}`));
+      this._handleError(new Error(`Failed to setup AudioProcessor: ${error.message}`));
     }
   }
 
