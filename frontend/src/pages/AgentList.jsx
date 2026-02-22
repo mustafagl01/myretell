@@ -51,8 +51,9 @@ export const AgentList = ({ user, onLogout }) => {
 
     return (
         <DashboardLayout user={user} onLogout={onLogout} title="Assistants" hideContentPadding={true}>
-            {/* MIDDLE COLUMN: Assistants List */}
-            <div className="agents-sidebar">
+            <div className="agents-page-layout">
+                {/* MIDDLE COLUMN: Assistants List */}
+                <div className="agents-sidebar">
                 <div className="agents-sidebar-header">
                     <button className="btn-save-vapi" style={{ width: '100%' }} onClick={() => navigate('/agents/create')}>
                         Create Assistant +
@@ -81,8 +82,8 @@ export const AgentList = ({ user, onLogout }) => {
                 </div>
             </div>
 
-            {/* RIGHT COLUMN: Detail View */}
-            <div className="agent-detail-view">
+                {/* RIGHT COLUMN: Detail View */}
+                <div className="agent-detail-view">
                 {selectedAgent ? (
                     <>
                         <div className="detail-view-header">
@@ -248,6 +249,7 @@ export const AgentList = ({ user, onLogout }) => {
                 ) : (
                     <div className="empty-state">Select an assistant to configure</div>
                 )}
+                </div>
             </div>
         </DashboardLayout>
     );
