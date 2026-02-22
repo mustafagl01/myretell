@@ -87,11 +87,6 @@ export class DeepgramConnection {
           reject(err);
         };
 
-        // ✅ Config'i setupConnection'dan ÖNCE ver (Deepgram SDK v3 requirement)
-        if (config && Object.keys(config).length > 0) {
-          this.agent.configure(config);
-        }
-
         // Initiate the WebSocket connection
         this.agent.setupConnection();
       });
@@ -132,7 +127,8 @@ export class DeepgramConnection {
    */
   sendAudio(audioData) {
     if (!this.isConnected || !this.agent) {
-      throw new Error('Not connected to Deepgram. Call connect() first.');
+      console.warn('Attempted to send audio while not connected to Deepgram');
+      return;
     }
 
     try {
@@ -140,13 +136,32 @@ export class DeepgramConnection {
       const data = Buffer.isBuffer(audioData) ? audioData : Buffer.from(audioData);
       this.agent.send(data);
     } catch (error) {
+      console.error('Error sending audio to Deepgram:', error.message);
       if (this.onError) {
         this.onError({
           type: 'send_error',
           message: error.message,
         });
       }
-      throw error;
+    }
+  }
+
+  /**
+   * Send a JSON control message to Deepgram.
+   * 
+   * @param {Object} data - The JSON object to send
+   */
+  sendJson(data) {
+    if (!this.isConnected || !this.agent) {
+      console.warn('Attempted to send JSON while not connected to Deepgram:', data.type);
+      return;
+    }
+
+    try {
+      const payload = JSON.stringify(data);
+      this.agent.send(payload);
+    } catch (error) {
+      console.error('Error sending JSON to Deepgram:', error.message);
     }
   }
 
@@ -250,8 +265,20 @@ export class DeepgramConnection {
 
     // Connection opened
     this.agent.on(AgentEvents.Open, () => {
-      console.log('Deepgram WebSocket connection opened');
+      console.log('[DEEPGRAM] WebSocket connection opened successfully');
       this.isConnected = true;
+
+      // Configure agent AFTER connection is open
+      if (this._pendingConfig && Object.keys(this._pendingConfig).length > 0) {
+        console.log('[DEEPGRAM] Applying configuration...');
+        try {
+          this.agent.configure(this._pendingConfig);
+          console.log('[DEEPGRAM] Configuration sent successfully');
+        } catch (err) {
+          console.error('[DEEPGRAM] Configuration failed:', err.message);
+        }
+        this._pendingConfig = null;
+      }
 
       if (this.onOpen) {
         this.onOpen();

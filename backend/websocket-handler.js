@@ -453,12 +453,14 @@ export class WebSocketHandler {
   }
 
   _onDeepgramError(ws, error) {
-    console.error('[WS] Deepgram error forwarded to client:', JSON.stringify(error));
+    const errorString = typeof error === 'string' ? error : JSON.stringify(error);
+    console.error('[WS] Deepgram error received:', errorString);
+
     this._sendError(ws, {
-      type: error.type || 'connection_error',
-      message: error.message || 'Unknown Deepgram error',
-      code: error.code || null,
-      details: error.details || error,
+      type: error?.type || 'connection_error',
+      message: error?.message || 'Unknown Deepgram error',
+      code: error?.code || null,
+      details: error
     });
   }
 
@@ -505,10 +507,11 @@ export class WebSocketHandler {
       if (result.message) {
         const dgConn = this.deepgramConnections.get(ws);
         if (dgConn) {
-          dgConn.send(JSON.stringify({
+          console.log(`[Workflow] Injecting agent message: ${result.message}`);
+          dgConn.sendJson({
             type: 'InjectAgentMessage',
             message: result.message
-          }));
+          });
         }
       }
 
@@ -516,7 +519,8 @@ export class WebSocketHandler {
       if (result.type === 'prompt' && result.config) {
         const dgConn = this.deepgramConnections.get(ws);
         if (dgConn) {
-          dgConn.send(JSON.stringify({
+          console.log(`[Workflow] Updating agent settings for prompt node`);
+          dgConn.sendJson({
             type: 'UpdateSettings',
             settings: {
               agent: {
@@ -526,7 +530,7 @@ export class WebSocketHandler {
                 }
               }
             }
-          }));
+          });
         }
       }
 
