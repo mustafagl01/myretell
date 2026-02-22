@@ -65,12 +65,14 @@ app.get('/', (req, res) => {
     service: 'MyVoiceAgent Backend',
     status: 'running',
     deepgramConfigured: !!deepgramClient,
-    llm: 'Google Gemini 2.0 Flash'
+    llm: 'Deepgram Built-in'
   });
 });
 
-// ========== Deepgram Agent Config (Google Gemini as LLM) ==========
+// ========== Deepgram Agent Config (Deepgram Built-in LLM) ==========
 
+// Default agent configuration for WebSocket connections
+// Using Deepgram's built-in LLM (no API key needed for testing)
 const buildAgentConfig = () => ({
   tags: ['myvoiceagent', 'demo'],
   agent: {
@@ -88,17 +90,9 @@ const buildAgentConfig = () => ({
     },
     think: {
       provider: {
-        type: 'google',
-        model: 'gemini-2.0-flash',
-        temperature: 0.7
+        type: 'deepgram'  // Use Deepgram's built-in LLM
       },
-      endpoint: {
-        url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-        headers: {
-          authorization: `Bearer ${process.env.GOOGLE_API_KEY}`
-        }
-      },
-      instructions: 'You are a helpful voice assistant. Be concise and friendly.'
+      instructions: 'You are a helpful voice assistant. Be concise and friendly. Keep responses short and conversational.'
     },
     greeting: 'Hello! How can I help you today?'
   }
@@ -183,7 +177,7 @@ app.post('/api/deepgram/connect', async (req, res) => {
       message: 'Deepgram agent connection initiated',
       configuration: {
         stt_model: 'nova-3',
-        llm_model: 'gemini-2.0-flash (Google)',
+        llm_model: 'deepgram',
         tts_model: 'aura-2-thalia-en'
       }
     });
@@ -213,7 +207,7 @@ app.get('/api/deepgram/status', (req, res) => {
   res.json({
     connected: !!deepgramConnection,
     keepAliveActive: !!keepAliveInterval,
-    llm: 'gemini-2.0-flash'
+    llm: 'deepgram'
   });
 });
 
@@ -223,7 +217,7 @@ const defaultAgentConfig = buildAgentConfig();
 
 const server = app.listen(PORT, () => {
   console.log(`Backend server running on port ${PORT}`);
-  console.log(`LLM: Google Gemini 2.0 Flash`);
+  console.log(`LLM: Deepgram Built-in`);
 });
 
 let wsHandler = null;
