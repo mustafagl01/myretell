@@ -96,13 +96,14 @@
         flex-direction: column;
     }
 
+    .agent-detail-view {
+        order: -1;
+        min-height: 58vh;
+    }
+
     .agents-sidebar {
         width: 100%;
         max-height: 42vh;
-    }
-
-    .agent-detail-view {
-        min-height: 58vh;
     }
 }
 

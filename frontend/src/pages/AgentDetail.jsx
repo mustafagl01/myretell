@@ -26,6 +26,14 @@ const STT_OPTIONS = [
     { value: 'azure-speech', label: 'Azure Speech Neural (Soon)', disabled: true },
 ];
 
+const LANGUAGE_OPTIONS = [
+    { value: 'en', label: 'English' },
+    { value: 'tr', label: 'Türkçe' },
+    { value: 'de', label: 'Deutsch' },
+    { value: 'fr', label: 'Français' },
+    { value: 'es', label: 'Español' },
+];
+
 const LLM_OPTIONS = [
     { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Seçim: Hız+Fiyat)' },
     { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (Best Quality)' },
