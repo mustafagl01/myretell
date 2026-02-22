@@ -124,7 +124,7 @@ export class WebSocketHandler {
       if (isBinary) {
         // Binary audio from frontend
         const isReady = this.connectionReady.get(ws);
-        
+
         if (isReady) {
           // Connection ready, send immediately
           deepgramConn.sendAudio(data);
@@ -202,7 +202,10 @@ export class WebSocketHandler {
 
   _onDeepgramAudio(ws, audioData) {
     try {
-      const base64Audio = audioData.toString('base64');
+      // Ensure audioData is a Buffer before converting to base64
+      const buffer = Buffer.isBuffer(audioData) ? audioData : Buffer.from(audioData);
+      const base64Audio = buffer.toString('base64');
+
       this._sendJson(ws, {
         type: 'Audio',
         data: base64Audio,

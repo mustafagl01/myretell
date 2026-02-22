@@ -62,42 +62,30 @@ export class DeepgramConnection {
    */
   async connect(config = {}) {
     try {
-      // Create new agent connection
-      this.agent = this.client.agent();
+      // Create new agent connection using the explicit v1.connect() method
+      // Note: In SDK v3+, client.agent.v1.connect() is the recommended way to establish the WebSocket
+      this.agent = await this.client.agent.v1.connect();
 
       // Set up event handlers
       this._setupEventHandlers();
 
-      // Wait for connection to be established
-      await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Connection timeout: Failed to connect to Deepgram within 10 seconds'));
-        }, 10000);
-
-        this.agent.once(AgentEvents.Open, () => {
-          clearTimeout(timeout);
-          this.isConnected = true;
-          resolve();
-        });
-
-        this.agent.once(AgentEvents.Error, (error) => {
-          clearTimeout(timeout);
-          reject(new Error(`Connection failed: ${error.message || 'Unknown error'}`));
-        });
-      });
-
       // Configure agent if settings provided
       if (config && Object.keys(config).length > 0) {
+        // Log the config we're sending for debugging
+        console.log('Configuring Deepgram agent with:', JSON.stringify(config, null, 2));
         this.agent.configure(config);
       }
+
+      this.isConnected = true;
     } catch (error) {
       this.isConnected = false;
+      console.error('Deepgram connection error details:', error);
       throw new Error(`Failed to connect to Deepgram: ${error.message}`);
     }
   }
 
   /**
-   * Disconnect from Deepgram Voice Agent API.
+   * Disconnect from the Deepgram Voice Agent API.
    *
    * This gracefully closes the WebSocket connection.
    */
@@ -122,7 +110,7 @@ export class DeepgramConnection {
   /**
    * Send audio data to Deepgram.
    *
-   * @param {Buffer|ArrayBuffer|string} audioData - Audio data to send
+   * @param {Buffer|ArrayBuffer|Uint8Array} audioData - Audio data to send
    */
   sendAudio(audioData) {
     if (!this.isConnected || !this.agent) {
@@ -130,7 +118,9 @@ export class DeepgramConnection {
     }
 
     try {
-      this.agent.send(audioData);
+      // Ensure we're sending a Buffer or Uint8Array
+      const data = Buffer.isBuffer(audioData) ? audioData : Buffer.from(audioData);
+      this.agent.send(data);
     } catch (error) {
       if (this.onError) {
         this.onError({
@@ -291,6 +281,7 @@ export class DeepgramConnection {
       AgentEvents.Welcome,
       AgentEvents.SettingsApplied,
       AgentEvents.AgentAudioDone,
+      AgentEvents.FunctionCallRequest,
     ];
 
     usefulEvents.forEach((eventType) => {

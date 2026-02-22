@@ -69,14 +69,27 @@ app.get('/', (req, res) => {
 
 // ========== Deepgram Agent Config ==========
 
-// Minimal config - Deepgram will use default LLM when think is omitted
+// Update config to match Deepgram Voice Agent V1 schema with provider wrappers
 const buildAgentConfig = () => ({
   agent: {
     listen: {
-      model: 'nova-3'
+      provider: {
+        type: 'deepgram',
+        model: 'nova-3'
+      }
+    },
+    think: {
+      provider: {
+        type: 'open_ai',
+        model: 'gpt-4o-mini'
+      },
+      prompt: 'You are a helpful and friendly AI voice assistant. Keep your responses concise and conversational.'
     },
     speak: {
-      model: 'aura-2-thalia-en'
+      provider: {
+        type: 'deepgram',
+        model: 'aura-2-thalia-en'
+      }
     }
   }
 });
@@ -103,11 +116,14 @@ app.post('/api/deepgram/connect', async (req, res) => {
       return res.status(400).json({ error: 'Connection already exists' });
     }
 
-    deepgramConnection = deepgramClient.agent();
+    // Use the explicit v1.connect() method which returns the connection
+    deepgramConnection = await deepgramClient.agent.v1.connect();
+
+    // Configure immediately after connection
+    deepgramConnection.configure(buildAgentConfig());
 
     deepgramConnection.on(AgentEvents.Open, () => {
       console.log('Deepgram connection opened');
-      deepgramConnection.configure(buildAgentConfig());
     });
 
     deepgramConnection.on(AgentEvents.SettingsApplied, () => {
