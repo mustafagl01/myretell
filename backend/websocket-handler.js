@@ -2,6 +2,7 @@ import { WebSocketServer } from 'ws';
 import jwt from 'jsonwebtoken';
 import prisma from './config/prisma.js';
 import { DeepgramConnection } from './deepgram-connection.js';
+import { WorkflowExecutor } from './workflow-executor.js';
 
 /**
  * WebSocketHandler manages WebSocket connections for audio relay.
@@ -441,9 +442,87 @@ export class WebSocketHandler {
     });
   }
 
-  _onDeepgramMessage(ws, message) {
-    console.log('[DEBUG] Deepgram message:', JSON.stringify(message).substring(0, 200));
+  async _onDeepgramMessage(ws, message) {
+    // Rely message to client as usual
     this._sendJson(ws, message);
+
+    try {
+      const data = typeof message === 'string' ? JSON.parse(message) : message;
+
+      // Handle user speech transcripts from Deepgram Voice Agent API
+      if (data.type === 'ConversationText' && data.role === 'user') {
+        const userText = data.content;
+        console.log(`[Workflow Context] User said: ${userText}`);
+
+        // If workflow is enabled, let the executor decide the next move
+        if (ws.agentRecord?.workflowEnabled && ws.agentRecord?.workflowJson) {
+          await this._handleWorkflowStep(ws, userText);
+        }
+      }
+    } catch (error) {
+      console.error('[WS] Workflow intercept error:', error.message);
+    }
+  }
+
+  async _handleWorkflowStep(ws, userText) {
+    if (!ws.workflowExecutor) {
+      ws.workflowExecutor = new WorkflowExecutor(
+        ws.agentRecord.workflowJson,
+        {
+          userEmail: ws.user?.email,
+          agentName: ws.agentRecord?.name,
+          lastUserMessage: userText
+        }
+      );
+    }
+
+    const result = await ws.workflowExecutor.executeNext(userText);
+
+    if (result) {
+      console.log(`[Workflow] Result Type: ${result.type}`);
+
+      // If the node produces a message, tell Deepgram to speak it
+      if (result.message) {
+        const dgConn = this.deepgramConnections.get(ws);
+        if (dgConn) {
+          dgConn.send(JSON.stringify({
+            type: 'InjectAgentMessage',
+            message: result.message
+          }));
+        }
+      }
+
+      // If the node is a prompt node, we might want to update the agent's instructions for the next turn
+      if (result.type === 'prompt' && result.config) {
+        const dgConn = this.deepgramConnections.get(ws);
+        if (dgConn) {
+          dgConn.send(JSON.stringify({
+            type: 'UpdateSettings',
+            settings: {
+              agent: {
+                think: {
+                  instructions: result.config.systemPrompt,
+                  model: result.config.model
+                }
+              }
+            }
+          }));
+        }
+      }
+
+      // If the node is a transfer node
+      if (result.type === 'transfer') {
+        this._sendJson(ws, { type: 'TransferCall', data: result });
+      }
+
+      // If the call should end
+      if (result.type === 'end_call') {
+        setTimeout(() => {
+          this._handleClientDisconnect(ws);
+          ws.close();
+        }, 2000);
+      }
+    }
   }
 
   async _handleClientDisconnect(ws) {

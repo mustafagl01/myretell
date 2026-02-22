@@ -1,0 +1,464 @@
+/* ═══ Workflow Editor Layout ═══ */
+.workflow-editor-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 80px);
+    background: #0a0a0f;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+/* ═══ Toolbar ═══ */
+.workflow-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(22, 22, 31, 0.95);
+    border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+    flex-wrap: wrap;
+    z-index: 10;
+}
+
+.toolbar-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    margin-right: 0.5rem;
+}
+
+.btn-add-node {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 8px;
+    color: #cbd5e1;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-add-node:hover {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.5);
+    color: #f1f5f9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.btn-node-icon {
+    font-size: 1rem;
+}
+
+.btn-node-label {
+    font-weight: 500;
+}
+
+/* ═══ Canvas ═══ */
+.workflow-canvas {
+    flex: 1;
+    position: relative;
+}
+
+.workflow-canvas .react-flow__renderer {
+    background: #0a0a0f !important;
+}
+
+/* ═══ Custom Node Styles ═══ */
+.custom-node {
+    background: rgba(22, 22, 31, 0.98);
+    border: 2px solid rgba(99, 102, 241, 0.4);
+    border-radius: 12px;
+    padding: 0;
+    min-width: 240px;
+    max-width: 280px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+}
+
+.custom-node:hover {
+    box-shadow: 0 12px 40px rgba(99, 102, 241, 0.25);
+}
+
+.custom-node.selected {
+    border-color: #818cf8 !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25), 0 12px 40px rgba(99, 102, 241, 0.3);
+}
+
+/* ── Node Header ── */
+.node-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.node-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.node-title {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #f1f5f9;
+    flex: 1;
+}
+
+.node-title-input {
+    background: transparent;
+    border: none;
+    color: #f1f5f9;
+    font-weight: 700;
+    font-size: 0.85rem;
+    flex: 1;
+    outline: none;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+}
+
+.node-title-input:focus {
+    color: #818cf8;
+}
+
+/* ── Node Body ── */
+.node-body {
+    padding: 10px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.node-body .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.node-body .form-group label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+}
+
+.node-textarea,
+.node-input,
+.node-select {
+    width: 100%;
+    background: rgba(10, 10, 15, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 6px 8px;
+    color: #e2e8f0;
+    font-size: 0.78rem;
+    font-family: 'Inter', sans-serif;
+    resize: vertical;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.node-textarea:focus,
+.node-input:focus,
+.node-select:focus {
+    outline: none;
+    border-color: rgba(99, 102, 241, 0.5);
+}
+
+.node-textarea.mono,
+.node-input.mono {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', monospace;
+    font-size: 0.72rem;
+}
+
+.node-select {
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 28px;
+}
+
+.node-body input[type="range"] {
+    width: 100%;
+    accent-color: #6366f1;
+    height: 4px;
+}
+
+/* ── Node Type Colors ── */
+.start-node {
+    border-color: rgba(16, 185, 129, 0.5);
+}
+
+.start-node .node-header {
+    background: rgba(16, 185, 129, 0.08);
+}
+
+.prompt-node {
+    border-color: rgba(99, 102, 241, 0.5);
+}
+
+.prompt-node .node-header {
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.condition-node {
+    border-color: rgba(245, 158, 11, 0.5);
+}
+
+.condition-node .node-header {
+    background: rgba(245, 158, 11, 0.08);
+}
+
+.api-node {
+    border-color: rgba(139, 92, 246, 0.5);
+}
+
+.api-node .node-header {
+    background: rgba(139, 92, 246, 0.08);
+}
+
+.end-node {
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+.end-node .node-header {
+    background: rgba(239, 68, 68, 0.08);
+}
+
+.transfer-node {
+    border-color: rgba(6, 182, 212, 0.5);
+}
+
+.transfer-node .node-header {
+    background: rgba(6, 182, 212, 0.08);
+}
+
+.variable-node {
+    border-color: rgba(249, 115, 22, 0.5);
+}
+
+.variable-node .node-header {
+    background: rgba(249, 115, 22, 0.08);
+}
+
+.webhook-node {
+    border-color: rgba(236, 72, 153, 0.5);
+}
+
+.webhook-node .node-header {
+    background: rgba(236, 72, 153, 0.08);
+}
+
+/* ── Handles ── */
+.node-handle {
+    width: 12px !important;
+    height: 12px !important;
+    border: 2px solid #16161f !important;
+    border-radius: 50% !important;
+    transition: transform 0.15s;
+}
+
+.node-handle:hover {
+    transform: scale(1.4);
+}
+
+.source-handle {
+    background: #6366f1 !important;
+}
+
+.target-handle {
+    background: #94a3b8 !important;
+}
+
+.handle-true {
+    background: #10b981 !important;
+}
+
+.handle-false {
+    background: #ef4444 !important;
+}
+
+/* ── Condition Handles Layout ── */
+.condition-handles {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 20px 14px;
+    position: relative;
+}
+
+.handle-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+}
+
+.handle-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.true-label {
+    color: #10b981;
+}
+
+.false-label {
+    color: #ef4444;
+}
+
+/* ═══ MiniMap ═══ */
+.wf-minimap {
+    background: rgba(22, 22, 31, 0.95) !important;
+    border: 1px solid rgba(99, 102, 241, 0.15) !important;
+    border-radius: 8px !important;
+}
+
+/* ═══ Controls ═══ */
+.wf-controls {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.wf-controls button {
+    background: rgba(22, 22, 31, 0.95) !important;
+    border: 1px solid rgba(99, 102, 241, 0.2) !important;
+    border-radius: 6px !important;
+    color: #94a3b8 !important;
+    fill: #94a3b8 !important;
+    width: 32px !important;
+    height: 32px !important;
+}
+
+.wf-controls button:hover {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: #f1f5f9 !important;
+    fill: #f1f5f9 !important;
+}
+
+/* ═══ Info Panel ═══ */
+.wf-info-panel {
+    background: rgba(22, 22, 31, 0.95) !important;
+    padding: 10px 16px !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(99, 102, 241, 0.15) !important;
+    display: flex !important;
+    gap: 1.5rem !important;
+}
+
+.wf-info-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.wf-info-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.wf-info-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #6366f1;
+    font-family: 'Outfit', sans-serif;
+}
+
+/* ═══ Save Status ═══ */
+.wf-save-status {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #10b981;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ═══ Secondary Button ═══ */
+.btn-secondary {
+    padding: 0.5rem 1rem;
+    background: rgba(100, 116, 139, 0.1);
+    border: 1px solid rgba(100, 116, 139, 0.3);
+    border-radius: 8px;
+    color: #94a3b8;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-secondary:hover {
+    background: rgba(100, 116, 139, 0.2);
+    color: #f1f5f9;
+}
+
+/* ═══ Edge Styles ═══ */
+.react-flow__edge-path {
+    stroke: #6366f1 !important;
+    stroke-width: 2px;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+    stroke: #818cf8 !important;
+    stroke-width: 3px;
+}
+
+/* ═══ Connection Line ═══ */
+.react-flow__connection-path {
+    stroke: #818cf8 !important;
+    stroke-width: 2px;
+    stroke-dasharray: 5 5;
+}
+
+/* ═══ Responsive ═══ */
+@media (max-width: 768px) {
+    .workflow-toolbar {
+        padding: 0.5rem;
+        gap: 0.35rem;
+    }
+
+    .btn-add-node {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.7rem;
+    }
+
+    .btn-node-label {
+        display: none;
+    }
+
+    .custom-node {
+        min-width: 180px;
+        max-width: 220px;
+    }
+}

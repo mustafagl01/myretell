@@ -170,16 +170,46 @@ export const AgentDetail = ({ user, onLogout }) => {
             onLogout={onLogout}
             title={agent?.name || 'Agent'}
             actions={
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    {/* Primary Actions - TOP */}
+                    {!isActive ? (
+                        <button className="btn-talk" onClick={start}>
+                            🎤 Talk to Assistant
+                        </button>
+                    ) : (
+                        <button className="btn-test-stop" onClick={stop}>
+                            ■ End Call
+                        </button>
+                    )}
+                    <button className="btn-publish" onClick={() => {
+                        navigator.clipboard.writeText(`<script src="https://myretell.vercel.app/widget.js" data-agent-id="${agent?.id}"></script>`);
+                        setSaved(true);
+                        setTimeout(() => setSaved(false), 2000);
+                    }}>
+                        {saved ? '✓ Copied!' : '🚀 Publish / Embed'}
+                    </button>
+                    <button className="btn-workflow" onClick={() => navigate(`/workflow/${id}`)}>
+                        🔄 Edit Workflow
+                    </button>
                     <button className="btn-save" onClick={handleSave} disabled={saving}>
-                        {saving ? 'Saving...' : saved ? '✓ Saved' : 'Save Changes'}
+                        {saving ? 'Saving...' : '💾 Save'}
                     </button>
                     <button className="btn-delete" onClick={handleDelete} disabled={deleting}>
-                        {deleting ? '...' : 'Delete'}
+                        {deleting ? '...' : '🗑 Delete'}
                     </button>
                 </div>
             }
         >
+            {/* Connection status bar */}
+            {isActive && (
+                <div className="active-call-bar">
+                    <div className="call-pulse"></div>
+                    <span>Session Active — Speaking with <b>{agent.name}</b></span>
+                    <span className="call-connection">{connectionState}</span>
+                    {error && <span className="call-error">{error}</span>}
+                </div>
+            )}
+
             {/* Tabs */}
             <div className="detail-tabs">
                 <button className={`tab ${activeTab === 'config' ? 'active' : ''}`} onClick={() => setActiveTab('config')}>

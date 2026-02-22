@@ -76,18 +76,23 @@ export const AgentCreate = ({ user, onLogout }) => {
         greeting: '',
     });
 
+    const [agentMode, setAgentMode] = useState('single'); // 'single' or 'workflow'
+
     const handleChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         setError('');
     };
 
-    const isFormValid = formData.name.trim().length >= 3 && formData.systemPrompt.trim().length >= 10;
+    const isFormValid = formData.name.trim().length >= 3 &&
+        (agentMode === 'workflow' || formData.systemPrompt.trim().length >= 10);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!isFormValid) {
-            setError('System prompt must be at least 10 characters and Name at least 3.');
+            setError(agentMode === 'single'
+                ? 'System prompt must be at least 10 characters and Name at least 3.'
+                : 'Name must be at least 3 characters.');
             return;
         }
 
@@ -100,12 +105,19 @@ export const AgentCreate = ({ user, onLogout }) => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({
+                    ...formData,
+                    workflowEnabled: agentMode === 'workflow'
+                })
             });
 
             const data = await res.json();
             if (res.ok) {
-                navigate(`/agents/${data.id}`);
+                if (agentMode === 'workflow') {
+                    navigate(`/workflow/${data.id}`);
+                } else {
+                    navigate(`/agents/${data.id}`);
+                }
             } else {
                 setError(data.error || data.message || 'Failed to create agent');
             }
@@ -120,6 +132,33 @@ export const AgentCreate = ({ user, onLogout }) => {
         <DashboardLayout user={user} onLogout={onLogout} title="Create New Agent">
             <form className="agent-form" onSubmit={handleSubmit}>
                 <div className="form-main">
+                    {/* Mode Selection */}
+                    <div className="form-card mode-selection-card">
+                        <h3 className="form-card-title">Select Agent Type</h3>
+                        <div className="mode-options-grid">
+                            <div
+                                className={`mode-option-card ${agentMode === 'single' ? 'active' : ''}`}
+                                onClick={() => setAgentMode('single')}
+                            >
+                                <div className="mode-icon">💬</div>
+                                <div className="mode-info">
+                                    <h4>Single Prompt Agent</h4>
+                                    <p>Controlled by one system prompt. Best for simple assistants.</p>
+                                </div>
+                            </div>
+                            <div
+                                className={`mode-option-card ${agentMode === 'workflow' ? 'active' : ''}`}
+                                onClick={() => setAgentMode('workflow')}
+                            >
+                                <div className="mode-icon">🔄</div>
+                                <div className="mode-info">
+                                    <h4>Visual Workflow Agent</h4>
+                                    <p>N8N-style drag & drop flows. Best for complex logic.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="form-card">
                         <h3 className="form-card-title">General Information</h3>
                         <div className="form-group">
@@ -128,35 +167,36 @@ export const AgentCreate = ({ user, onLogout }) => {
                                 type="text"
                                 className="form-input"
                                 placeholder="e.g. My Helpful Assistant"
-                                value={form.name}
+                                value={formData.name}
                                 onChange={(e) => handleChange('name', e.target.value)}
                                 minLength={3}
                                 maxLength={50}
                                 required
                             />
-                            <span className="char-count">{form.name.length}/50</span>
                         </div>
-                        <div className="form-group">
-                            <label className="form-label">System Prompt</label>
-                            <textarea
-                                className="form-textarea"
-                                placeholder="Define how the agent should behave. Minimum 10 characters..."
-                                value={form.systemPrompt}
-                                onChange={(e) => handleChange('systemPrompt', e.target.value)}
-                                minLength={10}
-                                required
-                            />
-                            <span className={`char-count ${form.systemPrompt.length < 10 ? 'error' : 'success'}`}>
-                                {form.systemPrompt.length} characters (min 10)
-                            </span>
-                        </div>
+                        {agentMode === 'single' && (
+                            <div className="form-group">
+                                <label className="form-label">System Prompt</label>
+                                <textarea
+                                    className="form-textarea"
+                                    placeholder="Define how the agent should behave. Minimum 10 characters..."
+                                    value={formData.systemPrompt}
+                                    onChange={(e) => handleChange('systemPrompt', e.target.value)}
+                                    minLength={10}
+                                    required
+                                />
+                                <span className={`char-count ${formData.systemPrompt.length < 10 ? 'error' : 'success'}`}>
+                                    {formData.systemPrompt.length} characters (min 10)
+                                </span>
+                            </div>
+                        )}
                         <div className="form-group">
                             <label className="form-label">Greeting (Optional)</label>
                             <input
                                 type="text"
                                 className="form-input"
                                 placeholder="e.g. Hello, I am your voice assistant. How can I help?"
-                                value={form.greeting}
+                                value={formData.greeting}
                                 onChange={(e) => handleChange('greeting', e.target.value)}
                             />
                         </div>
@@ -169,12 +209,12 @@ export const AgentCreate = ({ user, onLogout }) => {
                         <p className="form-card-desc">Choose the brain of your agent.</p>
                         <div className="model-options" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                             {LLM_OPTIONS.map(opt => (
-                                <label key={opt.value} className={`model-option ${form.llmModel === opt.value ? 'selected' : ''}`}>
+                                <label key={opt.value} className={`model-option ${formData.llmModel === opt.value ? 'selected' : ''}`}>
                                     <input
                                         type="radio"
                                         name="llmModel"
                                         value={opt.value}
-                                        checked={form.llmModel === opt.value}
+                                        checked={formData.llmModel === opt.value}
                                         onChange={() => handleChange('llmModel', opt.value)}
                                     />
                                     <span className="model-name">{opt.label}</span>
@@ -187,25 +227,25 @@ export const AgentCreate = ({ user, onLogout }) => {
                         <h3 className="form-card-title">Voice & Language</h3>
                         <div className="form-group">
                             <label className="form-label">Language</label>
-                            <select className="form-select" value={form.language} onChange={(e) => handleChange('language', e.target.value)}>
+                            <select className="form-select" value={formData.language} onChange={(e) => handleChange('language', e.target.value)}>
                                 {LANGUAGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
                         <div className="form-group">
                             <label className="form-label">TTS Engine (Seçim Tablosu)</label>
-                            <select className="form-select" value={form.ttsModel} onChange={(e) => handleChange('ttsModel', e.target.value)}>
+                            <select className="form-select" value={formData.ttsModel} onChange={(e) => handleChange('ttsModel', e.target.value)}>
                                 {STACK_TTS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
                         <div className="form-group">
                             <label className="form-label">Select Voice</label>
-                            <select className="form-select" value={form.voice} onChange={(e) => handleChange('voice', e.target.value)}>
+                            <select className="form-select" value={formData.voice} onChange={(e) => handleChange('voice', e.target.value)}>
                                 {VOICE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
                         <div className="form-group">
                             <label className="form-label">Transcriber Engine (STT)</label>
-                            <select className="form-select" value={form.sttModel} onChange={(e) => handleChange('sttModel', e.target.value)}>
+                            <select className="form-select" value={formData.sttModel} onChange={(e) => handleChange('sttModel', e.target.value)}>
                                 {STT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
