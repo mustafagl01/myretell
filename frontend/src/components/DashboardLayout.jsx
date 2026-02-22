@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Mic,
@@ -8,13 +8,16 @@ import {
     Settings as SettingsIcon,
     CreditCard,
     LogOut,
-    Zap
+    Zap,
+    Menu,
+    X
 } from 'lucide-react';
 import './DashboardLayout.css';
 
 export const DashboardLayout = ({ user, onLogout, title, actions, children, hideContentPadding = false }) => {
     const navigate = useNavigate();
     const location = useLocation();
+    const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
     // Safety check for user and credit balance
     const creditBalance = user?.creditBalance?.balance || 0;
@@ -34,10 +37,14 @@ export const DashboardLayout = ({ user, onLogout, title, actions, children, hide
 
     const sections = ['Build', 'Monitor', 'Account'];
 
+    useEffect(() => {
+        setIsMobileNavOpen(false);
+    }, [location.pathname]);
+
     return (
         <div className="dashboard-layout">
             {/* Sidebar */}
-            <aside className="sidebar">
+            <aside className={`sidebar ${isMobileNavOpen ? 'open' : ''}`}>
                 <div className="sidebar-header" onClick={() => navigate('/agents')} style={{ cursor: 'pointer' }}>
                     <div className="logo-icon">M</div>
                     <span className="logo-text">myretell</span>
@@ -51,7 +58,10 @@ export const DashboardLayout = ({ user, onLogout, title, actions, children, hide
                                 <button
                                     key={item.path}
                                     className={`nav-item ${isActive(item.path) ? 'active' : ''}`}
-                                    onClick={() => navigate(item.path)}
+                                    onClick={() => {
+                                        navigate(item.path);
+                                        setIsMobileNavOpen(false);
+                                    }}
                                 >
                                     <item.icon className="nav-icon" size={18} />
                                     {item.label}
@@ -80,7 +90,16 @@ export const DashboardLayout = ({ user, onLogout, title, actions, children, hide
             {/* Main Area */}
             <main className="dashboard-main">
                 <header className="top-bar">
-                    <h1 className="page-title">{title || 'Dashboard'}</h1>
+                    <div className="top-bar-left">
+                        <button
+                            className="mobile-nav-toggle"
+                            onClick={() => setIsMobileNavOpen((open) => !open)}
+                            aria-label={isMobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                        >
+                            {isMobileNavOpen ? <X size={18} /> : <Menu size={18} />}
+                        </button>
+                        <h1 className="page-title">{title || 'Dashboard'}</h1>
+                    </div>
                     <div className="top-bar-actions">
                         <div className="credit-pill" onClick={() => navigate('/pricing')}>
                             <Zap size={14} fill="#6ee7b7" stroke="#6ee7b7" style={{ opacity: 0.8 }} />
@@ -94,6 +113,8 @@ export const DashboardLayout = ({ user, onLogout, title, actions, children, hide
                     {children}
                 </div>
             </main>
+
+            {isMobileNavOpen && <button className="sidebar-overlay" onClick={() => setIsMobileNavOpen(false)} aria-label="Close navigation" />}
         </div>
     );
 };
