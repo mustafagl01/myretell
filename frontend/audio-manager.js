@@ -1,27 +1,13 @@
 /**
  * AudioManager orchestrates all audio components for the voice agent.
  *
- * This class handles:
- * - Coordinating AudioCapture, AudioQueue, AudioPlayer, and WebSocketClient
- * - Managing the data flow: capture → WebSocket → queue → player
- * - Handling conversation state (active/inactive)
- * - Processing audio from microphone to Deepgram and back to speakers
- * - Error handling and state management
- *
  * Data Flow:
  * 1. Microphone audio captured by AudioCapture (MediaStream)
- * 2. Audio chunks sent to backend via WebSocketClient
- * 3. Backend forwards to Deepgram Voice Agent API
- * 4. Deepgram responses (AgentEvents.Audio) received via WebSocket
- * 5. Audio data decoded by AudioPlayer
- * 6. Decoded AudioBuffer queued in AudioQueue
- * 7. AudioPlayer schedules chunks for gapless playback
- *
- * State Management:
- * - Tracks conversation active state
- * - Monitors buffer depth for playback health
- * - Handles connection state changes
- * - Manages AudioContext user gesture requirements
+ * 2. AudioProcessor converts Float32 → Int16 PCM and sends via WebSocket
+ * 3. Backend forwards raw PCM to Deepgram Voice Agent API
+ * 4. Deepgram responses (AgentEvents.Audio) received as base64 via WebSocket
+ * 5. Base64 decoded → ArrayBuffer → sent directly to AudioPlayer.scheduleBuffer()
+ * 6. AudioPlayer converts raw PCM to AudioBuffer and schedules gapless playback
  */
 import { AudioCapture } from './audio-capture.js';
 import { AudioQueue } from './audio-queue.js';
@@ -30,24 +16,6 @@ import { WebSocketClient } from './websocket-client.js';
 import { AudioProcessor } from './audio-processor.js';
 
 export class AudioManager {
-  /**
-   * Create a new AudioManager instance.
-   *
-   * @param {Object} options - Configuration options
-   * @param {string} options.wsUrl - WebSocket server URL (default: 'ws://localhost:3001/ws')
-   * @param {number} options.sampleRate - Audio sample rate in Hz (default: 16000)
-   * @param {number} options.minBufferThreshold - Minimum buffer threshold (default: 3)
-   * @param {number} options.maxBufferThreshold - Maximum buffer threshold (default: 5)
-   * @param {number} options.volume - Playback volume 0.0 to 1.0 (default: 1.0)
-   * @param {Function} options.onConversationStarted - Callback when conversation starts
-   * @param {Function} options.onConversationStopped - Callback when conversation stops
-   * @param {Function} options.onAudioPlaying - Callback when audio starts playing
-   * @param {Function} options.onAudioStopped - Callback when audio stops playing
-   * @param {Function} options.onBufferLow - Callback when buffer is low
-   * @param {Function} options.onBufferHigh - Callback when buffer is high
-   * @param {Function} options.onConnectionChange - Callback when connection state changes
-   * @param {Function} options.onError - Callback when error occurs
-   */
   constructor(options = {}) {
     const {
       wsUrl = 'ws://localhost:3001/ws',
@@ -79,23 +47,14 @@ export class AudioManager {
     this.onConnectionChangeCallback = onConnectionChange;
     this.onErrorCallback = onError;
 
-    // Conversation state
     this.isConversationActive = false;
-    this.mediaRecorder = null;
-    this.audioChunks = [];
-    this.audioProcessor = null; // For raw PCM capture
+    this.audioProcessor = null;
 
-    // Initialize components
     this._initializeComponents();
   }
 
-  /**
-   * Initialize all audio components.
-   * @private
-   */
   _initializeComponents() {
     try {
-      // Initialize WebSocket client for backend communication
       this.wsClient = new WebSocketClient({
         url: this.wsUrl,
         onOpen: () => this._handleWsOpen(),
@@ -105,7 +64,6 @@ export class AudioManager {
         onAudio: (data) => this._handleAudioData(data),
       });
 
-      // Initialize audio capture for microphone access
       this.audioCapture = new AudioCapture({
         sampleRate: this.sampleRate,
         channelCount: 1,
@@ -113,7 +71,6 @@ export class AudioManager {
         onError: (error) => this._handleCaptureError(error),
       });
 
-      // Initialize audio queue for buffering
       this.audioQueue = new AudioQueue({
         minThreshold: this.minBufferThreshold,
         maxThreshold: this.maxBufferThreshold,
@@ -122,7 +79,6 @@ export class AudioManager {
         onBufferChange: (depth) => this._handleBufferChange(depth),
       });
 
-      // Initialize audio player for playback
       this.audioPlayer = new AudioPlayer({
         volume: this.volume,
         onPlaybackStart: () => this._handlePlaybackStart(),
@@ -135,38 +91,21 @@ export class AudioManager {
     }
   }
 
-  /**
-   * Start the voice conversation.
-   *
-   * This method:
-   * 1. Connects to the WebSocket server
-   * 2. Requests microphone access from the user
-   * 3. Starts capturing audio from the microphone
-   * 4. Ensures AudioContext is running (requires user gesture)
-   *
-   * @returns {Promise<boolean>} True if conversation started successfully
-   */
   async startConversation() {
-    if (this.isConversationActive) {
-      return true;
-    }
+    if (this.isConversationActive) return true;
 
     try {
-      // Connect to WebSocket server
       this.wsClient.connect();
 
-      // Ensure AudioContext is running (requires user gesture)
       const contextRunning = await this.audioPlayer.ensureContextRunning();
       if (!contextRunning) {
-        throw new Error('Failed to start AudioContext. Please ensure you have interacted with the page.');
+        throw new Error('Failed to start AudioContext. Please interact with the page first.');
       }
 
-      // Start capturing audio from microphone
       await this.audioCapture.start();
 
       this.isConversationActive = true;
 
-      // Notify callback
       if (this.onConversationStartedCallback) {
         this.onConversationStartedCallback();
       }
@@ -178,51 +117,23 @@ export class AudioManager {
     }
   }
 
-  /**
-   * Stop the voice conversation.
-   *
-   * This method:
-   * 1. Stops capturing audio from the microphone
-   * 2. Disconnects from the WebSocket server
-   * 3. Stops any currently playing audio
-   * 4. Clears the audio queue
-   */
   stopConversation() {
-    if (!this.isConversationActive) {
-      return;
-    }
+    if (!this.isConversationActive) return;
 
     try {
-      // Stop capturing audio
       this.audioCapture.stop();
 
-      // Stop MediaRecorder if active
-      if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-        this.mediaRecorder.stop();
-        this.mediaRecorder = null;
-      }
-
-      // Stop AudioProcessor if active
       if (this.audioProcessor && this.audioProcessor.processing) {
         this.audioProcessor.stop();
         this.audioProcessor = null;
       }
 
-      // Clear audio chunks
-      this.audioChunks = [];
-
-      // Disconnect WebSocket
       this.wsClient.disconnect();
-
-      // Stop audio playback
       this.audioPlayer.stop();
-
-      // Clear audio queue
       this.audioQueue.clear();
 
       this.isConversationActive = false;
 
-      // Notify callback
       if (this.onConversationStoppedCallback) {
         this.onConversationStoppedCallback();
       }
@@ -231,20 +142,13 @@ export class AudioManager {
     }
   }
 
-  /**
-   * Handle MediaStream ready from AudioCapture.
-   * @private
-   *
-   * @param {MediaStream} stream - The media stream
-   */
   _handleStreamReady(stream) {
     try {
-      // Use AudioProcessor for raw PCM (Int16) output instead of MediaRecorder
-      // Deepgram Voice Agent expects raw Linear16 PCM, not WebM/Opus
+      // Use AudioProcessor for raw Int16 PCM output (Deepgram requires Linear16)
       this.audioProcessor = new AudioProcessor({
         sampleRate: this.sampleRate,
         onAudioData: (pcmData) => {
-          // Send raw PCM data to backend via WebSocket
+          // pcmData is Int16Array — send raw buffer to backend
           this.wsClient.sendAudio(pcmData.buffer);
         },
         onError: (error) => {
@@ -252,7 +156,6 @@ export class AudioManager {
         },
       });
 
-      // Start processing audio
       this.audioProcessor.start(stream);
     } catch (error) {
       this._handleError(new Error(`Failed to setup AudioProcessor: ${error.message}`));
@@ -260,64 +163,34 @@ export class AudioManager {
   }
 
   /**
-   * Get supported MIME type for MediaRecorder.
-   * @private
-   *
-   * @returns {string} Supported MIME type
+   * Handle audio data from Deepgram via WebSocket.
+   * Deepgram sends raw Linear16 PCM — do NOT use decodeAudioData.
+   * Convert base64 → ArrayBuffer → send directly to scheduleBuffer.
    */
-  _getSupportedMimeType() {
-    const types = [
-      'audio/webm;codecs=opus',
-      'audio/ogg;codecs=opus',
-      'audio/webm',
-      'audio/ogg',
-      'audio/mp4',
-      'audio/mp3',
-      '',
-    ];
-
-    for (const type of types) {
-      if (MediaRecorder.isTypeSupported(type)) {
-        return type;
-      }
-    }
-
-    return '';
-  }
-
-  /**
-   * Handle audio data received from WebSocket.
-   * @private
-   *
-   * @param {string} data - Base64 encoded audio data or JSON object
-   */
-  async _handleAudioData(data) {
+  _handleAudioData(data) {
     try {
-      // Convert base64 data to ArrayBuffer
       let audioArrayBuffer;
 
       if (typeof data === 'string') {
-        // Base64 encoded string
+        // base64 string → ArrayBuffer
         const binaryString = atob(data);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
         }
         audioArrayBuffer = bytes.buffer;
-      } else if (data instanceof ArrayBuffer || data instanceof Uint8Array) {
-        // Already binary data
-        audioArrayBuffer = data instanceof Uint8Array ? data.buffer : data;
+      } else if (data instanceof ArrayBuffer) {
+        audioArrayBuffer = data;
+      } else if (data instanceof Uint8Array) {
+        audioArrayBuffer = data.buffer;
       } else {
         throw new Error('Invalid audio data format');
       }
 
-      // Decode audio data
-      const audioBuffer = await this.audioPlayer.decodeAudioData(audioArrayBuffer);
+      // FIX: Do NOT use decodeAudioData — Deepgram sends raw PCM, not encoded audio.
+      // Send raw ArrayBuffer directly to audioPlayer which handles PCM → AudioBuffer.
+      this.audioQueue.enqueue(audioArrayBuffer);
 
-      // Enqueue for playback
-      this.audioQueue.enqueue(audioBuffer);
-
-      // Schedule playback if not already playing
       if (!this.audioPlayer.playing && !this.audioQueue.isEmpty()) {
         this._scheduleNextChunk();
       }
@@ -326,242 +199,122 @@ export class AudioManager {
     }
   }
 
-  /**
-   * Schedule the next audio chunk for playback.
-   * @private
-   */
-  async _scheduleNextChunk() {
-    const audioBuffer = this.audioQueue.dequeue();
-    if (!audioBuffer) {
-      return;
-    }
+  _scheduleNextChunk() {
+    const audioData = this.audioQueue.dequeue();
+    if (!audioData) return;
 
-    // Schedule the buffer for gapless playback
-    this.audioPlayer.scheduleBuffer(audioBuffer);
+    // scheduleBuffer now accepts raw PCM ArrayBuffer and handles conversion internally
+    this.audioPlayer.scheduleBuffer(audioData, this.sampleRate);
   }
 
-  /**
-   * Handle WebSocket connection opened.
-   * @private
-   */
   _handleWsOpen() {
     if (this.onConnectionChangeCallback) {
       this.onConnectionChangeCallback('connected');
     }
   }
 
-  /**
-   * Handle WebSocket connection closed.
-   * @private
-   *
-   * @param {CloseEvent} event - Close event
-   */
   _handleWsClose(event) {
     if (this.onConnectionChangeCallback) {
       this.onConnectionChangeCallback('disconnected');
     }
-
-    // If conversation was active, stop it
     if (this.isConversationActive) {
       this.stopConversation();
     }
   }
 
-  /**
-   * Handle WebSocket error.
-   * @private
-   *
-   * @param {Error} error - The error
-   */
   _handleWsError(error) {
     this._handleError(new Error(`WebSocket error: ${error.message || error}`));
   }
 
-  /**
-   * Handle WebSocket message (non-audio).
-   * @private
-   *
-   * @param {Object} message - The message object
-   */
   _handleWsMessage(message) {
-    // Handle non-audio messages if needed
-    // Currently we only handle audio messages
+    // Non-audio messages (status, events, etc.)
+    console.log('WS Message:', message);
   }
 
-  /**
-   * Handle audio capture error.
-   * @private
-   *
-   * @param {Error} error - The error
-   */
   _handleCaptureError(error) {
     this._handleError(new Error(`Audio capture error: ${error.message}`));
-
-    // Stop conversation if capture fails
     if (this.isConversationActive) {
       this.stopConversation();
     }
   }
 
-  /**
-   * Handle audio playback error.
-   * @private
-   *
-   * @param {Error} error - The error
-   */
   _handlePlayerError(error) {
     this._handleError(new Error(`Audio playback error: ${error.message}`));
   }
 
-  /**
-   * Handle playback started.
-   * @private
-   */
   _handlePlaybackStart() {
     if (this.onAudioPlayingCallback) {
       this.onAudioPlayingCallback();
     }
   }
 
-  /**
-   * Handle playback ended.
-   * @private
-   */
   _handlePlaybackEnd() {
     if (this.onAudioStoppedCallback) {
       this.onAudioStoppedCallback();
     }
   }
 
-  /**
-   * Handle chunk completion - schedule next chunk.
-   * @private
-   */
   _handleChunkComplete() {
-    // Schedule next chunk if available
     if (!this.audioQueue.isEmpty()) {
       this._scheduleNextChunk();
     }
   }
 
-  /**
-   * Handle low buffer state.
-   * @private
-   *
-   * @param {number} depth - Current buffer depth
-   */
   _handleBufferLow(depth) {
     if (this.onBufferLowCallback) {
       this.onBufferLowCallback(depth);
     }
   }
 
-  /**
-   * Handle high buffer state.
-   * @private
-   *
-   * @param {number} depth - Current buffer depth
-   */
   _handleBufferHigh(depth) {
     if (this.onBufferHighCallback) {
       this.onBufferHighCallback(depth);
     }
   }
 
-  /**
-   * Handle buffer depth change.
-   * @private
-   *
-   * @param {number} depth - Current buffer depth
-   */
   _handleBufferChange(depth) {
-    // Can be used for UI updates or monitoring
+    // Available for UI monitoring
   }
 
-  /**
-   * Handle errors and notify callback.
-   * @private
-   *
-   * @param {Error} error - The error
-   */
   _handleError(error) {
     if (this.onErrorCallback) {
       this.onErrorCallback(error);
     }
   }
 
-  /**
-   * Set the playback volume.
-   *
-   * @param {number} volume - Volume level 0.0 to 1.0
-   */
   setVolume(volume) {
     this.audioPlayer.setVolume(volume);
   }
 
-  /**
-   * Get the current playback volume.
-   *
-   * @returns {number} Current volume 0.0 to 1.0
-   */
   getVolume() {
-    return this.audioPlayer.getVolume();
+    return this.audioPlayer.getVolume?.() ?? this.volume;
   }
 
-  /**
-   * Get the current conversation state.
-   *
-   * @returns {boolean} True if conversation is active
-   */
   get conversationActive() {
     return this.isConversationActive;
   }
 
-  /**
-   * Get the WebSocket connection state.
-   *
-   * @returns {string} Connection state: 'connected', 'connecting', 'disconnected'
-   */
   getConnectionState() {
     return this.wsClient.getConnectionState();
   }
 
-  /**
-   * Get the audio queue statistics.
-   *
-   * @returns {Object} Queue statistics
-   */
   getQueueStats() {
     return this.audioQueue.getStats();
   }
 
-  /**
-   * Get the AudioContext state.
-   *
-   * @returns {string} AudioContext state: 'suspended', 'running', or 'closed'
-   */
   getAudioContextState() {
-    return this.audioPlayer.getContextState();
+    return this.audioPlayer.getContextState?.() ?? 'unknown';
   }
 
-  /**
-   * Check if audio is currently playing.
-   *
-   * @returns {boolean} True if audio is playing
-   */
   get playing() {
     return this.audioPlayer.playing;
   }
 
-  /**
-   * Clean up resources.
-   *
-   * Stops all components and releases resources.
-   * Call this when the audio manager is no longer needed.
-   */
   destroy() {
     this.stopConversation();
-    this.audioPlayer.destroy();
+    if (this.audioPlayer.destroy) {
+      this.audioPlayer.destroy();
+    }
   }
 }
 
