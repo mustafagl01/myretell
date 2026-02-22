@@ -9,6 +9,7 @@ import { CallHistory } from './pages/CallHistory';
 import { Analytics } from './pages/Analytics';
 import { Pricing } from './pages/Pricing';
 import { Settings } from './pages/Settings';
+import { WorkflowEditor } from './pages/WorkflowEditor';
 import './index.css';
 
 function App() {
@@ -65,6 +66,8 @@ function App() {
                     <Route path="/analytics" element={user ? <Analytics user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
                     <Route path="/pricing" element={user ? <Pricing user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
                     <Route path="/settings" element={user ? <Settings user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+                    <Route path="/workflow" element={user ? <Navigate to="/agents" /> : <Navigate to="/login" />} />
+                    <Route path="/workflow/:agentId" element={user ? <WorkflowEditor user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
 
                     {/* Dashboard redirects to agents list */}
                     <Route path="/dashboard" element={<Navigate to="/agents" />} />

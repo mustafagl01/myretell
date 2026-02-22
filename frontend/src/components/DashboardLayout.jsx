@@ -7,6 +7,7 @@ import {
     BarChart3,
     Settings as SettingsIcon,
     CreditCard,
+    GitBranch,
     LogOut,
     Zap,
     Menu,
@@ -29,6 +30,7 @@ export const DashboardLayout = ({ user, onLogout, title, actions, children, hide
 
     const navItems = [
         { label: 'Assistants', icon: Mic, path: '/agents', section: 'Build' },
+        { label: 'Workflows', icon: GitBranch, path: '/workflow', section: 'Build', badge: 'Beta' },
         { label: 'Call History', icon: History, path: '/history', section: 'Monitor' },
         { label: 'Analytics', icon: BarChart3, path: '/analytics', section: 'Monitor', badge: 'New' },
         { label: 'API Keys & Settings', icon: SettingsIcon, path: '/settings', section: 'Account' },

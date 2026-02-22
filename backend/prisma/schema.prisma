@@ -26,21 +26,24 @@ model User {
 }
 
 model Agent {
-  id           String         @id @default(uuid())
-  userId       String
-  name         String
-  systemPrompt String         @db.Text
-  voice        String         @default("aura-2-thalia-en")
-  sttModel     String         @default("nova-3")
-  ttsModel     String         @default("deepgram")
-  llmModel     String         @default("gpt-4o-mini")
-  language     String         @default("en")
-  greeting     String?
-  status       String         @default("active")
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sessions     UsageSession[]
+  id              String         @id @default(uuid())
+  userId          String
+  name            String
+  systemPrompt    String         @db.Text
+  voice           String         @default("aura-2-thalia-en")
+  sttModel        String         @default("nova-3")
+  ttsModel        String         @default("deepgram")
+  llmModel        String         @default("gpt-4o-mini")
+  language        String         @default("en")
+  greeting        String?
+  status          String         @default("active")
+  workflowJson    Json?
+  workflowEnabled Boolean        @default(false)
+  workflowVersion Int            @default(1)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions        UsageSession[]
 
   @@index([userId])
 }

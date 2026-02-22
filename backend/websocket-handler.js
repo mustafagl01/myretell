@@ -2,6 +2,7 @@ import { WebSocketServer } from 'ws';
 import jwt from 'jsonwebtoken';
 import prisma from './config/prisma.js';
 import { DeepgramConnection } from './deepgram-connection.js';
+import { WorkflowExecutor } from './workflow-executor.js';
 
 /**
  * WebSocketHandler manages WebSocket connections for audio relay.
@@ -429,8 +430,38 @@ export class WebSocketHandler {
     });
   }
 
-  _onDeepgramMessage(ws, message) {
+  async _onDeepgramMessage(ws, message) {
     console.log('[DEBUG] Deepgram message:', JSON.stringify(message).substring(0, 200));
+
+    try {
+      if (message?.type === 'ConversationText' || message?.data?.type === 'ConversationText') {
+        const payload = message?.data?.type === 'ConversationText' ? message.data : message;
+        const userText = payload?.data?.text || payload?.text;
+
+        if (userText && ws.agentRecord?.workflowEnabled && ws.agentRecord?.workflowJson) {
+          if (!ws.workflowExecutor) {
+            ws.workflowExecutor = new WorkflowExecutor(
+              ws.agentRecord.workflowJson,
+              ws.conversationContext || {},
+            );
+          }
+
+          const result = await ws.workflowExecutor.executeNext(userText);
+          ws.conversationContext = ws.workflowExecutor.context;
+
+          if (result?.message) {
+            console.log('[Workflow AI Response]:', result.message);
+          }
+
+          if (!result || !result.shouldContinue) {
+            console.log('[Workflow] Ended');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[Workflow] Execution error:', error.message);
+    }
+
     this._sendJson(ws, message);
   }
 

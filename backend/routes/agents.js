@@ -74,6 +74,108 @@ router.post('/', async (req, res) => {
     }
 });
 
+// Get workflow for agent
+router.get('/:id/workflow', async (req, res) => {
+    try {
+        const agent = await prisma.agent.findFirst({
+            where: {
+                id: req.params.id,
+                userId: req.user.id
+            },
+            select: {
+                workflowJson: true,
+                workflowEnabled: true,
+                workflowVersion: true
+            }
+        });
+
+        if (!agent) {
+            return res.status(404).json({ error: 'Agent not found' });
+        }
+
+        res.json({
+            workflow: agent.workflowJson || { version: 1, nodes: [], edges: [], variables: {} },
+            enabled: agent.workflowEnabled,
+            version: agent.workflowVersion
+        });
+    } catch (error) {
+        console.error('Get workflow error:', error.message);
+        res.status(500).json({ error: 'Failed to load workflow' });
+    }
+});
+
+// Save/update workflow
+router.put('/:id/workflow', async (req, res) => {
+    try {
+        const { workflowJson, enabled } = req.body;
+
+        if (!workflowJson || !Array.isArray(workflowJson.nodes) || !Array.isArray(workflowJson.edges)) {
+            return res.status(400).json({ error: 'Invalid workflow structure' });
+        }
+
+        const existingAgent = await prisma.agent.findFirst({
+            where: {
+                id: req.params.id,
+                userId: req.user.id
+            }
+        });
+
+        if (!existingAgent) {
+            return res.status(404).json({ error: 'Agent not found' });
+        }
+
+        const agent = await prisma.agent.update({
+            where: { id: req.params.id },
+            data: {
+                workflowJson,
+                workflowEnabled: enabled !== undefined ? Boolean(enabled) : true,
+                workflowVersion: { increment: 1 }
+            }
+        });
+
+        res.json({
+            success: true,
+            workflow: agent.workflowJson,
+            version: agent.workflowVersion,
+            enabled: agent.workflowEnabled
+        });
+    } catch (error) {
+        console.error('Save workflow error:', error.message);
+        res.status(500).json({ error: 'Failed to save workflow' });
+    }
+});
+
+// Toggle workflow enabled/disabled
+router.patch('/:id/workflow/toggle', async (req, res) => {
+    try {
+        const agent = await prisma.agent.findFirst({
+            where: {
+                id: req.params.id,
+                userId: req.user.id
+            }
+        });
+
+        if (!agent) {
+            return res.status(404).json({ error: 'Agent not found' });
+        }
+
+        const updated = await prisma.agent.update({
+            where: { id: req.params.id },
+            data: {
+                workflowEnabled: !agent.workflowEnabled
+            }
+        });
+
+        res.json({
+            success: true,
+            enabled: updated.workflowEnabled
+        });
+    } catch (error) {
+        console.error('Toggle workflow error:', error.message);
+        res.status(500).json({ error: 'Failed to toggle workflow' });
+    }
+});
+
 /**
  * GET /api/agents/:id — Get a single agent by ID
  */
