@@ -8,7 +8,6 @@ dotenv.config();
 
 // Verify environment variables are loaded
 const requiredEnvVars = ['DEEPGRAM_API_KEY'];
-const optionalEnvVars = ['POSTGRES_URL', 'PORT'];
 
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 if (missingVars.length > 0) {
@@ -17,10 +16,8 @@ if (missingVars.length > 0) {
 }
 
 console.log('Environment loaded successfully');
-console.log(`Required: DEEPGRAM_API_KEY (${process.env.DEEPGRAM_API_KEY ? '✓' : '✗'})`);
-if (process.env.POSTGRES_URL) {
-  console.log(`Optional: POSTGRES_URL (✓)`);
-}
+console.log(`DEEPGRAM_API_KEY: ${process.env.DEEPGRAM_API_KEY ? '✓' : '✗'}`);
+console.log(`GOOGLE_API_KEY: ${process.env.GOOGLE_API_KEY ? '✓' : '✗'}`);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -38,13 +35,13 @@ try {
 // Middleware
 app.use(express.json());
 
-// CORS middleware - allow frontend to connect
+// CORS middleware
 app.use((req, res, next) => {
   const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
     'https://myvoiceagent-frontend.vercel.app',
-    'https://myretell.vercel.app', // Add production URL
+    'https://myretell.vercel.app',
   ];
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin) || !origin) {
@@ -58,210 +55,23 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint
+// Health check
 app.get('/api/health', (req, res) => {
   res.status(200).send('OK');
 });
 
-// Root endpoint
 app.get('/', (req, res) => {
   res.json({
     service: 'MyVoiceAgent Backend',
     status: 'running',
-    deepgramConfigured: !!deepgramClient
+    deepgramConfigured: !!deepgramClient,
+    llm: 'Google Gemini 2.0 Flash'
   });
 });
 
-// ========== Epic 2: WebSocket Connection & Configuration ==========
+// ========== Deepgram Agent Config (Google Gemini 2.0 Flash as LLM) ==========
 
-// Store active connection and keep-alive interval
-let deepgramConnection = null;
-let keepAliveInterval = null;
-
-// Keep-alive function to maintain connection
-function keepAlive() {
-  if (deepgramConnection) {
-    try {
-      deepgramConnection.keepAlive();
-      console.log('Keep-alive signal sent');
-    } catch (error) {
-      console.error('Error sending keep-alive:', error.message);
-    }
-  }
-}
-
-// Deepgram WebSocket connect endpoint
-app.post('/api/deepgram/connect', async (req, res) => {
-  try {
-    if (!deepgramClient) {
-      return res.status(500).json({ error: 'Deepgram client not initialized' });
-    }
-
-    if (deepgramConnection) {
-      return res.status(400).json({ error: 'Connection already exists' });
-    }
-
-    // Create agent connection
-    deepgramConnection = deepgramClient.agent();
-
-    // Handle connection opened
-    deepgramConnection.on(AgentEvents.Open, () => {
-      console.log('Deepgram agent connection opened');
-
-      // Configure the agent
-      deepgramConnection.configure({
-        tags: ['myvoiceagent', 'demo'],
-        agent: {
-          // Speech-to-text configuration
-          listen: {
-            provider: {
-              type: 'deepgram',
-              model: 'nova-3'
-            }
-          },
-          // Text-to-speech configuration
-          speak: {
-            provider: {
-              type: 'deepgram',
-              model: 'aura-2-thalia-en'
-            }
-          },
-          // LLM configuration
-          think: {
-            provider: {
-              type: 'open_ai',
-              model: 'gpt-4o-mini'
-            },
-            instructions: 'You are a helpful voice assistant. Be concise and friendly.'
-          },
-          greeting: 'Hello! How can I help you today?'
-        }
-      });
-    });
-
-    // Handle settings applied
-    deepgramConnection.on(AgentEvents.SettingsApplied, () => {
-      console.log('Agent configuration applied successfully');
-    });
-
-    // Handle welcome event
-    deepgramConnection.on(AgentEvents.Welcome, (data) => {
-      console.log('Welcome event received, request ID:', data.request_id);
-    });
-
-    // Handle conversation text
-    deepgramConnection.on(AgentEvents.ConversationText, (data) => {
-      console.log(`[${data.role}]: ${data.content}`);
-    });
-
-    // Handle user started speaking
-    deepgramConnection.on(AgentEvents.UserStartedSpeaking, () => {
-      console.log('User started speaking...');
-    });
-
-    // Handle agent thinking
-    deepgramConnection.on(AgentEvents.AgentThinking, (data) => {
-      console.log('Agent thinking:', data.content);
-    });
-
-    // Handle agent started speaking
-    deepgramConnection.on(AgentEvents.AgentStartedSpeaking, (data) => {
-      console.log('Agent started speaking (latency:', data.total_latency, 'ms)');
-    });
-
-    // Handle agent audio
-    deepgramConnection.on(AgentEvents.Audio, (audioData) => {
-      console.log('Agent audio data received');
-    });
-
-    // Handle agent finished speaking
-    deepgramConnection.on(AgentEvents.AgentAudioDone, () => {
-      console.log('Agent finished speaking');
-    });
-
-    // Handle errors
-    deepgramConnection.on(AgentEvents.Error, (error) => {
-      console.error('Deepgram agent error:', error);
-    });
-
-    // Handle connection closed
-    deepgramConnection.on(AgentEvents.Close, () => {
-      console.log('Deepgram agent connection closed');
-      // Clear keep-alive interval when connection closes
-      if (keepAliveInterval) {
-        clearInterval(keepAliveInterval);
-        keepAliveInterval = null;
-      }
-      deepgramConnection = null;
-    });
-
-    // Start keep-alive interval (every 5 seconds)
-    keepAliveInterval = setInterval(keepAlive, 5000);
-
-    res.json({
-      success: true,
-      message: 'Deepgram agent connection initiated',
-      configuration: {
-        stt_model: 'nova-3',
-        llm_model: 'gpt-4o-mini',
-        tts_model: 'aura-2-thalia-en'
-      }
-    });
-
-  } catch (error) {
-    console.error('Error connecting to Deepgram agent:', error);
-    res.status(500).json({ error: 'Failed to connect to Deepgram agent', details: error.message });
-  }
-});
-
-// Deepgram disconnect endpoint
-app.post('/api/deepgram/disconnect', (req, res) => {
-  try {
-    if (!deepgramConnection) {
-      return res.status(400).json({ error: 'No active connection to disconnect' });
-    }
-
-    // Clear keep-alive interval
-    if (keepAliveInterval) {
-      clearInterval(keepAliveInterval);
-      keepAliveInterval = null;
-    }
-
-    // Close connection (the on(Close) handler will clean up deepgramConnection)
-    // Note: Deepgram SDK doesn't have an explicit close method, connection closes when the event ends
-    deepgramConnection = null;
-
-    res.json({
-      success: true,
-      message: 'Deepgram agent connection disconnected'
-    });
-
-  } catch (error) {
-    console.error('Error disconnecting from Deepgram agent:', error);
-    res.status(500).json({ error: 'Failed to disconnect from Deepgram agent', details: error.message });
-  }
-});
-
-// Deepgram status endpoint
-app.get('/api/deepgram/status', (req, res) => {
-  const isConnected = !!deepgramConnection;
-  res.json({
-    connected: isConnected,
-    keepAliveActive: !!keepAliveInterval,
-    configuration: isConnected ? {
-      stt_model: 'nova-3',
-      llm_model: 'gpt-4o-mini',
-      tts_model: 'aura-2-thalia-en'
-    } : null
-  });
-});
-
-// ========== End Epic 2 ==========
-
-// ========== Epic 3: WebSocket Audio Relay ==========
-
-// Default agent configuration for WebSocket connections
-const defaultAgentConfig = {
+const buildAgentConfig = () => ({
   tags: ['myvoiceagent', 'demo'],
   agent: {
     listen: {
@@ -278,22 +88,144 @@ const defaultAgentConfig = {
     },
     think: {
       provider: {
-        type: 'open_ai',
-        model: 'gpt-4o-mini'
+        type: 'custom',
+        url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+        model: 'gemini-2.0-flash',
+        headers: [
+          {
+            key: 'Authorization',
+            value: `Bearer ${process.env.GOOGLE_API_KEY}`
+          }
+        ]
       },
       instructions: 'You are a helpful voice assistant. Be concise and friendly.'
     },
     greeting: 'Hello! How can I help you today?'
   }
-};
-
-// Start server and initialize WebSocket handler
-const server = app.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
-  console.log(`Deepgram client ${deepgramClient ? 'initialized' : 'not configured'}`);
 });
 
-// Initialize WebSocket handler
+// Store active connection and keep-alive interval
+let deepgramConnection = null;
+let keepAliveInterval = null;
+
+function keepAlive() {
+  if (deepgramConnection) {
+    try {
+      deepgramConnection.keepAlive();
+      console.log('Keep-alive signal sent');
+    } catch (error) {
+      console.error('Error sending keep-alive:', error.message);
+    }
+  }
+}
+
+app.post('/api/deepgram/connect', async (req, res) => {
+  try {
+    if (!deepgramClient) {
+      return res.status(500).json({ error: 'Deepgram client not initialized' });
+    }
+    if (deepgramConnection) {
+      return res.status(400).json({ error: 'Connection already exists' });
+    }
+
+    deepgramConnection = deepgramClient.agent();
+
+    deepgramConnection.on(AgentEvents.Open, () => {
+      console.log('Deepgram agent connection opened');
+      deepgramConnection.configure(buildAgentConfig());
+    });
+
+    deepgramConnection.on(AgentEvents.SettingsApplied, () => {
+      console.log('Agent configuration applied successfully');
+    });
+
+    deepgramConnection.on(AgentEvents.Welcome, (data) => {
+      console.log('Welcome event, request_id:', data.request_id);
+    });
+
+    deepgramConnection.on(AgentEvents.ConversationText, (data) => {
+      console.log(`[${data.role}]: ${data.content}`);
+    });
+
+    deepgramConnection.on(AgentEvents.UserStartedSpeaking, () => {
+      console.log('User started speaking...');
+    });
+
+    deepgramConnection.on(AgentEvents.AgentThinking, (data) => {
+      console.log('Agent thinking:', data.content);
+    });
+
+    deepgramConnection.on(AgentEvents.AgentStartedSpeaking, (data) => {
+      console.log('Agent started speaking (latency:', data.total_latency, 'ms)');
+    });
+
+    deepgramConnection.on(AgentEvents.AgentAudioDone, () => {
+      console.log('Agent finished speaking');
+    });
+
+    deepgramConnection.on(AgentEvents.Error, (error) => {
+      console.error('Deepgram agent error:', error);
+    });
+
+    deepgramConnection.on(AgentEvents.Close, () => {
+      console.log('Deepgram agent connection closed');
+      if (keepAliveInterval) {
+        clearInterval(keepAliveInterval);
+        keepAliveInterval = null;
+      }
+      deepgramConnection = null;
+    });
+
+    keepAliveInterval = setInterval(keepAlive, 5000);
+
+    res.json({
+      success: true,
+      message: 'Deepgram agent connection initiated',
+      configuration: {
+        stt_model: 'nova-3',
+        llm_model: 'gemini-2.0-flash (Google)',
+        tts_model: 'aura-2-thalia-en'
+      }
+    });
+  } catch (error) {
+    console.error('Error connecting to Deepgram agent:', error);
+    res.status(500).json({ error: 'Failed to connect', details: error.message });
+  }
+});
+
+app.post('/api/deepgram/disconnect', (req, res) => {
+  try {
+    if (!deepgramConnection) {
+      return res.status(400).json({ error: 'No active connection' });
+    }
+    if (keepAliveInterval) {
+      clearInterval(keepAliveInterval);
+      keepAliveInterval = null;
+    }
+    deepgramConnection = null;
+    res.json({ success: true, message: 'Disconnected' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to disconnect', details: error.message });
+  }
+});
+
+app.get('/api/deepgram/status', (req, res) => {
+  res.json({
+    connected: !!deepgramConnection,
+    keepAliveActive: !!keepAliveInterval,
+    llm: 'gemini-2.0-flash'
+  });
+});
+
+// ========== WebSocket Server ==========
+
+const defaultAgentConfig = buildAgentConfig();
+
+const server = app.listen(PORT, () => {
+  console.log(`Backend server running on port ${PORT}`);
+  console.log(`LLM: Google Gemini 2.0 Flash`);
+});
+
 let wsHandler = null;
 try {
   wsHandler = new WebSocketHandler({
@@ -301,32 +233,17 @@ try {
     path: '/ws',
     defaultAgentConfig: defaultAgentConfig
   });
-  console.log(`WebSocket handler initialized on ws://localhost:${PORT}/ws`);
+  console.log(`WebSocket handler initialized on /ws`);
 } catch (error) {
   console.error('Failed to initialize WebSocket handler:', error.message);
 }
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully...');
-  if (wsHandler) {
-    wsHandler.close();
-    console.log('WebSocket handler closed');
-  }
-  server.close(() => {
-    console.log('HTTP server closed');
-    process.exit(0);
-  });
+  if (wsHandler) wsHandler.close();
+  server.close(() => process.exit(0));
 });
 
 process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully...');
-  if (wsHandler) {
-    wsHandler.close();
-    console.log('WebSocket handler closed');
-  }
-  server.close(() => {
-    console.log('HTTP server closed');
-    process.exit(0);
-  });
+  if (wsHandler) wsHandler.close();
+  server.close(() => process.exit(0));
 });
