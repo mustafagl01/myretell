@@ -4,26 +4,11 @@ import { DeepgramConnection } from './deepgram-connection.js';
 /**
  * WebSocketHandler manages WebSocket connections for audio relay.
  *
- * This class creates a WebSocket server that:
- * - Receives binary audio data from the frontend
- * - Forwards audio to Deepgram Voice Agent
- * - Receives audio events from Deepgram
- * - Forwards audio data to the frontend as JSON messages
- *
  * Protocol:
  * - Frontend → Backend: Binary audio chunks (raw PCM/linear16)
  * - Backend → Frontend: JSON messages with type and data
- * - Example: { type: "Audio", data: "<base64_encoded_audio>" }
  */
 export class WebSocketHandler {
-  /**
-   * Create a new WebSocketHandler instance.
-   *
-   * @param {Object} options - Configuration options
-   * @param {Object} options.server - HTTP server to attach WebSocket to
-   * @param {string} options.path - WebSocket endpoint path (default: '/ws')
-   * @param {Object} options.defaultAgentConfig - Default agent configuration to apply on connect
-   */
   constructor(options = {}) {
     const { server, path = '/ws', defaultAgentConfig = null } = options;
 
@@ -35,45 +20,36 @@ export class WebSocketHandler {
     this.path = path;
     this.wss = null;
     this.deepgramConnections = new Map(); // ws -> DeepgramConnection
+    this.audioQueues = new Map(); // ws -> audio queue (while connecting)
+    this.connectionReady = new Map(); // ws -> boolean
     this.defaultAgentConfig = defaultAgentConfig;
 
-    // Initialize WebSocket server
     this._initialize();
   }
 
-  /**
-   * Initialize the WebSocket server.
-   * @private
-   */
   _initialize() {
     this.wss = new WebSocketServer({
       server: this.server,
       path: this.path,
     });
 
-    // Handle new WebSocket connections
     this.wss.on('connection', (ws, req) => {
       this._handleConnection(ws, req);
     });
 
-    // Handle server errors
     this.wss.on('error', (error) => {
       console.error('WebSocket server error:', error.message);
     });
   }
 
-  /**
-   * Handle a new WebSocket connection.
-   * @private
-   *
-   * @param {Object} ws - WebSocket connection instance
-   * @param {Object} req - HTTP request object
-   */
   _handleConnection(ws, req) {
     const clientIp = req.socket.remoteAddress;
     console.log(`WebSocket client connected: ${clientIp}`);
 
-    // Create Deepgram connection for this client
+    // Initialize audio queue for this connection
+    this.audioQueues.set(ws, []);
+    this.connectionReady.set(ws, false);
+
     let deepgramConn = null;
 
     try {
@@ -85,15 +61,18 @@ export class WebSocketHandler {
         onMessage: (message) => this._onDeepgramMessage(ws, message),
       });
 
-      // Store the connection
       this.deepgramConnections.set(ws, deepgramConn);
 
-      // Connect to Deepgram with default agent configuration
-      deepgramConn.connect(this.defaultAgentConfig || {}).catch((error) => {
+      // Connect to Deepgram (async)
+      deepgramConn.connect(this.defaultAgentConfig || {}).then(() => {
+        console.log('Deepgram connection ready, flushing audio queue');
+        this.connectionReady.set(ws, true);
+        this._flushAudioQueue(ws);
+      }).catch((error) => {
         console.error('Failed to connect to Deepgram:', error.message);
         this._sendError(ws, {
           type: 'connection_failed',
-          message: 'Failed to connect to Deepgram service',
+          message: 'Failed to connect to Deepgram service: ' + error.message,
         });
         ws.close();
       });
@@ -107,24 +86,20 @@ export class WebSocketHandler {
       return;
     }
 
-    // Handle incoming messages from client
     ws.on('message', (data, isBinary) => {
       this._handleClientMessage(ws, data, isBinary);
     });
 
-    // Handle client disconnect
     ws.on('close', (code, reason) => {
       console.log(`WebSocket client disconnected: ${clientIp} (code: ${code})`);
       this._handleClientDisconnect(ws);
     });
 
-    // Handle client errors
     ws.on('error', (error) => {
       console.error(`WebSocket client error: ${clientIp}:`, error.message);
       this._handleClientDisconnect(ws);
     });
 
-    // Send welcome message
     this._sendJson(ws, {
       type: 'Welcome',
       data: {
@@ -134,14 +109,6 @@ export class WebSocketHandler {
     });
   }
 
-  /**
-   * Handle incoming messages from the WebSocket client.
-   * @private
-   *
-   * @param {Object} ws - WebSocket connection instance
-   * @param {Buffer} data - Message data (binary or text)
-   * @param {boolean} isBinary - Whether the message is binary
-   */
   _handleClientMessage(ws, data, isBinary) {
     const deepgramConn = this.deepgramConnections.get(ws);
 
@@ -155,10 +122,25 @@ export class WebSocketHandler {
 
     try {
       if (isBinary) {
-        // Binary data = audio from frontend, forward to Deepgram
-        deepgramConn.sendAudio(data);
+        // Binary audio from frontend
+        const isReady = this.connectionReady.get(ws);
+        
+        if (isReady) {
+          // Connection ready, send immediately
+          deepgramConn.sendAudio(data);
+        } else {
+          // Not ready yet, queue the audio
+          const queue = this.audioQueues.get(ws);
+          if (queue) {
+            queue.push(data);
+            // Limit queue size to prevent memory issues (max 5 seconds @ 16kHz)
+            if (queue.length > 100) {
+              queue.shift(); // Remove oldest
+            }
+          }
+        }
       } else {
-        // JSON message = control/config message
+        // JSON control message
         const message = JSON.parse(data.toString());
         this._handleJsonMessage(ws, message, deepgramConn);
       }
@@ -172,31 +154,44 @@ export class WebSocketHandler {
   }
 
   /**
-   * Handle JSON control messages from the client.
-   * @private
-   *
-   * @param {Object} ws - WebSocket connection instance
-   * @param {Object} message - Parsed JSON message
-   * @param {DeepgramConnection} deepgramConn - Deepgram connection instance
+   * Flush queued audio when Deepgram connection is ready
    */
+  _flushAudioQueue(ws) {
+    const deepgramConn = this.deepgramConnections.get(ws);
+    const queue = this.audioQueues.get(ws);
+
+    if (!deepgramConn || !queue || queue.length === 0) {
+      return;
+    }
+
+    console.log(`Flushing ${queue.length} queued audio chunks`);
+
+    while (queue.length > 0) {
+      const audioData = queue.shift();
+      try {
+        deepgramConn.sendAudio(audioData);
+      } catch (error) {
+        console.error('Error flushing audio queue:', error.message);
+        break;
+      }
+    }
+  }
+
   _handleJsonMessage(ws, message, deepgramConn) {
     const { type, data } = message;
 
     switch (type) {
       case 'Configure':
-        // Configure the agent settings
         if (data && deepgramConn.connected) {
           deepgramConn.configure(data);
         }
         break;
 
       case 'KeepAlive':
-        // Send keepalive to Deepgram
         deepgramConn.keepAlive();
         break;
 
       case 'Ping':
-        // Respond with pong
         this._sendJson(ws, { type: 'Pong', data: null });
         break;
 
@@ -205,19 +200,9 @@ export class WebSocketHandler {
     }
   }
 
-  /**
-   * Handle audio data from Deepgram.
-   * Forward to frontend as JSON with base64 encoded data.
-   * @private
-   *
-   * @param {Object} ws - WebSocket connection instance
-   * @param {Buffer} audioData - Binary audio data from Deepgram
-   */
   _onDeepgramAudio(ws, audioData) {
     try {
-      // Encode binary audio as base64 for JSON transmission
       const base64Audio = audioData.toString('base64');
-
       this._sendJson(ws, {
         type: 'Audio',
         data: base64Audio,
@@ -227,12 +212,6 @@ export class WebSocketHandler {
     }
   }
 
-  /**
-   * Handle Deepgram connection opened.
-   * @private
-   *
-   * @param {Object} ws - WebSocket connection instance
-   */
   _onDeepgramOpen(ws) {
     console.log('Deepgram connection established');
     this._sendJson(ws, {
@@ -244,15 +223,9 @@ export class WebSocketHandler {
     });
   }
 
-  /**
-   * Handle Deepgram connection closed.
-   * @private
-   *
-   * @param {Object} ws - WebSocket connection instance
-   * @param {Object} event - Close event
-   */
   _onDeepgramClose(ws, event) {
     console.log('Deepgram connection closed:', event.code, event.reason);
+    this.connectionReady.set(ws, false);
     this._sendJson(ws, {
       type: 'Disconnected',
       data: {
@@ -262,36 +235,15 @@ export class WebSocketHandler {
     });
   }
 
-  /**
-   * Handle Deepgram error.
-   * @private
-   *
-   * @param {Object} ws - WebSocket connection instance
-   * @param {Object} error - Error object
-   */
   _onDeepgramError(ws, error) {
-    console.error('Deepgram error:', error.message);
+    console.error('Deepgram error:', error);
     this._sendError(ws, error);
   }
 
-  /**
-   * Handle JSON messages from Deepgram (non-audio events).
-   * @private
-   *
-   * @param {Object} ws - WebSocket connection instance
-   * @param {Object} message - Message from Deepgram
-   */
   _onDeepgramMessage(ws, message) {
-    // Forward JSON messages to frontend
     this._sendJson(ws, message);
   }
 
-  /**
-   * Handle client disconnect.
-   * @private
-   *
-   * @param {Object} ws - WebSocket connection instance
-   */
   _handleClientDisconnect(ws) {
     const deepgramConn = this.deepgramConnections.get(ws);
 
@@ -300,16 +252,13 @@ export class WebSocketHandler {
       this.deepgramConnections.delete(ws);
     }
 
+    // Clean up queue and ready state
+    this.audioQueues.delete(ws);
+    this.connectionReady.delete(ws);
+
     ws.close();
   }
 
-  /**
-   * Send a JSON message to the WebSocket client.
-   * @private
-   *
-   * @param {Object} ws - WebSocket connection instance
-   * @param {Object} data - Data to send as JSON
-   */
   _sendJson(ws, data) {
     if (ws.readyState === ws.OPEN) {
       try {
@@ -320,13 +269,6 @@ export class WebSocketHandler {
     }
   }
 
-  /**
-   * Send an error message to the WebSocket client.
-   * @private
-   *
-   * @param {Object} ws - WebSocket connection instance
-   * @param {Object} error - Error object
-   */
   _sendError(ws, error) {
     this._sendJson(ws, {
       type: 'Error',
@@ -334,11 +276,7 @@ export class WebSocketHandler {
     });
   }
 
-  /**
-   * Close all WebSocket connections and cleanup.
-   */
   close() {
-    // Close all Deepgram connections
     for (const [ws, deepgramConn] of this.deepgramConnections) {
       try {
         deepgramConn.disconnect();
@@ -348,19 +286,15 @@ export class WebSocketHandler {
       }
     }
     this.deepgramConnections.clear();
+    this.audioQueues.clear();
+    this.connectionReady.clear();
 
-    // Close WebSocket server
     if (this.wss) {
       this.wss.close();
       this.wss = null;
     }
   }
 
-  /**
-   * Get the number of active connections.
-   *
-   * @returns {number} Active connection count
-   */
   get connectionCount() {
     return this.deepgramConnections.size;
   }
