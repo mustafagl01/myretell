@@ -65,6 +65,9 @@ export class DeepgramConnection {
       // SDK v3.7.x: client.agent() returns an AgentLiveClient object
       this.agent = this.client.agent();
 
+      // Store config for later use after connection opens
+      this._pendingConfig = config;
+
       // Set up event handlers BEFORE establishing connection
       this._setupEventHandlers();
 
@@ -74,24 +77,15 @@ export class DeepgramConnection {
           reject(new Error('Connection timeout: Failed to connect to Deepgram within 15 seconds'));
         }, 15000);
 
-        this.agent.on(AgentEvents.Open, () => {
+        // Use a flag to prevent double-resolve from the Open handler in _setupEventHandlers
+        this._connectResolve = () => {
           clearTimeout(timeout);
-          console.log('Deepgram WebSocket connection opened');
-          this.isConnected = true;
-
-          // Configure agent AFTER connection is open
-          if (config && Object.keys(config).length > 0) {
-            console.log('Configuring Deepgram agent with:', JSON.stringify(config, null, 2));
-            this.agent.configure(config);
-          }
-
           resolve();
-        });
-
-        this.agent.on(AgentEvents.Error, (error) => {
+        };
+        this._connectReject = (err) => {
           clearTimeout(timeout);
-          reject(new Error(`Connection failed: ${error.message || JSON.stringify(error)}`));
-        });
+          reject(err);
+        };
 
         // Initiate the WebSocket connection
         this.agent.setupConnection();
@@ -251,26 +245,63 @@ export class DeepgramConnection {
 
     // Connection opened
     this.agent.on(AgentEvents.Open, () => {
+      console.log('Deepgram WebSocket connection opened');
       this.isConnected = true;
+
+      // Configure agent AFTER connection is open
+      if (this._pendingConfig && Object.keys(this._pendingConfig).length > 0) {
+        console.log('Configuring Deepgram agent with:', JSON.stringify(this._pendingConfig, null, 2));
+        this.agent.configure(this._pendingConfig);
+        this._pendingConfig = null;
+      }
+
       if (this.onOpen) {
         this.onOpen();
+      }
+
+      // Resolve the connect() promise
+      if (this._connectResolve) {
+        this._connectResolve();
+        this._connectResolve = null;
       }
     });
 
     // Connection closed
     this.agent.on(AgentEvents.Close, (event) => {
+      console.log('Deepgram close event:', JSON.stringify(event));
       this.isConnected = false;
       if (this.onClose) {
         this.onClose(event);
       }
     });
 
-    // Error occurred
+    // Error occurred — extract full details from the Deepgram error object
     this.agent.on(AgentEvents.Error, (error) => {
+      // Extract useful info from Deepgram error (it can be nested or unusual shape)
+      const errMsg = error?.message
+        || error?.error?.message
+        || error?.description
+        || error?.error?.description
+        || (typeof error === 'string' ? error : null)
+        || 'Unknown Deepgram error';
+
+      const errCode = error?.code || error?.error?.code || error?.status || null;
+
+      console.error('[DEEPGRAM ERROR] Code:', errCode, 'Message:', errMsg);
+      console.error('[DEEPGRAM ERROR] Full object:', JSON.stringify(error, null, 2));
+
+      // If we're still in the connect() phase, reject the promise
+      if (this._connectReject) {
+        this._connectReject(new Error(`Deepgram connection failed: ${errMsg}`));
+        this._connectReject = null;
+        return;
+      }
+
       if (this.onError) {
         this.onError({
           type: 'connection_error',
-          message: error.message || 'Unknown Deepgram error',
+          message: errMsg,
+          code: errCode,
           details: error,
         });
       }
@@ -279,13 +310,13 @@ export class DeepgramConnection {
     // Binary audio data received
     this.agent.on(AgentEvents.Audio, (audioData) => {
       if (this.onAudio) {
-        // AudioData is a Buffer from Deepgram
         this.onAudio(audioData);
       }
     });
 
     // Generic message handler (for all JSON events)
     this.agent.on(AgentEvents.Unhandled, (message) => {
+      console.log('[DEEPGRAM] Unhandled event:', JSON.stringify(message).substring(0, 300));
       if (this.onMessage) {
         this.onMessage(message);
       }

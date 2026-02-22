@@ -420,8 +420,13 @@ export class WebSocketHandler {
   }
 
   _onDeepgramError(ws, error) {
-    console.error('[DEBUG] Deepgram error:', JSON.stringify(error));
-    this._sendError(ws, error);
+    console.error('[WS] Deepgram error forwarded to client:', JSON.stringify(error));
+    this._sendError(ws, {
+      type: error.type || 'connection_error',
+      message: error.message || 'Unknown Deepgram error',
+      code: error.code || null,
+      details: error.details || error,
+    });
   }
 
   _onDeepgramMessage(ws, message) {
