@@ -266,3 +266,25 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* ─── Cost Display ─── */
+.cost-cell {
+    font-weight: 600;
+    color: #fbbf24 !important;
+    font-variant-numeric: tabular-nums;
+}
+
+.cost-value {
+    color: #6ee7b7 !important;
+}
+
+.rate-info {
+    margin-top: 1.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: 8px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #a5b4fc;
+}
