@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import prisma from '../config/prisma.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 dotenv.config();
 
