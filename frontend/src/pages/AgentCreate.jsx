@@ -4,12 +4,28 @@ import { DashboardLayout } from '../components/DashboardLayout';
 import './AgentCreate.css';
 
 const LLM_OPTIONS = [
-    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Seçim: Hız + Fiyat)', provider: 'google' },
-    { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (Premium: En İyi Kalite)', provider: 'anthropic' },
-    { value: 'gpt-4o', label: 'OpenAI GPT-4o (Standard)', provider: 'openai' },
-    { value: 'gpt-4o-mini', label: 'OpenAI GPT-4o-mini (Economy)', provider: 'openai' },
-    { value: 'llama-3.1-70b-versatile', label: 'Groq Llama 3.1 (Ultra-fast)', provider: 'groq' },
-    { value: 'deepgram-default', label: 'Deepgram Default (Test / Free)', provider: 'deepgram' },
+    // Google Gemini
+    { value: 'gemini-3.0-flash', label: '⚡ Gemini 3.0 Flash (En Hızlı)', provider: 'google' },
+    { value: 'gemini-2.5-pro', label: '🧠 Gemini 2.5 Pro (Güçlü)', provider: 'google' },
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (Dengeli)', provider: 'google' },
+    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Ekonomik)', provider: 'google' },
+    // OpenAI
+    { value: 'gpt-5.2', label: '🏆 GPT-5.2 (En Gelişmiş)', provider: 'openai' },
+    { value: 'gpt-5.1', label: 'GPT-5.1 (Premium)', provider: 'openai' },
+    { value: 'gpt-4.1', label: 'GPT-4.1 (Stabil)', provider: 'openai' },
+    { value: 'gpt-4o', label: 'GPT-4o (Standard)', provider: 'openai' },
+    { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Ekonomik)', provider: 'openai' },
+    // Anthropic Claude
+    { value: 'claude-sonnet-4.6', label: '✨ Claude Sonnet 4.6 (En İyi Kalite)', provider: 'anthropic' },
+    { value: 'claude-sonnet-4.5', label: 'Claude Sonnet 4.5 (Premium)', provider: 'anthropic' },
+    { value: 'claude-haiku-4', label: 'Claude Haiku 4 (Hızlı & Ucuz)', provider: 'anthropic' },
+    { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (Klasik)', provider: 'anthropic' },
+    // Meta Llama (Groq)
+    { value: 'llama-4-scout', label: '🦙 Llama 4 Scout (Groq - Ultra Hızlı)', provider: 'groq' },
+    { value: 'llama-3.3-70b', label: 'Llama 3.3 70B (Groq)', provider: 'groq' },
+    { value: 'llama-3.1-70b-versatile', label: 'Llama 3.1 70B (Groq - Klasik)', provider: 'groq' },
+    // Deepgram
+    { value: 'deepgram-default', label: '🆓 Deepgram Default (Ücretsiz Test)', provider: 'deepgram' },
 ];
 
 const STT_OPTIONS = [
@@ -36,8 +52,8 @@ const VOICE_OPTIONS = [
 ];
 
 const LANGUAGE_OPTIONS = [
-    { value: 'en', label: 'English (US)' },
     { value: 'tr', label: 'Turkish (TR)' },
+    { value: 'en', label: 'English (US)' },
     { value: 'es', label: 'Spanish' },
     { value: 'fr', label: 'French' },
     { value: 'de', label: 'German' },
@@ -49,23 +65,23 @@ export const AgentCreate = ({ user, onLogout }) => {
     const navigate = useNavigate();
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
-    const [form, setForm] = useState({
+    const [formData, setFormData] = useState({
         name: '',
-        systemPrompt: '',
-        llmModel: 'gemini-2.0-flash',
-        ttsModel: 'eleven_turbo_v3',
-        voice: 'cgS8vJhk66vDX8O6m62a',
+        systemPrompt: 'Sen yardımcı bir asistansın.',
+        llmModel: 'gpt-4o-mini',
+        voice: 'aura-2-thalia-en',
         sttModel: 'nova-3',
-        language: 'en',
+        ttsModel: 'deepgram',
+        language: 'tr',
         greeting: '',
     });
 
     const handleChange = (field, value) => {
-        setForm(prev => ({ ...prev, [field]: value }));
+        setFormData(prev => ({ ...prev, [field]: value }));
         setError('');
     };
 
-    const isFormValid = form.name.trim().length >= 3 && form.systemPrompt.trim().length >= 10;
+    const isFormValid = formData.name.trim().length >= 3 && formData.systemPrompt.trim().length >= 10;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -84,7 +100,7 @@ export const AgentCreate = ({ user, onLogout }) => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
-                body: JSON.stringify(form)
+                body: JSON.stringify(formData)
             });
 
             const data = await res.json();

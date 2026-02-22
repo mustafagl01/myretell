@@ -81,36 +81,70 @@ export class WebSocketHandler {
     const model = agent.llmModel || 'gemini-2.0-flash';
 
     if (model.includes('gemini') || model.includes('google')) {
-      const geminiModel = model.includes('2.0') ? 'gemini-2.0-flash' : 'gemini-1.5-flash';
+      // Map to actual Gemini API model names
+      let geminiModel = 'gemini-2.0-flash';
+      if (model.includes('3.0')) geminiModel = 'gemini-3.0-flash';
+      else if (model === 'gemini-2.5-pro') geminiModel = 'gemini-2.5-pro';
+      else if (model.includes('2.5') && model.includes('flash')) geminiModel = 'gemini-2.5-flash';
+      else if (model.includes('2.0')) geminiModel = 'gemini-2.0-flash';
+
       thinkProvider = {
         type: 'google',
         model: geminiModel,
         ...(user?.googleApiKey && { api_key: user.googleApiKey })
       };
     } else if (model.includes('claude') || model.includes('anthropic')) {
+      // Map to actual Anthropic API model names
+      let claudeModel = 'claude-3-5-sonnet-20240620';
+      if (model.includes('4.6')) claudeModel = 'claude-sonnet-4-6-20260101';
+      else if (model.includes('4.5')) claudeModel = 'claude-sonnet-4-5-20260101';
+      else if (model.includes('haiku-4')) claudeModel = 'claude-haiku-4-20260101';
+      else if (model.includes('3-5-sonnet') || model.includes('3.5')) claudeModel = 'claude-3-5-sonnet-20240620';
+
       thinkProvider = {
         type: 'anthropic',
-        model: model.includes('sonnet') ? 'claude-3-5-sonnet-20240620' : 'claude-3-haiku-20240307',
+        model: claudeModel,
         ...(user?.anthropicApiKey && { api_key: user.anthropicApiKey })
       };
     } else if (model.includes('gpt') || model.includes('open_ai')) {
+      // Map to actual OpenAI API model names
+      let openaiModel = model;
+      if (model === 'gpt-5.2') openaiModel = 'gpt-5.2';
+      else if (model === 'gpt-5.1') openaiModel = 'gpt-5.1';
+      else if (model === 'gpt-4.1') openaiModel = 'gpt-4.1';
+      else if (model === 'gpt-4o-mini') openaiModel = 'gpt-4o-mini';
+      else if (model === 'gpt-4o') openaiModel = 'gpt-4o';
+
       thinkProvider = {
         type: 'open_ai',
-        model: model,
+        model: openaiModel,
         ...(user?.openaiApiKey && { api_key: user.openaiApiKey })
       };
     } else if (model.includes('groq') || model.includes('llama')) {
+      // Map to actual Groq API model names
+      let groqModel = model;
+      if (model.includes('4-scout')) groqModel = 'meta-llama/llama-4-scout-17b-16e-instruct';
+      else if (model.includes('3.3-70b')) groqModel = 'llama-3.3-70b-versatile';
+      else if (model.includes('3.1-70b')) groqModel = 'llama-3.1-70b-versatile';
+
       thinkProvider = {
         type: 'groq',
-        model: model,
+        model: groqModel,
         ...(user?.groqApiKey && { api_key: user.groqApiKey })
       };
     }
 
-    // TTS Provider Logic: Check if it's an ElevenLabs voice ID (lengthy hash)
+    // TTS Provider Logic
     let speakProvider;
-    if (agent.voice && agent.voice.length > 15 && !agent.voice.startsWith('aura')) {
-      // Map frontend ttsModel to ElevenLabs model_id
+
+    if (agent.ttsModel === 'deepgram') {
+      // Explicitly requested Deepgram
+      speakProvider = {
+        type: 'deepgram',
+        model: (agent.voice && agent.voice.startsWith('aura')) ? agent.voice : 'aura-2-thalia-en'
+      };
+    } else if (agent.voice && agent.voice.length > 15 && !agent.voice.startsWith('aura')) {
+      // It's an ElevenLabs voice ID (lengthy hash)
       const elModel = (agent.ttsModel === 'eleven_turbo_v3') ? 'eleven_turbo_v2_5' : 'eleven_multilingual_v2';
 
       speakProvider = {
@@ -120,7 +154,7 @@ export class WebSocketHandler {
         ...(user?.elevenlabsApiKey && { api_key: user.elevenlabsApiKey })
       };
     } else {
-      // Default to Deepgram Aura
+      // Ultimate Fallback to Deepgram Aura
       speakProvider = {
         type: 'deepgram',
         model: (agent.voice && agent.voice.startsWith('aura')) ? agent.voice : 'aura-2-thalia-en'
@@ -128,12 +162,7 @@ export class WebSocketHandler {
     }
 
     // STT Provider Logic
-    let listenProvider = {
-      type: 'deepgram',
-      model: agent.sttModel || 'nova-3',
-      ...(agent.language && { language: agent.language })
-    };
-
+    let listenProvider;
     if (agent.sttModel === 'whisper-1') {
       listenProvider = {
         type: 'open_ai',
@@ -141,7 +170,7 @@ export class WebSocketHandler {
         ...(user?.openaiApiKey && { api_key: user.openaiApiKey })
       };
     } else {
-      // Default to Deepgram for everything else (fallback for azure-speech, assembly-ai for now)
+      // Default to Deepgram for everything else (fallback for nova-3, azure-speech, assembly-ai)
       listenProvider = {
         type: 'deepgram',
         model: 'nova-3',
