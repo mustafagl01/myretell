@@ -206,6 +206,47 @@
     border: 1px dashed #334155;
 }
 
+.custom-topup-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+    border: 1px solid #334155;
+    border-radius: 1.25rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.custom-topup-header h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.4rem;
+}
+
+.custom-topup-header p {
+    margin: 0;
+    color: #94a3b8;
+    line-height: 1.5;
+}
+
+.custom-topup-amount {
+    margin-top: 1.5rem;
+    font-size: 2.2rem;
+    font-weight: 800;
+}
+
+.custom-topup-slider {
+    width: 100%;
+    margin: 1rem 0;
+    accent-color: #6366f1;
+}
+
+.custom-topup-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    color: #cbd5e1;
+    margin-bottom: 1.25rem;
+    font-size: 0.95rem;
+}
+
 .pricing-footer-info strong {
     color: #818cf8;
     cursor: pointer;

@@ -10,8 +10,20 @@ const router = express.Router();
 
 // Create a checkout session
 router.post('/create-session', authenticateToken, async (req, res) => {
-    const { planName, amount, credits } = req.body;
+    const { planName, amount, credits, checkoutType } = req.body;
     const userId = req.user.id;
+
+    if (!planName || typeof planName !== 'string') {
+        return res.status(400).json({ error: 'Invalid plan name' });
+    }
+
+    if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) {
+        return res.status(400).json({ error: 'Invalid amount' });
+    }
+
+    if (checkoutType === 'topup' && amount < 10) {
+        return res.status(400).json({ error: 'Top-up minimum is $10' });
+    }
 
     try {
         const session = await stripe.checkout.sessions.create({
