@@ -337,6 +337,26 @@ export class WebSocketHandler {
       // Determine agent config
       let agentConfig = this.defaultAgentConfig;
 
+      // Use Deepgram's native LLM by default if no agent is specified
+      // This avoids external API key issues
+      if (!ws.agentId) {
+        agentConfig = {
+          audio: {
+            input: { encoding: 'linear16', sample_rate: 16000 },
+            output: { encoding: 'linear16', sample_rate: 16000, container: 'none' }
+          },
+          agent: {
+            listen: { model: 'nova-2', provider: { type: 'deepgram' } },
+            think: {
+              provider: { type: 'deepgram' },
+              model: 'llama-3-70b-instruct',
+              instructions: 'You are a helpful and friendly AI voice assistant. Keep your responses concise.'
+            },
+            speak: { provider: { type: 'deepgram' }, model: 'aura-2-thalia-en' }
+          }
+        };
+      }
+
       if (ws.agentId) {
         const agent = await prisma.agent.findFirst({
           where: { id: ws.agentId, userId: user.id }
@@ -345,13 +365,12 @@ export class WebSocketHandler {
         if (agent) {
           agentConfig = this._buildAgentConfigFromAgent(agent, user);
           ws.agentRecord = agent;
-          console.log(`Using agent config: "${agent.name}" for user ${user.email}`);
         } else {
-          console.warn(`Agent ${ws.agentId} not found for user ${user.id}, using default config`);
+          console.warn(`Agent ${ws.agentId} not found, using default Deepgram config`);
         }
       }
 
-      // NOW start Deepgram connection with the right config
+      console.log(`[AUTH] Starting Deepgram for ${user.email} (Agent: ${ws.agentRecord?.name || 'Default'})`);
       this._startDeepgramConnection(ws, agentConfig);
 
       this._sendJson(ws, {
@@ -362,11 +381,15 @@ export class WebSocketHandler {
           agentName: ws.agentRecord?.name || 'Default'
         }
       });
-      console.log(`User ${user.email} authenticated on WebSocket`);
 
     } catch (error) {
-      console.error('WebSocket Auth Error:', error.message);
-      this._sendError(ws, { type: 'auth_error', message: 'Invalid token' });
+      console.error('[WS AUTH ERROR]:', error.message);
+      // Send the actual error message so we can debug!
+      this._sendError(ws, {
+        type: 'auth_error',
+        message: error.message || 'Authentication failed',
+        details: error.stack
+      });
     }
   }
 
