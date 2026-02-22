@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://myvoiceagent-backend.onrender.com/api/:path*"
+      "destination": "https://myretell.onrender.com/api/:path*"
     }
   ]
 }
