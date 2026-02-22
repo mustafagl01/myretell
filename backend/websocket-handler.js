@@ -115,8 +115,22 @@ export class WebSocketHandler {
       speakProvider = {
         type: 'eleven_labs',
         voice_id: agent.voice,
-        model_id: 'eleven_turbo_v2_5',
+        model_id: 'eleven_multilingual_v2', // Use Multilingual v2 for better international support
         ...(user?.elevenlabsApiKey && { api_key: user.elevenlabsApiKey })
+      };
+    }
+
+    // STT Provider Logic
+    let listenProvider = {
+      type: 'deepgram',
+      model: agent.sttModel || 'nova-3',
+      ...(agent.language && { language: agent.language })
+    };
+
+    if (agent.sttModel === 'whisper-1') {
+      listenProvider = {
+        type: 'open_ai',
+        model: 'whisper-1'
       };
     }
 
@@ -126,13 +140,7 @@ export class WebSocketHandler {
         output: { encoding: 'linear16', sample_rate: 16000, container: 'none' }
       },
       agent: {
-        listen: {
-          provider: {
-            type: 'deepgram',
-            model: agent.sttModel || 'nova-3',
-            ...(agent.language && { language: agent.language })
-          }
-        },
+        listen: { provider: listenProvider },
         think: {
           ...(thinkProvider ? { provider: thinkProvider } : {}),
           prompt: agent.systemPrompt,

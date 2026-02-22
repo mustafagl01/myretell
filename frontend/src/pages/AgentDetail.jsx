@@ -7,9 +7,24 @@ import './AgentDetail.css';
 const VOICE_OPTIONS = [
     { value: 'aura-2-thalia-en', label: 'Thalia (Female) - Deepgram' },
     { value: 'aura-2-orion-en', label: 'Orion (Male) - Deepgram' },
-    { value: 'cgS8vJhk66vDX8O6m62a', label: 'Serena (Female) - ElevenLabs' },
-    { value: 'nPczCAnBy9noDW9As69E', label: 'Brian (Male) - ElevenLabs' },
+    { value: 'cgS8vJhk66vDX8O6m62a', label: 'Serena (Female) - ElevenLabs Premium' },
+    { value: 'nPczCAnBy9noDW9As69E', label: 'Brian (Male) - ElevenLabs Premium' },
     { value: 'pFZP5JQG7iQjIQuC4Bku', label: 'Lily (Female) - ElevenLabs v3' },
+];
+
+const STT_OPTIONS = [
+    { value: 'nova-3', label: 'Deepgram Nova-3 (Fastest)' },
+    { value: 'whisper-1', label: 'OpenAI Whisper-1 (Accurate)' },
+];
+
+const LANGUAGE_OPTIONS = [
+    { value: 'en', label: 'English (US)' },
+    { value: 'tr', label: 'Turkish (TR)' },
+    { value: 'es', label: 'Spanish' },
+    { value: 'fr', label: 'French' },
+    { value: 'de', label: 'German' },
+    { value: 'it', label: 'Italian' },
+    { value: 'pt', label: 'Portuguese' },
 ];
 
 const LLM_OPTIONS = [
@@ -58,7 +73,8 @@ export const AgentDetail = ({ user, onLogout }) => {
                     systemPrompt: data.systemPrompt,
                     llmModel: data.llmModel,
                     voice: data.voice,
-                    language: data.language,
+                    language: data.language || 'en',
+                    sttModel: data.sttModel || 'nova-3',
                     greeting: data.greeting || '',
                 });
             } else {
@@ -201,6 +217,18 @@ export const AgentDetail = ({ user, onLogout }) => {
                             </select>
                         </div>
                         <div className="form-card">
+                            <h3 className="form-card-title">Transcriber (STT)</h3>
+                            <select className="form-select" value={editForm.sttModel} onChange={(e) => setEditForm(p => ({ ...p, sttModel: e.target.value }))}>
+                                {STT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </select>
+                        </div>
+                        <div className="form-card">
+                            <h3 className="form-card-title">Language</h3>
+                            <select className="form-select" value={editForm.language} onChange={(e) => setEditForm(p => ({ ...p, language: e.target.value }))}>
+                                {LANGUAGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </select>
+                        </div>
+                        <div className="form-card">
                             <div className="agent-meta-info">
                                 <div className="meta-row">
                                     <span className="meta-k">Created</span>
@@ -212,7 +240,7 @@ export const AgentDetail = ({ user, onLogout }) => {
                                 </div>
                                 <div className="meta-row">
                                     <span className="meta-k">STT</span>
-                                    <span className="meta-v">Deepgram Nova-3</span>
+                                    <span className="meta-v">{agent.sttModel || 'Deepgram Nova-3'}</span>
                                 </div>
                                 <div className="meta-row">
                                     <span className="meta-k">Status</span>

@@ -12,20 +12,27 @@ const LLM_OPTIONS = [
     { value: 'llama-3.1-70b-versatile', label: 'Llama 3.1 70B (Ultra-fast)', provider: 'groq' },
 ];
 
+const STT_OPTIONS = [
+    { value: 'nova-3', label: 'Deepgram Nova-3 (Fastest)', provider: 'deepgram' },
+    { value: 'whisper-1', label: 'OpenAI Whisper-1 (Accurate)', provider: 'openai' },
+];
+
 const VOICE_OPTIONS = [
     { value: 'aura-2-thalia-en', label: 'Thalia (Female) - Deepgram', provider: 'deepgram' },
     { value: 'aura-2-orion-en', label: 'Orion (Male) - Deepgram', provider: 'deepgram' },
-    { value: 'cgS8vJhk66vDX8O6m62a', label: 'Serena (Female) - ElevenLabs', provider: 'elevenlabs' },
-    { value: 'nPczCAnBy9noDW9As69E', label: 'Brian (Male) - ElevenLabs', provider: 'elevenlabs' },
+    { value: 'cgS8vJhk66vDX8O6m62a', label: 'Serena (Female) - ElevenLabs Premium', provider: 'elevenlabs' },
+    { value: 'nPczCAnBy9noDW9As69E', label: 'Brian (Male) - ElevenLabs Premium', provider: 'elevenlabs' },
     { value: 'pFZP5JQG7iQjIQuC4Bku', label: 'Lily (Female) - ElevenLabs v3', provider: 'elevenlabs' },
 ];
 
 const LANGUAGE_OPTIONS = [
-    { value: 'en', label: 'English' },
-    { value: 'tr', label: 'Turkish' },
+    { value: 'en', label: 'English (US)' },
+    { value: 'tr', label: 'Turkish (TR)' },
     { value: 'es', label: 'Spanish' },
     { value: 'fr', label: 'French' },
     { value: 'de', label: 'German' },
+    { value: 'it', label: 'Italian' },
+    { value: 'pt', label: 'Portuguese' },
 ];
 
 export const AgentCreate = ({ user, onLogout }) => {
@@ -161,6 +168,12 @@ export const AgentCreate = ({ user, onLogout }) => {
                             <label className="form-label">Voice</label>
                             <select className="form-select" value={form.voice} onChange={(e) => handleChange('voice', e.target.value)}>
                                 {VOICE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Transcriber (STT)</label>
+                            <select className="form-select" value={form.sttModel} onChange={(e) => handleChange('sttModel', e.target.value)}>
+                                {STT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
                     </div>

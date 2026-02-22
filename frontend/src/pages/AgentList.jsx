@@ -73,7 +73,8 @@ export const AgentList = ({ user, onLogout }) => {
                                 <span className="item-meta">
                                     {a.llmModel.startsWith('gpt') ? 'openai' :
                                         a.llmModel.startsWith('claude') ? 'anthropic' :
-                                            a.llmModel.startsWith('gemini') ? 'google' : 'deepgram'} · {a.voice.split('-')[1]}
+                                            a.llmModel.startsWith('gemini') ? 'google' :
+                                                a.llmModel.startsWith('llama') ? 'groq' : 'deepgram'} · {a.sttModel === 'whisper-1' ? 'openai' : 'deepgram'}
                                 </span>
                             </div>
                         ))}
@@ -180,8 +181,8 @@ export const AgentList = ({ user, onLogout }) => {
                                                 <option value="aura-2-orion-en">Orion (English, Male)</option>
                                             </optgroup>
                                             <optgroup label="ElevenLabs (Premium)">
-                                                <option value="cgS8vJhk66vDX8O6m62a">Serena (ElevenLabs v3 - Female)</option>
-                                                <option value="nPczCAnBy9noDW9As69E">Brian (ElevenLabs v3 - Male)</option>
+                                                <option value="cgS8vJhk66vDX8O6m62a">Serena (ElevenLabs Premium - Female)</option>
+                                                <option value="nPczCAnBy9noDW9As69E">Brian (ElevenLabs Premium - Male)</option>
                                                 <option value="pFZP5JQG7iQjIQuC4Bku">Lily (ElevenLabs v3 - Natural)</option>
                                             </optgroup>
                                         </select>
@@ -196,10 +197,14 @@ export const AgentList = ({ user, onLogout }) => {
                             {activeTab === 'advanced' && (
                                 <div className="vapi-form-section">
                                     <div className="vapi-field">
-                                        <label>Transcriber Model</label>
-                                        <select className="vapi-input">
-                                            <option>Deepgram Nova-3 (Latest)</option>
-                                            <option>Deepgram Nova-2 (Legacy)</option>
+                                        <label>Transcriber Model (STT)</label>
+                                        <select
+                                            className="vapi-input"
+                                            value={selectedAgent.sttModel}
+                                            onChange={(e) => setSelectedAgent({ ...selectedAgent, sttModel: e.target.value })}
+                                        >
+                                            <option value="nova-3">Deepgram Nova-3 (Fastest)</option>
+                                            <option value="whisper-1">OpenAI Whisper-1 (Accurate)</option>
                                         </select>
                                     </div>
                                     <div className="vapi-field">
@@ -209,9 +214,13 @@ export const AgentList = ({ user, onLogout }) => {
                                             value={selectedAgent.language}
                                             onChange={(e) => setSelectedAgent({ ...selectedAgent, language: e.target.value })}
                                         >
-                                            <option value="en">English</option>
-                                            <option value="tr">Turkish</option>
+                                            <option value="en">English (US)</option>
+                                            <option value="tr">Turkish (TR)</option>
                                             <option value="es">Spanish</option>
+                                            <option value="fr">French</option>
+                                            <option value="de">German</option>
+                                            <option value="it">Italian</option>
+                                            <option value="pt">Portuguese</option>
                                         </select>
                                     </div>
                                 </div>
