@@ -124,7 +124,7 @@ router.post('/register', async (req, res) => {
         passwordHash,
         creditBalance: {
           create: {
-            balance: 0
+            balance: 5
           }
         }
       },

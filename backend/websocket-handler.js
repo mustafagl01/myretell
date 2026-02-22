@@ -336,7 +336,7 @@ export class WebSocketHandler {
       if (!user) throw new Error('User not found');
 
       if (!user.creditBalance || Number(user.creditBalance.balance) <= 0) {
-        this._sendError(ws, { type: 'insufficient_credits', message: 'Please refill your credits' });
+        this._sendError(ws, { type: 'insufficient_balance', message: 'Please top up your balance' });
         ws.close();
         return;
       }
@@ -437,24 +437,23 @@ export class WebSocketHandler {
       this.deepgramConnections.delete(ws);
     }
 
-    // SaaS: Track session duration and deduct dollar cost
+    // SaaS: Track session duration and deduct dollar balance at $0.20/minute
     if (ws.user && ws.sessionStartTime) {
-      const endTime = Date.now();
-      const durationSeconds = Math.ceil((endTime - ws.sessionStartTime) / 1000);
-      const durationMinutes = durationSeconds / 60;
+      const durationSeconds = Math.ceil((Date.now() - ws.sessionStartTime) / 1000);
+      const costToDeduct = Number(((durationSeconds / 60) * 0.2).toFixed(2));
 
-      // Cost calculation: $0.20 per minute (pro-rated to the second)
-      const COST_PER_MINUTE = 0.20;
-      const costAmount = durationMinutes * COST_PER_MINUTE;
-      const costRounded = Math.round(costAmount * 100) / 100; // Round to 2 decimals
-
-      console.log(`Session ended for ${ws.user.email}: ${durationSeconds}s = ${durationMinutes.toFixed(2)}min = $${costRounded}`);
+      console.log(`Deducting $${costToDeduct.toFixed(2)} from user ${ws.user.email} for ${durationSeconds}s session`);
 
       try {
+        const balanceRecord = await prisma.creditBalance.findUnique({ where: { userId: ws.user.id } });
+        const currentBalance = Number(balanceRecord?.balance || 0);
+        const nextBalance = Math.max(0, Number((currentBalance - costToDeduct).toFixed(2)));
+
         await prisma.$transaction([
-          prisma.creditBalance.update({
+          prisma.creditBalance.upsert({
             where: { userId: ws.user.id },
-            data: { balance: { decrement: costRounded } }
+            update: { balance: nextBalance },
+            create: { userId: ws.user.id, balance: nextBalance }
           }),
           prisma.usageSession.create({
             data: {
@@ -463,14 +462,13 @@ export class WebSocketHandler {
               startTime: new Date(ws.sessionStartTime),
               endTime: new Date(endTime),
               durationSeconds,
-              costAmount: costRounded,
-              creditsUsed: Math.ceil(durationMinutes), // backward compat
+              creditsUsed: costToDeduct,
               status: 'completed'
             }
           })
         ]);
       } catch (error) {
-        console.error('Failed to deduct cost on disconnect:', error.message);
+        console.error('Failed to deduct balance on disconnect:', error.message);
       }
     }
 

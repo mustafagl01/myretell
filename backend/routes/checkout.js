@@ -10,7 +10,7 @@ const router = express.Router();
 
 // Create a checkout session
 router.post('/create-session', authenticateToken, async (req, res) => {
-    const { planName, amount, credits, checkoutType } = req.body;
+    const { planName, amount, checkoutType } = req.body;
     const userId = req.user.id;
 
     if (!planName || typeof planName !== 'string') {
@@ -34,9 +34,9 @@ router.post('/create-session', authenticateToken, async (req, res) => {
                         currency: 'usd',
                         product_data: {
                             name: planName,
-                            description: `${credits} of voice assistant talk time`,
+                            description: `Adds $${amount.toFixed(2)} to your MyRetell balance`,
                         },
-                        unit_amount: amount * 100, // amount in cents
+                        unit_amount: Math.round(amount * 100),
                     },
                     quantity: 1,
                 },
@@ -46,6 +46,10 @@ router.post('/create-session', authenticateToken, async (req, res) => {
             cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/pricing`,
             client_reference_id: userId,
             customer_email: req.user.email,
+            metadata: {
+                checkoutType: checkoutType || 'plan',
+                balanceAmount: amount.toFixed(2),
+            },
         });
 
         res.json({ id: session.id, url: session.url });

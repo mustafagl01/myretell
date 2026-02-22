@@ -60,8 +60,7 @@ model UsageSession {
   startTime       DateTime  @default(now())
   endTime         DateTime?
   durationSeconds Int?
-  costAmount      Decimal?  @db.Decimal(10, 2)
-  creditsUsed     Int?
+  creditsUsed     Decimal? @db.Decimal(10, 2)
   status          String    @default("active")
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   agent           Agent?    @relation(fields: [agentId], references: [id], onDelete: SetNull)
@@ -74,7 +73,7 @@ model Transaction {
   id              String   @id @default(uuid())
   userId          String
   amount          Decimal  @db.Decimal(10, 2)
-  creditsAdded    Int?     // Deprecated: kept for backward compat
+  creditsAdded    Decimal  @db.Decimal(10, 2)
   type            String
   stripePaymentId String?  @unique
   stripeSessionId String?  @unique

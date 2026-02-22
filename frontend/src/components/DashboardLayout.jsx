@@ -19,8 +19,7 @@ export const DashboardLayout = ({ user, onLogout, title, actions, children, hide
     const location = useLocation();
     const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
-    // Safety check for user and credit balance
-    const creditBalance = user?.creditBalance?.balance || 0;
+    const balance = Number(user?.creditBalance?.balance || 0);
 
     const isActive = (path) => {
         if (path === '/agents' && location.pathname === '/') return true;
@@ -32,7 +31,7 @@ export const DashboardLayout = ({ user, onLogout, title, actions, children, hide
         { label: 'Call History', icon: History, path: '/history', section: 'Monitor' },
         { label: 'Analytics', icon: BarChart3, path: '/analytics', section: 'Monitor', badge: 'New' },
         { label: 'API Keys & Settings', icon: SettingsIcon, path: '/settings', section: 'Account' },
-        { label: 'Credits & Plans', icon: CreditCard, path: '/pricing', section: 'Account' },
+        { label: 'Balance & Plans', icon: CreditCard, path: '/pricing', section: 'Account' },
     ];
 
     const sections = ['Build', 'Monitor', 'Account'];
@@ -103,7 +102,7 @@ export const DashboardLayout = ({ user, onLogout, title, actions, children, hide
                     <div className="top-bar-actions">
                         <div className="credit-pill" onClick={() => navigate('/pricing')}>
                             <Zap size={14} fill="#6ee7b7" stroke="#6ee7b7" style={{ opacity: 0.8 }} />
-                            <span>{Number(creditBalance).toFixed(0)} min</span>
+                            <span>${balance.toFixed(2)}</span>
                         </div>
                         {actions}
                     </div>

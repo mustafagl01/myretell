@@ -3,28 +3,37 @@ import { DashboardLayout } from '../components/DashboardLayout';
 import { Check, Zap, Rocket, Crown, Star } from 'lucide-react';
 import './Pricing.css';
 
+const BASE_RATE = 0.20;
+
 export const Pricing = ({ user, onLogout }) => {
     const [loading, setLoading] = useState(null);
     const [error, setError] = useState('');
     const [customAmount, setCustomAmount] = useState(10);
 
-    // $0.20 per minute → $1 = 5 minutes
-    const RATE_PER_MINUTE = 0.20;
-    const estimatedMinutes = Math.floor(customAmount / RATE_PER_MINUTE);
+    const currentBalance = Number(user?.creditBalance?.balance || 0);
+
+    const customTopup = {
+        min: 10,
+        max: 300,
+        step: 5,
+    };
+
+    const projectedBalance = currentBalance + customAmount;
+    const estimatedMinutes = Math.floor(customAmount / BASE_RATE);
 
     const tiers = [
         {
             name: 'FREE',
             price: 0,
-            balance: 2.00,  // $2.00 free = 10 min
-            desc: 'Deneme ve küçük testler için',
+            monthlyBalance: 5,
+            rate: 0.20,
+            desc: 'Start free with a $5.00 signup balance.',
             icon: Star,
             features: [
+                '$5.00 free balance on signup',
+                'Usage rate: $0.20 / minute',
+                `~${Math.floor(5 / 0.2)} minutes at this rate`,
                 '1 Voice Agent',
-                '$2.00 free balance (~10 min)',
-                'Economy stack (Deepgram + Gemini)',
-                'Gemini 2.0 Flash LLM',
-                'English Only',
                 'Community Support'
             ],
             btnText: 'Current Plan',
@@ -33,16 +42,15 @@ export const Pricing = ({ user, onLogout }) => {
         {
             name: 'STARTER',
             price: 19,
-            balance: 19.00,
-            desc: 'Küçük ekipler için en iyi başlangıç',
+            monthlyBalance: 19,
+            rate: 0.18,
+            desc: 'Best for individuals and small teams.',
             icon: Zap,
             features: [
-                '3 Voice Agents',
-                '$19.00 balance (~95 min)',
-                'Economy stack (Deepgram + Gemini)',
-                'English & Turkish Support',
-                'Remove Branding',
-                'Email Support'
+                '$19 added to balance each month',
+                'Usage rate: $0.18 / minute',
+                `~${Math.floor(19 / 0.18)} minutes at this rate`,
+                'Up to 3 agents'
             ],
             popular: false,
             btnText: 'Upgrade to Starter',
@@ -51,17 +59,15 @@ export const Pricing = ({ user, onLogout }) => {
         {
             name: 'PRO',
             price: 49,
-            balance: 49.00,
-            desc: 'Kalite ve ölçek için en popüler plan',
+            monthlyBalance: 49,
+            rate: 0.16,
+            desc: 'Most popular for growing teams.',
             icon: Rocket,
             features: [
-                '10 Voice Agents',
-                '$49.00 balance (~245 min)',
-                'ElevenLabs v3 (High Definition)',
-                'Claude 3.5 Sonnet Support',
-                '10+ Languages Included',
-                'Full API Access',
-                'Priority Support'
+                '$49 added to balance each month',
+                'Usage rate: $0.16 / minute',
+                `~${Math.floor(49 / 0.16)} minutes at this rate`,
+                'Up to 10 agents'
             ],
             popular: true,
             btnText: 'Go Pro',
@@ -70,18 +76,15 @@ export const Pricing = ({ user, onLogout }) => {
         {
             name: 'SCALE',
             price: 149,
-            balance: 149.00,
-            desc: 'Yüksek hacimli kullanım ve ekipler için',
+            monthlyBalance: 149,
+            rate: 0.15,
+            desc: 'For high-volume production usage.',
             icon: Crown,
             features: [
-                'Unlimited Voice Agents',
-                '$149.00 balance (~745 min)',
-                'All Premium Models',
-                'Voice Cloning Included',
-                'All 99 Languages (Whisper)',
-                'Custom Integrations',
-                'White-label Option',
-                'Dedicated Support'
+                '$149 added to balance each month',
+                'Usage rate: $0.15 / minute',
+                `~${Math.floor(149 / 0.15)} minutes at this rate`,
+                'Unlimited agents'
             ],
             btnText: 'Go Scale',
             btnClass: 'btn-plan-outline'
@@ -103,7 +106,7 @@ export const Pricing = ({ user, onLogout }) => {
                 body: JSON.stringify({
                     planName: tier.name,
                     amount: tier.price,
-                    credits: `$${tier.balance.toFixed(2)} balance`
+                    checkoutType: 'subscription-balance'
                 }),
             });
 
@@ -128,9 +131,8 @@ export const Pricing = ({ user, onLogout }) => {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({
-                    planName: 'Pay As You Go Top-up',
+                    planName: 'Pay As You Go Balance Top-up',
                     amount: customAmount,
-                    credits: `$${customAmount.toFixed(2)} balance`,
                     checkoutType: 'topup'
                 }),
             });
@@ -145,12 +147,12 @@ export const Pricing = ({ user, onLogout }) => {
     };
 
     return (
-        <DashboardLayout user={user} onLogout={onLogout} title="Credits & Plans">
+        <DashboardLayout user={user} onLogout={onLogout} title="Balance & Plans">
             <div className="pricing-container-v2">
                 <header className="pricing-v2-header">
-                    <span className="badge-promo">$0.20 / minute — Simple, Transparent Pricing</span>
-                    <h1>Choose Your Plan</h1>
-                    <p>$1 paid = $1.00 balance. Usage billed at $0.20 per minute, pro-rated to the second.</p>
+                    <span className="badge-promo">Dollar Balance Billing</span>
+                    <h1>Simple usage-based pricing</h1>
+                    <p>All usage is billed from your balance in USD.</p>
                 </header>
 
                 {error && <div className="pricing-error-v2">{error}</div>}
@@ -167,8 +169,8 @@ export const Pricing = ({ user, onLogout }) => {
                                     <span className="value">{tier.price}</span>
                                     <span className="period">{tier.price === 0 ? '' : '/mo'}</span>
                                 </div>
-                                <div className="tier-minutes">~{Math.floor(tier.balance / RATE_PER_MINUTE)} minutes of usage</div>
-                                <div className="tier-rate">${RATE_PER_MINUTE.toFixed(2)} / minute</div>
+                                <div className="tier-minutes">${tier.monthlyBalance.toFixed(2)} balance/month</div>
+                                <div className="tier-rate">Usage rate: ${tier.rate.toFixed(2)} / minute</div>
                                 <p className="tier-desc">{tier.desc}</p>
                             </div>
 
@@ -191,15 +193,12 @@ export const Pricing = ({ user, onLogout }) => {
 
                 <section className="custom-topup-card">
                     <div className="custom-topup-header">
-                        <h2>💳 Pay As You Go Top-up</h2>
-                        <p>
-                            Load any amount from $10 to $300. $1 paid = $1.00 balance.
-                            Usage is billed at <strong>$0.20/min</strong>, pro-rated to the second.
-                        </p>
+                        <h2>Pay as you go balance top-up</h2>
+                        <p>Load any amount from ${customTopup.min} to ${customTopup.max} directly into your USD balance.</p>
                     </div>
 
-                    <div className="custom-topup-amount">${customAmount}</div>
-                    <div className="custom-topup-highlight">~{estimatedMinutes} minutes for ${customAmount}</div>
+                    <div className="custom-topup-amount">Load ${customAmount}</div>
+                    <div className="custom-topup-highlight">Your balance becomes ${projectedBalance.toFixed(2)}</div>
                     <input
                         type="range"
                         min={10}
@@ -211,8 +210,8 @@ export const Pricing = ({ user, onLogout }) => {
                     />
 
                     <div className="custom-topup-meta">
-                        <span>Estimated: ~{estimatedMinutes} minutes</span>
-                        <span>Rate: $0.20 / min</span>
+                        <span>Load ${customAmount} → Your balance becomes ${projectedBalance.toFixed(2)}</span>
+                        <span>Estimated talk time: ~{estimatedMinutes} minutes at $0.20/min</span>
                     </div>
 
                     <button
@@ -223,10 +222,6 @@ export const Pricing = ({ user, onLogout }) => {
                         {loading === 'CUSTOM_TOPUP' ? 'Processing...' : `Top up $${customAmount}`}
                     </button>
                 </section>
-
-                <div className="pricing-footer-info">
-                    <p>Need more? <strong>Contact us</strong> for Enterprise custom pricing.</p>
-                </div>
             </div>
         </DashboardLayout>
     );

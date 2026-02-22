@@ -39,33 +39,7 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
         return () => clearInterval(interval);
     }, []);
 
-    // Real-time session cost meter
-    React.useEffect(() => {
-        if (!isActive) {
-            setSessionDuration(0);
-            setSessionCost(0);
-            return;
-        }
-
-        const interval = setInterval(() => {
-            setSessionDuration(prev => {
-                const newDuration = prev + 1;
-                const cost = (newDuration / 60) * 0.20;
-                setSessionCost(Math.round(cost * 100) / 100);
-                return newDuration;
-            });
-        }, 1000);
-
-        return () => clearInterval(interval);
-    }, [isActive]);
-
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    };
-
-    const creditBalance = parseFloat(user?.creditBalance?.balance || 0);
+    const balance = Number(user?.creditBalance?.balance || 0);
 
     return (
         <div className="dashboard-layout">
@@ -96,7 +70,7 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                                 <rect x="2" y="5" width="20" height="14" rx="2" />
                                 <line x1="2" y1="10" x2="22" y2="10" />
                             </svg>
-                            Credits & Plans
+                            Balance & Plans
                         </button>
                     </nav>
                 </div>
@@ -167,7 +141,7 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                                 <circle cx="12" cy="12" r="10" />
                                 <path d="M12 6v6l4 2" />
                             </svg>
-                            ${creditBalance.toFixed(2)} balance
+                            ${balance.toFixed(2)} remaining
                         </div>
                         <button className="btn-upgrade" onClick={() => window.location.href = '/pricing'}>
                             Top Up
@@ -184,8 +158,8 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                                 <span className="quick-stat-label">Balance</span>
                                 <div className="quick-stat-icon green">💰</div>
                             </div>
-                            <div className="quick-stat-value">${creditBalance.toFixed(2)}</div>
-                            <span className="quick-stat-change">$0.20/min rate</span>
+                            <div className="quick-stat-value">${balance.toFixed(2)}</div>
+                            <span className="quick-stat-change">USD balance available</span>
                         </div>
                         <div className="quick-stat-card">
                             <div className="quick-stat-header">
@@ -308,7 +282,7 @@ export const Dashboard = ({ user: initialUser, onLogout }) => {
                                         <div className="activity-item">
                                             <div className="activity-icon credit">💳</div>
                                             <div className="activity-content">
-                                                <div className="activity-text">Account created with ${creditBalance.toFixed(2)} free balance</div>
+                                                <div className="activity-text">Account created with $5.00 free balance</div>
                                                 <div className="activity-time">Today</div>
                                             </div>
                                         </div>
