@@ -135,6 +135,22 @@ export class WebSocketHandler {
       };
     }
 
+    // --- API KEY VALIDATION & FALLBACK ---
+    // If external provider selected but no key, fallback to Deepgram native
+    if (thinkProvider && thinkProvider.type !== 'deepgram' && !thinkProvider.api_key) {
+      console.warn(`⚠️ [Config] LLM Provider ${thinkProvider.type} selected but no API key found. Falling back to Deepgram native.`);
+      thinkProvider = {
+        type: 'deepgram',
+        model: 'llama-3-70b-instruct'
+      };
+    } else if (!thinkProvider) {
+      // Default fallback
+      thinkProvider = {
+        type: 'deepgram',
+        model: 'llama-3-70b-instruct'
+      };
+    }
+
     // TTS Provider Logic
     let speakProvider;
     let speakModel = (agent.voice && agent.voice.startsWith('aura')) ? agent.voice : 'aura-2-thalia-en';
@@ -149,7 +165,15 @@ export class WebSocketHandler {
         model_id: elModel,
         ...(user?.elevenlabsApiKey && { api_key: user.elevenlabsApiKey })
       };
-      speakModel = null; // ElevenLabs uses voice_id/model_id inside provider
+
+      // Validation for TwelveLabs/ElevenLabs keys
+      if (!speakProvider.api_key) {
+        console.warn(`⚠️ [Config] ElevenLabs selected but no API key. Falling back to Deepgram TTS.`);
+        speakProvider = { type: 'deepgram' };
+        speakModel = 'aura-2-thalia-en';
+      } else {
+        speakModel = null; // ElevenLabs uses voice_id/model_id inside provider
+      }
     } else {
       speakProvider = { type: 'deepgram' };
     }
@@ -174,7 +198,7 @@ export class WebSocketHandler {
             ...(thinkProvider.api_key && { api_key: thinkProvider.api_key })
           },
           model: thinkProvider.model,
-          instructions: agent.systemPrompt,
+          instructions: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant. Keep your responses concise.',
           ...(agent.greeting && { greeting: agent.greeting }),
         },
         speak: {

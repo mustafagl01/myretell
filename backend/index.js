@@ -88,8 +88,8 @@ const buildAgentConfig = () => ({
   agent: {
     listen: { model: 'nova-2', provider: { type: 'deepgram' } },
     think: {
-      provider: { type: 'open_ai' },
-      model: 'gpt-4o-mini',
+      provider: { type: 'deepgram' },
+      model: 'llama-3-70b-instruct',
       instructions: 'You are a helpful and friendly AI voice assistant. Keep your responses concise and conversational.'
     },
     speak: {
