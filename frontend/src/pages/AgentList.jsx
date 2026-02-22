@@ -4,9 +4,12 @@ import { DashboardLayout } from '../components/DashboardLayout';
 import './AgentList.css';
 
 export const AgentList = ({ user, onLogout }) => {
-    const [agents, setAgents] = useState([]);
-    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const [agents, setAgents] = useState([]);
+    const [selectedAgent, setSelectedAgent] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('model');
+    const [saveStatus, setSaveStatus] = useState('');
 
     useEffect(() => {
         fetchAgents();
@@ -17,92 +20,137 @@ export const AgentList = ({ user, onLogout }) => {
             const res = await fetch('/api/agents', {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
-            if (res.ok) {
-                const data = await res.json();
-                setAgents(data);
-            }
+            const data = await res.json();
+            setAgents(data);
+            if (data.length > 0) setSelectedAgent(data[0]);
         } catch (err) {
-            console.error('Failed to fetch agents:', err);
+            console.error(err);
         } finally {
             setLoading(false);
         }
     };
 
-    const formatDate = (dateStr) => {
-        const d = new Date(dateStr);
-        return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
-            ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    };
-
-    const modelLabels = {
-        'nova-3': 'Nova-3',
-        'gpt-4o-mini': 'GPT-4o Mini',
-        'aura-2-thalia-en': 'Thalia',
+    const handleSave = async () => {
+        setSaveStatus('Saving...');
+        try {
+            const res = await fetch(`/api/agents/${selectedAgent.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(selectedAgent)
+            });
+            if (res.ok) setSaveStatus('Saved!');
+            else setSaveStatus('Error saving');
+            setTimeout(() => setSaveStatus(''), 2000);
+        } catch (err) {
+            setSaveStatus('Error');
+        }
     };
 
     return (
-        <DashboardLayout user={user} onLogout={onLogout} title="All Agents"
-            actions={
-                <button className="btn-primary" onClick={() => navigate('/agents/create')}>
-                    + Create an Agent
-                </button>
-            }
-        >
-            {loading ? (
-                <div className="loading-state">
-                    <div className="loading-spinner"></div>
-                    Loading agents...
-                </div>
-            ) : agents.length === 0 ? (
-                <div className="empty-state">
-                    <div className="empty-icon">🎙️</div>
-                    <h3>No agents yet</h3>
-                    <p>Create your first voice agent to get started</p>
-                    <button className="btn-primary btn-lg" onClick={() => navigate('/agents/create')}>
-                        + Create an Agent
-                    </button>
-                </div>
-            ) : (
-                <div className="agents-table-wrapper">
-                    <table className="agents-table">
-                        <thead>
-                            <tr>
-                                <th>Agent Name</th>
-                                <th>Language</th>
-                                <th>LLM</th>
-                                <th>Voice</th>
-                                <th>Sessions</th>
-                                <th>Last Edited</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {agents.map(agent => (
-                                <tr key={agent.id} onClick={() => navigate(`/agents/${agent.id}`)} className="agent-row">
-                                    <td>
-                                        <div className="agent-name-cell">
-                                            <div className="agent-avatar-sm">🎙️</div>
-                                            <span className="agent-name">{agent.name}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span className="lang-badge">{agent.language.toUpperCase()}</span>
-                                    </td>
-                                    <td className="text-muted">{modelLabels[agent.llmModel] || agent.llmModel}</td>
-                                    <td className="text-muted">{modelLabels[agent.ttsModel] || agent.ttsModel}</td>
-                                    <td className="text-muted">{agent._count?.sessions || 0}</td>
-                                    <td className="text-muted">{formatDate(agent.updatedAt)}</td>
-                                    <td>
-                                        <button className="btn-icon" onClick={(e) => { e.stopPropagation(); navigate(`/agents/${agent.id}`); }}>
-                                            →
-                                        </button>
-                                    </td>
-                                </tr>
+        <DashboardLayout user={user} onLogout={onLogout} title="Assistants" hideContentPadding={true}>
+            <div className="content-area">
+                {/* MIDDLE COLUMN: Assistants List */}
+                <div className="agents-sidebar">
+                    <div className="agents-sidebar-header">
+                        <button className="btn-primary" style={{ width: '100%' }} onClick={() => navigate('/agents/create')}>
+                            Create Assistant +
+                        </button>
+                        <div className="search-container">
+                            <input type="text" className="search-input" placeholder="Search Assistants..." />
+                        </div>
+                    </div>
+                    <div className="agent-list-scroll">
+                        {loading ? <div className="loading-spinner"></div> :
+                            agents.map(a => (
+                                <div
+                                    key={a.id}
+                                    className={`agent-list-item ${selectedAgent?.id === a.id ? 'selected' : ''}`}
+                                    onClick={() => setSelectedAgent(a)}
+                                >
+                                    <span className="item-name">{a.name}</span>
+                                    <span className="item-meta">{a.llmModel === 'deepgram-default' ? 'deepgram' : 'openai'} · {a.voice.split('-')[1]}</span>
+                                </div>
                             ))}
-                        </tbody>
-                    </table>
+                    </div>
                 </div>
-            )}
+
+                {/* RIGHT COLUMN: Detail View */}
+                <div className="agent-detail-view">
+                    {selectedAgent ? (
+                        <>
+                            <div className="detail-view-header">
+                                <div className="agent-title-info">
+                                    <h2>{selectedAgent.name}</h2>
+                                    <span className="agent-id-tag">{selectedAgent.id}</span>
+                                </div>
+                                <div className="header-actions">
+                                    <button className="btn-test" onClick={() => navigate(`/agents/${selectedAgent.id}`)}>
+                                        Talk to Assistant 📞
+                                    </button>
+                                    <button className="btn-save-vapi" onClick={handleSave}>
+                                        {saveStatus || 'Publish'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="vapi-tabs">
+                                <button className={`vapi-tab ${activeTab === 'model' ? 'active' : ''}`} onClick={() => setActiveTab('model')}>Model</button>
+                                <button className={`vapi-tab ${activeTab === 'voice' ? 'active' : ''}`} onClick={() => setActiveTab('voice')}>Voice</button>
+                                <button className={`vapi-tab ${activeTab === 'advanced' ? 'active' : ''}`} onClick={() => setActiveTab('advanced')}>Transcriber</button>
+                            </div>
+
+                            <div className="detail-pannel">
+                                <div className="vapi-stats-grid">
+                                    <div className="vapi-stat-card">
+                                        <div className="stat-header">
+                                            <span>Cost</span>
+                                            <span>~$0.16/min</span>
+                                        </div>
+                                        <div className="stat-bar-bg">
+                                            <div className="stat-bar-fill" style={{ width: '40%', background: 'linear-gradient(90deg, #f59e0b, #6366f1)' }}></div>
+                                        </div>
+                                    </div>
+                                    <div className="vapi-stat-card">
+                                        <div className="stat-header">
+                                            <span>Latency</span>
+                                            <span>~800ms</span>
+                                        </div>
+                                        <div className="stat-bar-bg">
+                                            <div className="stat-bar-fill" style={{ width: '60%', background: 'linear-gradient(90deg, #ef4444, #10b981)' }}></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {activeTab === 'model' && (
+                                    <div className="vapi-form-section">
+                                        <div className="vapi-field">
+                                            <label>First Message</label>
+                                            <input
+                                                className="vapi-input"
+                                                value={selectedAgent.greeting || ''}
+                                                onChange={(e) => setSelectedAgent({ ...selectedAgent, greeting: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="vapi-field">
+                                            <label>System Prompt</label>
+                                            <textarea
+                                                className="vapi-textarea"
+                                                value={selectedAgent.systemPrompt}
+                                                onChange={(e) => setSelectedAgent({ ...selectedAgent, systemPrompt: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="empty-state">Select an assistant to configure</div>
+                    )}
+                </div>
+            </div>
         </DashboardLayout>
     );
 };
