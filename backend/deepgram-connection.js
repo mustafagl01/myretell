@@ -88,11 +88,19 @@ export class DeepgramConnection {
         };
 
         // Initiate the WebSocket connection
-        this.agent.setupConnection();
+        console.log(`[DEEPGRAM] [${new Date().toISOString()}] Initiating setupConnection()...`);
+        try {
+          this.agent.setupConnection();
+          console.log(`[DEEPGRAM] [${new Date().toISOString()}] setupConnection() called successfully`);
+        } catch (setupErr) {
+          console.error(`[DEEPGRAM] [${new Date().toISOString()}] CRITICAL: setupConnection() threw synchronously:`, setupErr.message);
+          this._connectReject(setupErr);
+        }
       });
     } catch (error) {
       this.isConnected = false;
-      console.error('Deepgram connection error details:', error);
+      console.error(`[DEEPGRAM] [${new Date().toISOString()}] Connection flow failed:`, error.message);
+      if (error.stack) console.error(error.stack);
       throw new Error(`Failed to connect to Deepgram: ${error.message}`);
     }
   }
