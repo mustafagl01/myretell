@@ -9,7 +9,11 @@ const VOICE_OPTIONS = [
     { value: 'nPczCAnBy9noDW9As69E', label: 'Brian (Male) - ElevenLabs' },
     { value: 'pFZP5JQG7iQjIQuC4Bku', label: 'Lily (Female) - ElevenLabs' },
     { value: 'aura-2-thalia-en', label: 'Thalia (Female) - Deepgram' },
-    { value: 'aura-2-orion-en', label: 'Orion (Male) - Deepgram' },
+    { value: 'aura-2-orpheus-en', label: 'Orpheus (Male) - Deepgram' },
+    { value: 'aura-2-athena-en', label: 'Athena (Female) - Deepgram' },
+    { value: 'aura-2-helios-en', label: 'Helios (Male) - Deepgram' },
+    { value: 'aura-2-luna-en', label: 'Luna (Female) - Deepgram' },
+    { value: 'aura-2-stella-en', label: 'Stella (Female) - Deepgram' },
 ];
 
 const TTS_MODEL_OPTIONS = [
@@ -21,6 +25,7 @@ const TTS_MODEL_OPTIONS = [
 ];
 
 const STT_OPTIONS = [
+    { value: 'nova-2', label: 'Deepgram Nova-2 (Latest)' },
     { value: 'nova-3', label: 'Deepgram Nova-3 (Winner - 200ms)' },
     { value: 'whisper-1', label: 'OpenAI Whisper v3 (Best Accuracy)' },
     { value: 'azure-speech', label: 'Azure Speech Neural (Soon)', disabled: true },
@@ -129,6 +134,25 @@ export const AgentDetail = ({ user, onLogout }) => {
             setLoading(false);
         }
     };
+
+    const handleFormChange = (field, value) => {
+        let updates = { [field]: value };
+
+        // Deepgram Free Tier Logic: Auto-configure and lock other settings
+        if (field === 'llmModel' && value === 'deepgram-default') {
+            updates = {
+                ...updates,
+                sttModel: 'nova-2',
+                language: 'en',
+                ttsModel: 'deepgram',
+                voice: 'aura-2-thalia-en'
+            };
+        }
+
+        setEditForm(prev => ({ ...prev, ...updates }));
+    };
+
+    const isDeepgramFree = editForm.llmModel === 'deepgram-default';
 
     const handleSave = async () => {
         setSaving(true);
@@ -266,6 +290,17 @@ export const AgentDetail = ({ user, onLogout }) => {
                                 onChange={(e) => setEditForm(p => ({ ...p, greeting: e.target.value }))}
                             />
                         </div>
+
+                        {/* Special Alert for Deepgram Free */}
+                        {isDeepgramFree && (
+                            <div className="deepgram-free-alert" style={{ marginBottom: '1.5rem' }}>
+                                <div className="alert-header">
+                                    <span className="alert-icon">✨</span>
+                                    <h4>Deepgram Free Tier Active</h4>
+                                </div>
+                                <p>Language, Voice, and Enginge settings are automatically optimized for free test usage. No external API keys required!</p>
+                            </div>
+                        )}
                     </div>
                     <div className="detail-sidebar">
                         <div className="form-card">
@@ -279,31 +314,51 @@ export const AgentDetail = ({ user, onLogout }) => {
                         </div>
                         <div className="form-card">
                             <h3 className="form-card-title">LLM Model</h3>
-                            <select className="form-select" value={editForm.llmModel} onChange={(e) => setEditForm(p => ({ ...p, llmModel: e.target.value }))}>
+                            <select className="form-select" value={editForm.llmModel} onChange={(e) => handleFormChange('llmModel', e.target.value)}>
                                 {LLM_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
                         <div className="form-card">
                             <h3 className="form-card-title">TTS Engine</h3>
-                            <select className="form-select" value={editForm.ttsModel} onChange={(e) => setEditForm(p => ({ ...p, ttsModel: e.target.value }))}>
+                            <select
+                                className="form-select"
+                                value={editForm.ttsModel}
+                                onChange={(e) => handleFormChange('ttsModel', e.target.value)}
+                                disabled={isDeepgramFree}
+                            >
                                 {TTS_MODEL_OPTIONS.map(o => <option key={o.value} value={o.value} disabled={o.disabled}>{o.label}</option>)}
                             </select>
                         </div>
                         <div className="form-card">
                             <h3 className="form-card-title">Voice</h3>
-                            <select className="form-select" value={editForm.voice} onChange={(e) => setEditForm(p => ({ ...p, voice: e.target.value }))}>
+                            <select
+                                className="form-select"
+                                value={editForm.voice}
+                                onChange={(e) => handleFormChange('voice', e.target.value)}
+                                disabled={isDeepgramFree}
+                            >
                                 {VOICE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
                         <div className="form-card">
                             <h3 className="form-card-title">Transcriber (STT)</h3>
-                            <select className="form-select" value={editForm.sttModel} onChange={(e) => setEditForm(p => ({ ...p, sttModel: e.target.value }))}>
+                            <select
+                                className="form-select"
+                                value={editForm.sttModel}
+                                onChange={(e) => handleFormChange('sttModel', e.target.value)}
+                                disabled={isDeepgramFree}
+                            >
                                 {STT_OPTIONS.map(o => <option key={o.value} value={o.value} disabled={o.disabled}>{o.label}</option>)}
                             </select>
                         </div>
                         <div className="form-card">
                             <h3 className="form-card-title">Language</h3>
-                            <select className="form-select" value={editForm.language} onChange={(e) => setEditForm(p => ({ ...p, language: e.target.value }))}>
+                            <select
+                                className="form-select"
+                                value={editForm.language}
+                                onChange={(e) => handleFormChange('language', e.target.value)}
+                                disabled={isDeepgramFree}
+                            >
                                 {LANGUAGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
@@ -315,7 +370,7 @@ export const AgentDetail = ({ user, onLogout }) => {
                                     <option key={n.id} value={n.phoneNumber}>{n.phoneNumber} ({n.name || 'Untitled'})</option>
                                 ))}
                             </select>
-                            <p className="form-card-desc" style={{marginTop: '0.5rem', fontSize: '0.75rem'}}>Connect numbers in the <b>Telephony</b> section.</p>
+                            <p className="form-card-desc" style={{ marginTop: '0.5rem', fontSize: '0.75rem' }}>Connect numbers in the <b>Telephony</b> section.</p>
                         </div>
                         <div className="form-card">
                             <div className="agent-meta-info">

@@ -48,7 +48,11 @@ const VOICE_OPTIONS = [
     { value: 'nPczCAnBy9noDW9As69E', label: 'Brian (Male) - ElevenLabs', provider: 'elevenlabs' },
     { value: 'pFZP5JQG7iQjIQuC4Bku', label: 'Lily (Female) - ElevenLabs', provider: 'elevenlabs' },
     { value: 'aura-2-thalia-en', label: 'Thalia (Female) - Deepgram', provider: 'deepgram' },
-    { value: 'aura-2-orion-en', label: 'Orion (Male) - Deepgram', provider: 'deepgram' },
+    { value: 'aura-2-orpheus-en', label: 'Orpheus (Male) - Deepgram', provider: 'deepgram' },
+    { value: 'aura-2-athena-en', label: 'Athena (Female) - Deepgram', provider: 'deepgram' },
+    { value: 'aura-2-helios-en', label: 'Helios (Male) - Deepgram', provider: 'deepgram' },
+    { value: 'aura-2-luna-en', label: 'Luna (Female) - Deepgram', provider: 'deepgram' },
+    { value: 'aura-2-stella-en', label: 'Stella (Female) - Deepgram', provider: 'deepgram' },
 ];
 
 const LANGUAGE_OPTIONS = [
@@ -79,12 +83,27 @@ export const AgentCreate = ({ user, onLogout }) => {
     const [agentMode, setAgentMode] = useState('single'); // 'single' or 'workflow'
 
     const handleChange = (field, value) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+        let updates = { [field]: value };
+
+        // Deepgram Free Tier Logic: Auto-configure and lock other settings
+        if (field === 'llmModel' && value === 'deepgram-default') {
+            updates = {
+                ...updates,
+                sttModel: 'nova-2',
+                language: 'en',
+                ttsModel: 'deepgram',
+                voice: 'aura-2-thalia-en'
+            };
+        }
+
+        setFormData(prev => ({ ...prev, ...updates }));
         setError('');
     };
 
     const isFormValid = formData.name.trim().length >= 3 &&
         (agentMode === 'workflow' || formData.systemPrompt.trim().length >= 10);
+
+    const isDeepgramFree = formData.llmModel === 'deepgram-default';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -200,6 +219,17 @@ export const AgentCreate = ({ user, onLogout }) => {
                                 onChange={(e) => handleChange('greeting', e.target.value)}
                             />
                         </div>
+
+                        {/* Special Alert for Deepgram Free */}
+                        {isDeepgramFree && (
+                            <div className="deepgram-free-alert">
+                                <div className="alert-header">
+                                    <span className="alert-icon">✨</span>
+                                    <h4>Deepgram Free Tier Active</h4>
+                                </div>
+                                <p>Language, Voice, and Enginge settings are automatically optimized for free test usage. No external API keys required!</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -227,25 +257,45 @@ export const AgentCreate = ({ user, onLogout }) => {
                         <h3 className="form-card-title">Voice & Language</h3>
                         <div className="form-group">
                             <label className="form-label">Language</label>
-                            <select className="form-select" value={formData.language} onChange={(e) => handleChange('language', e.target.value)}>
+                            <select
+                                className="form-select"
+                                value={formData.language}
+                                onChange={(e) => handleChange('language', e.target.value)}
+                                disabled={isDeepgramFree}
+                            >
                                 {LANGUAGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
                         <div className="form-group">
-                            <label className="form-label">TTS Engine (Seçim Tablosu)</label>
-                            <select className="form-select" value={formData.ttsModel} onChange={(e) => handleChange('ttsModel', e.target.value)}>
+                            <label className="form-label">TTS Engine</label>
+                            <select
+                                className="form-select"
+                                value={formData.ttsModel}
+                                onChange={(e) => handleChange('ttsModel', e.target.value)}
+                                disabled={isDeepgramFree}
+                            >
                                 {STACK_TTS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
                         <div className="form-group">
                             <label className="form-label">Select Voice</label>
-                            <select className="form-select" value={formData.voice} onChange={(e) => handleChange('voice', e.target.value)}>
+                            <select
+                                className="form-select"
+                                value={formData.voice}
+                                onChange={(e) => handleChange('voice', e.target.value)}
+                                disabled={isDeepgramFree}
+                            >
                                 {VOICE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
                         <div className="form-group">
                             <label className="form-label">Transcriber Engine (STT)</label>
-                            <select className="form-select" value={formData.sttModel} onChange={(e) => handleChange('sttModel', e.target.value)}>
+                            <select
+                                className="form-select"
+                                value={formData.sttModel}
+                                onChange={(e) => handleChange('sttModel', e.target.value)}
+                                disabled={isDeepgramFree}
+                            >
                                 {STT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
