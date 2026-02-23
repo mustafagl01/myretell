@@ -230,10 +230,13 @@ export class WebSocketHandler {
       agent: {
         language: agent.language || 'en',
         listen: {
-          model: agent.sttModel || 'nova-2'
+          model: agent.sttModel || 'nova-2',
+          provider: {
+            type: 'deepgram'
+          }
         },
         think: {
-          model: thinkProvider.model || 'llama-3-70b-instruct',
+          model: thinkProvider.model || 'athena',
           instructions: agent.systemPrompt || 'You are a helpful AI voice assistant.',
           provider: {
             type: thinkProvider.type || 'deepgram',
@@ -241,7 +244,10 @@ export class WebSocketHandler {
           }
         },
         speak: {
-          model: speakModel || 'aura-2-thalia-en'
+          model: speakModel || 'aura-asteria-en',
+          provider: {
+            type: 'deepgram'
+          }
         },
         ...(agent.greeting && { greeting: agent.greeting })
       }
