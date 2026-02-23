@@ -1,6 +1,6 @@
 {
   "name": "myvoiceagent-backend",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Backend service for Real-Time Voice AI Assistant using Deepgram Voice Agent SDK",
   "type": "module",
   "main": "index.js",

@@ -1,4 +1,5 @@
-// Deployment trigger: 2026-02-23 11:15
+// Deployment trigger: 2026-02-23 14:15
+console.log('--- [BUILD_VER: 2026-02-23_14-15] ---');
 import express from 'express';
 import dotenv from 'dotenv';
 import { createClient, AgentEvents } from '@deepgram/sdk';
