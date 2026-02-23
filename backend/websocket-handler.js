@@ -174,23 +174,42 @@ export class WebSocketHandler {
       speakProvider = { type: 'deepgram' };
     }
 
-    // STT Provider Logic
+    // --- STT Provider Logic ---
     const listenConfig = {
+      model: agent.sttModel || 'nova-2', // Model is at listen level
+      language: agent.language || 'en', // Language is at listen level
       provider: {
-        type: 'deepgram',
-        model: agent.sttModel || 'nova-3', // nova-2 or nova-3 depending on version
-        language: agent.language || 'en'
+        type: 'deepgram'
       }
     };
 
-    // TTS Provider Logic: Ensure model is inside provider
-    const finalSpeakProvider = { ...speakProvider };
-    if (speakModel) {
-      if (finalSpeakProvider.type === 'eleven_labs') {
-        finalSpeakProvider.model_id = speakModel;
-      } else {
-        finalSpeakProvider.model = speakModel;
+    // --- Format Speak Provider ---
+    const finalSpeakConfig = {
+      provider: {
+        type: speakProvider.type
       }
+    };
+
+    if (speakProvider.type === 'eleven_labs') {
+      finalSpeakConfig.provider.voice_id = speakProvider.voice_id;
+      finalSpeakConfig.provider.model_id = speakProvider.model_id;
+      if (speakProvider.api_key) finalSpeakConfig.provider.api_key = speakProvider.api_key;
+    } else {
+      // For Deepgram TTS, model is outside provider
+      finalSpeakConfig.model = speakModel;
+    }
+
+    // --- Format Think Provider ---
+    const finalThinkConfig = {
+      model: thinkProvider.model, // Model is outside provider
+      instructions: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant.', // Use instructions, not prompt
+      provider: {
+        type: thinkProvider.type
+      }
+    };
+
+    if (thinkProvider.api_key) {
+      finalThinkConfig.provider.api_key = thinkProvider.api_key;
     }
 
     return {
@@ -200,17 +219,8 @@ export class WebSocketHandler {
       },
       agent: {
         listen: listenConfig,
-        think: {
-          provider: {
-            type: thinkProvider.type,
-            ...(thinkProvider.api_key && { api_key: thinkProvider.api_key })
-          },
-          model: thinkProvider.model,
-          prompt: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant.'
-        },
-        speak: {
-          provider: finalSpeakProvider
-        },
+        think: finalThinkConfig,
+        speak: finalSpeakConfig,
         ...(agent.greeting && { greeting: agent.greeting })
       }
     };
