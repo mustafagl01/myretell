@@ -51,6 +51,11 @@ console.error = (...args) => {
   originalError.apply(console, args);
 };
 
+console.log('Environment validation complete');
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
 app.get('/api/logs', (req, res) => {
   res.send(`
     <html>
@@ -62,11 +67,6 @@ app.get('/api/logs', (req, res) => {
     </html>
   `);
 });
-
-console.log('Environment validation complete');
-
-const app = express();
-const PORT = process.env.PORT || 3001;
 
 // Initialize Deepgram client
 let deepgramClient = null;
