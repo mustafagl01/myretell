@@ -176,10 +176,22 @@ export class WebSocketHandler {
 
     // STT Provider Logic
     const listenConfig = {
-      model: agent.sttModel || 'nova-2',
-      language: agent.language || 'en',
-      provider: { type: 'deepgram' }
+      provider: {
+        type: 'deepgram',
+        model: agent.sttModel || 'nova-3', // nova-2 or nova-3 depending on version
+        language: agent.language || 'en'
+      }
     };
+
+    // TTS Provider Logic: Ensure model is inside provider
+    const finalSpeakProvider = { ...speakProvider };
+    if (speakModel) {
+      if (finalSpeakProvider.type === 'eleven_labs') {
+        finalSpeakProvider.model_id = speakModel;
+      } else {
+        finalSpeakProvider.model = speakModel;
+      }
+    }
 
     return {
       audio: {
@@ -191,16 +203,15 @@ export class WebSocketHandler {
         think: {
           provider: {
             type: thinkProvider.type,
+            model: thinkProvider.model,
             ...(thinkProvider.api_key && { api_key: thinkProvider.api_key })
           },
-          model: thinkProvider.model,
-          instructions: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant. Keep your responses concise.',
-          ...(agent.greeting && { greeting: agent.greeting }),
+          prompt: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant.'
         },
         speak: {
-          model: speakModel,
-          provider: speakProvider
-        }
+          provider: finalSpeakProvider
+        },
+        ...(agent.greeting && { greeting: agent.greeting })
       }
     };
   }

@@ -86,15 +86,15 @@ const buildAgentConfig = () => ({
     output: { encoding: 'linear16', sample_rate: 16000, container: 'none' }
   },
   agent: {
-    listen: { model: 'nova-2', provider: { type: 'deepgram' } },
+    listen: {
+      provider: { type: 'deepgram', model: 'nova-2', language: 'en' }
+    },
     think: {
-      provider: { type: 'deepgram' },
-      model: 'llama-3-70b-instruct',
-      instructions: 'You are a helpful and friendly AI voice assistant. Keep your responses concise and conversational.'
+      provider: { type: 'deepgram', model: 'llama-3-70b-instruct' },
+      prompt: 'You are a helpful and friendly AI voice assistant. Keep your responses concise and conversational.'
     },
     speak: {
-      provider: { type: 'deepgram' },
-      model: 'aura-2-thalia-en'
+      provider: { type: 'deepgram', model: 'aura-2-thalia-en' }
     }
   }
 });
