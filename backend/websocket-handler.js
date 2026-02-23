@@ -192,20 +192,26 @@ export class WebSocketHandler {
     // --- STT Provider Logic ---
     const listenConfig = {
       model: agent.sttModel || 'nova-2',
-      language: agent.language || 'en'
+      language: agent.language || 'en',
+      provider: {
+        type: 'deepgram',
+        model: agent.sttModel || 'nova-2' // Mandatory for SDK validation
+      }
     };
 
     // --- Format Speak Provider ---
-    const finalSpeakConfig = {};
+    const finalSpeakConfig = {
+      model: speakModel || 'aura-2-thalia-en',
+      provider: {
+        type: speakProvider.type || 'deepgram',
+        model: speakModel || 'aura-2-thalia-en'
+      }
+    };
+
     if (speakProvider.type === 'eleven_labs') {
-      finalSpeakConfig.provider = {
-        type: 'eleven_labs',
-        voice_id: speakProvider.voice_id,
-        model_id: speakProvider.model_id,
-        ...(speakProvider.api_key && { api_key: speakProvider.api_key })
-      };
-    } else {
-      finalSpeakConfig.model = speakModel || 'aura-2-thalia-en';
+      finalSpeakConfig.provider.voice_id = speakProvider.voice_id;
+      finalSpeakConfig.provider.model_id = speakProvider.model_id;
+      if (speakProvider.api_key) finalSpeakConfig.provider.api_key = speakProvider.api_key;
     }
 
     // --- Format Think Provider ---
@@ -214,6 +220,7 @@ export class WebSocketHandler {
       instructions: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant.',
       provider: {
         type: thinkProvider.type || 'deepgram',
+        model: thinkProvider.model || 'llama-3-70b-instruct', // Mandatory for SDK consistency
         ...(thinkProvider.api_key && { api_key: thinkProvider.api_key })
       }
     };
