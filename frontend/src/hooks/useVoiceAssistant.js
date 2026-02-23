@@ -1,15 +1,28 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AudioManager } from '../audio/AudioManager.js';
 
+const BACKEND_WS_BASE = 'wss://myretell.onrender.com/ws';
+const BACKEND_HEALTH_URL = 'https://myretell.onrender.com/api/health';
+
 const getWsUrl = (agentId) => {
     const base = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
-        ? 'wss://myretell.onrender.com/ws'
+        ? BACKEND_WS_BASE
         : 'ws://localhost:3001/ws';
 
     if (agentId) {
         return `${base}?agentId=${agentId}`;
     }
     return base;
+};
+
+/** Wake Render backend (cold start) before opening WebSocket; wait so server is ready. */
+const wakeBackend = async () => {
+    if (typeof window === 'undefined' || window.location.hostname === 'localhost') return;
+    try {
+        await fetch(BACKEND_HEALTH_URL, { method: 'GET', mode: 'cors' });
+        // Give backend ~1s to be ready for WebSocket upgrade (Render cold start)
+        await new Promise((r) => setTimeout(r, 1000));
+    } catch (_) { /* ignore */ }
 };
 
 export const useVoiceAssistant = (options = {}) => {
@@ -51,11 +64,13 @@ export const useVoiceAssistant = (options = {}) => {
 
     const start = useCallback(async () => {
         setError(null);
-        if (audioManagerRef.current) {
-            const success = await audioManagerRef.current.startConversation();
-            return success;
-        }
-        return false;
+        if (!audioManagerRef.current) return false;
+        // Use latest token (in case it was refreshed)
+        audioManagerRef.current.setToken(localStorage.getItem('token'));
+        // Wake Render backend before opening WebSocket (avoids 1005 on cold start)
+        await wakeBackend();
+        const success = await audioManagerRef.current.startConversation();
+        return success;
     }, []);
 
     const stop = useCallback(() => {

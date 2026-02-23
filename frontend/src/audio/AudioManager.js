@@ -29,6 +29,11 @@ export class AudioManager {
         this.isConversationActive = false;
         this.ws = null;
 
+        /** Call before startConversation() to use latest token (e.g. from localStorage). */
+        setToken(token) {
+            this.token = token;
+        }
+
         // Audio components
         this.capture = new AudioCapture({
             sampleRate: this.sampleRate,
@@ -117,8 +122,10 @@ export class AudioManager {
                     console.log('[AudioManager] WebSocket closed:', event.code, event.reason);
                     if (this.onConnectionChange) this.onConnectionChange('disconnected');
 
-                    // If closed with an error code/reason, notify user
-                    if (event.code !== 1000 && event.code !== 1001 && event.reason) {
+                    // 1005 = no status from server (often Render cold start or backend closed without reason)
+                    if (event.code === 1005 && !event.reason) {
+                        this._handleError(new Error('Bağlantı kapatıldı (1005). Backend uyanıyor olabilir veya kredi/API hatası. Lütfen birkaç saniye bekleyip tekrar deneyin.'));
+                    } else if (event.code !== 1000 && event.code !== 1001 && event.reason) {
                         this._handleError(new Error(event.reason));
                     }
 

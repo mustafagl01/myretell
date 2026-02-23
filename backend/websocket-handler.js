@@ -268,7 +268,7 @@ export class WebSocketHandler {
           type: 'connection_failed',
           message: 'Failed to connect to Deepgram service: ' + error.message,
         });
-        ws.close(1011, 'Deepgram connection failed: ' + error.message);
+        ws.close(1011, ('DG Error: ' + error.message).substring(0, 120));
       });
     } catch (error) {
       console.error('Error creating Deepgram connection:', error.message);
@@ -455,7 +455,7 @@ export class WebSocketHandler {
         message: error.message || 'Authentication failed',
         details: error.stack
       });
-      ws.close(1008, error.message || 'Authentication failed');
+      ws.close(1008, (error.message || 'Auth failed').substring(0, 120));
     }
   }
 
@@ -495,6 +495,10 @@ export class WebSocketHandler {
         reason: event.reason || 'Connection closed',
       },
     });
+    // If Deepgram closes, we should close the user session too
+    setTimeout(() => {
+      if (ws.readyState === 1) ws.close(1000, 'Deepgram closed: ' + (event.reason || 'No reason'));
+    }, 2000);
   }
 
   _onDeepgramError(ws, error) {
