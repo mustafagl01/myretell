@@ -250,9 +250,13 @@ export class WebSocketHandler {
 
       this.deepgramConnections.set(ws, deepgramConn);
 
-      debugLog(`Agent Name: ${agent.name}, LLM: ${thinkProvider.model}, STT: ${listenConfig.model}, TTS: ${speakModel}`);
+      const agentName = ws.agentRecord?.name || 'Default';
+      const llmModel = config?.agent?.think?.model || 'unknown';
+      const sttModel = config?.agent?.listen?.model || 'unknown';
+      const ttsModel = config?.agent?.speak?.model || config?.agent?.speak?.provider?.type || 'unknown';
+      debugLog(`Agent Name: ${agentName}, LLM: ${llmModel}, STT: ${sttModel}, TTS: ${ttsModel}`);
       debugLog('Full Deepgram config: ' + JSON.stringify(config, null, 2));
-      console.log(`[DEBUG] Agent Name: ${agent.name}, LLM: ${thinkProvider.model}, STT: ${listenConfig.model}, TTS: ${speakModel}`);
+      console.log(`[DEBUG] Agent Name: ${agentName}, LLM: ${llmModel}, STT: ${sttModel}, TTS: ${ttsModel}`);
       console.log('[DEBUG] Full Deepgram config being sent:', JSON.stringify(config, null, 2));
       deepgramConn.connect(config).then(() => {
         console.log('[DEBUG] Deepgram connection ready, flushing audio queue');
