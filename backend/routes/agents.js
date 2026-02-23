@@ -64,13 +64,18 @@ router.post('/', async (req, res) => {
                 llmModel: llmModel || 'gpt-4o-mini',
                 language: language || 'en',
                 greeting: greeting?.trim() || null,
+                phoneNumber: req.body.phoneNumber || null,
             }
         });
 
         res.status(201).json(agent);
     } catch (error) {
-        console.error('Error creating agent:', error.message);
-        res.status(500).json({ error: 'Failed to create agent' });
+        console.error('Detailed Error creating agent:', error);
+        res.status(500).json({
+            error: 'Failed to create agent',
+            details: error.message,
+            code: error.code // Prisma error codes are helpful
+        });
     }
 });
 
