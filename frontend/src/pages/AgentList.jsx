@@ -21,10 +21,14 @@ export const AgentList = ({ user, onLogout }) => {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             const data = await res.json();
-            setAgents(data);
-            if (data.length > 0) setSelectedAgent(data[0]);
+            
+            // Defensive check: Ensure data is an array
+            const agentList = Array.isArray(data) ? data : [];
+            setAgents(agentList);
+            if (agentList.length > 0) setSelectedAgent(agentList[0]);
         } catch (err) {
             console.error(err);
+            setAgents([]); // Reset to empty array on error
         } finally {
             setLoading(false);
         }
