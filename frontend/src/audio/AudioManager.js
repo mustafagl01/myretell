@@ -147,6 +147,10 @@ export class AudioManager {
 
             if (type === 'Audio') {
                 this._handleAudioData(data);
+            } else if (type === 'Error') {
+                const serverMessage = data?.message || 'Unknown websocket error';
+                console.error('[AudioManager] Server error:', data);
+                this._handleError(new Error(serverMessage));
             } else {
                 console.log('[AudioManager] WS Message:', type, data ? JSON.stringify(data).substring(0, 100) : '');
             }

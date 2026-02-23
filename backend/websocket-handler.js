@@ -87,7 +87,7 @@ export class WebSocketHandler {
     // LLM Provider Logic - Default to Deepgram Native
     let thinkProvider = {
       type: 'deepgram',
-      model: 'llama-3.1-70b-instruct'
+      model: 'llama-3-70b-instruct'
     };
 
     const model = agent.llmModel || 'llama-3-70b-instruct';
@@ -268,7 +268,7 @@ export class WebSocketHandler {
           type: 'connection_failed',
           message: 'Failed to connect to Deepgram service: ' + error.message,
         });
-        ws.close();
+        ws.close(1011, 'Deepgram connection failed');
       });
     } catch (error) {
       console.error('Error creating Deepgram connection:', error.message);
@@ -383,7 +383,7 @@ export class WebSocketHandler {
 
       if (!user.creditBalance || Number(user.creditBalance.balance) <= 0) {
         this._sendError(ws, { type: 'insufficient_credits', message: 'Please refill your credits' });
-        ws.close();
+        ws.close(4003, 'Insufficient credits');
         return;
       }
 
@@ -410,7 +410,7 @@ export class WebSocketHandler {
             },
             think: {
               provider: { type: 'deepgram' },
-              model: 'llama-3.1-70b-instruct',
+              model: 'llama-3-70b-instruct',
               instructions: 'You are a helpful and friendly AI voice assistant. Keep your responses concise and conversational.'
             },
             speak: {
@@ -587,7 +587,7 @@ export class WebSocketHandler {
       if (result.type === 'end_call') {
         setTimeout(() => {
           this._handleClientDisconnect(ws);
-          ws.close();
+          ws.close(1000, 'Call ended by workflow');
         }, 2000);
       }
     }
