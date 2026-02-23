@@ -283,20 +283,23 @@ export class DeepgramConnection {
 
       const fullConfig = this._pendingConfig || {};
       if (Object.keys(fullConfig).length > 0) {
-        // Restoration of the correct nesting: SDK's configure() expects the full Settings message body.
-        const settingsToPulse = {
+        // BYPASS SDK: The configure() method in current @deepgram/sdk has a bug
+        // that checks for provider.model before sending, but the server rejects it if present.
+        // We send the JSON directly to bypass this problematic SDK check.
+        const settingsPayload = {
+          type: 'Settings',
           agent: fullConfig.agent || fullConfig
         };
 
-        console.log('[DEEPGRAM] 📤 Dispatching Settings to SDK:', JSON.stringify(settingsToPulse, null, 2));
+        console.log('[DEEPGRAM] 📤 Dispatching RAW Settings (Bypassing SDK configure):', JSON.stringify(settingsPayload, null, 2));
         try {
-          // Use SDK method for protocol safety
-          this.agent.configure(settingsToPulse);
-          console.log('[DEEPGRAM] ✅ Configuration dispatched via SDK');
+          // Use manual send to bypass SDK level 'startsWith' crash
+          this.agent.send(JSON.stringify(settingsPayload));
+          console.log('[DEEPGRAM] ✅ RAW Configuration dispatched to network');
         } catch (err) {
-          console.error('[DEEPGRAM] ❌ SDK configuration failed:', err.message);
+          console.error('[DEEPGRAM] ❌ RAW configuration failed:', err.message);
           if (this._connectReject) {
-            this._connectReject(new Error(`Deepgram Config Error: ${err.message}`));
+            this._connectReject(new Error(`Deepgram RAW Config Error: ${err.message}`));
             this._connectReject = null;
           }
         }

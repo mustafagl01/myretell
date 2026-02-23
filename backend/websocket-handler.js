@@ -194,8 +194,7 @@ export class WebSocketHandler {
       model: agent.sttModel || 'nova-2',
       language: agent.language || 'en',
       provider: {
-        type: 'deepgram',
-        model: agent.sttModel || 'nova-2' // Mandatory for SDK validation
+        type: 'deepgram'
       }
     };
 
@@ -203,8 +202,7 @@ export class WebSocketHandler {
     const finalSpeakConfig = {
       model: speakModel || 'aura-2-thalia-en',
       provider: {
-        type: speakProvider.type || 'deepgram',
-        model: speakModel || 'aura-2-thalia-en'
+        type: speakProvider.type || 'deepgram'
       }
     };
 
@@ -220,7 +218,6 @@ export class WebSocketHandler {
       instructions: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant.',
       provider: {
         type: thinkProvider.type || 'deepgram',
-        model: thinkProvider.model || 'llama-3-70b-instruct', // Mandatory for SDK consistency
         ...(thinkProvider.api_key && { api_key: thinkProvider.api_key })
       }
     };
