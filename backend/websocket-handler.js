@@ -211,15 +211,12 @@ export class WebSocketHandler {
     // --- Format Think Provider ---
     const finalThinkConfig = {
       model: thinkProvider.model || 'llama-3-70b-instruct',
-      instructions: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant.'
-    };
-
-    if (thinkProvider.type !== 'deepgram') {
-      finalThinkConfig.provider = {
-        type: thinkProvider.type,
+      instructions: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant.',
+      provider: {
+        type: thinkProvider.type || 'deepgram',
         ...(thinkProvider.api_key && { api_key: thinkProvider.api_key })
-      };
-    }
+      }
+    };
 
     return {
       audio: {
