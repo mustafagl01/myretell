@@ -228,7 +228,13 @@ export class WebSocketHandler {
         output: { encoding: 'linear16', sample_rate: 16000, container: 'none' }
       },
       agent: {
-        listen: listenConfig,
+        language: agent.language || 'en', // MOVED to root agent level per official guidance
+        listen: {
+          model: agent.sttModel || 'nova-2',
+          provider: {
+            type: 'deepgram'
+          }
+        },
         think: finalThinkConfig,
         speak: finalSpeakConfig,
         ...(agent.greeting && { greeting: agent.greeting })
