@@ -87,7 +87,7 @@ export class WebSocketHandler {
     // LLM Provider Logic - Default to Deepgram Native
     let thinkProvider = {
       type: 'deepgram',
-      model: 'llama-3.1-70b-instruct'
+      model: 'llama-3-70b-instruct'
     };
 
     const model = agent.llmModel || 'llama-3-70b-instruct';
@@ -250,9 +250,13 @@ export class WebSocketHandler {
 
       this.deepgramConnections.set(ws, deepgramConn);
 
-      debugLog(`Agent Name: ${agent.name}, LLM: ${thinkProvider.model}, STT: ${listenConfig.model}, TTS: ${speakModel}`);
+      const agentName = ws.agentRecord?.name || 'Default';
+      const llmModel = config?.agent?.think?.model || 'unknown';
+      const sttModel = config?.agent?.listen?.model || 'unknown';
+      const ttsModel = config?.agent?.speak?.model || config?.agent?.speak?.provider?.type || 'unknown';
+      debugLog(`Agent Name: ${agentName}, LLM: ${llmModel}, STT: ${sttModel}, TTS: ${ttsModel}`);
       debugLog('Full Deepgram config: ' + JSON.stringify(config, null, 2));
-      console.log(`[DEBUG] Agent Name: ${agent.name}, LLM: ${thinkProvider.model}, STT: ${listenConfig.model}, TTS: ${speakModel}`);
+      console.log(`[DEBUG] Agent Name: ${agentName}, LLM: ${llmModel}, STT: ${sttModel}, TTS: ${ttsModel}`);
       console.log('[DEBUG] Full Deepgram config being sent:', JSON.stringify(config, null, 2));
       deepgramConn.connect(config).then(() => {
         console.log('[DEBUG] Deepgram connection ready, flushing audio queue');
@@ -264,7 +268,7 @@ export class WebSocketHandler {
           type: 'connection_failed',
           message: 'Failed to connect to Deepgram service: ' + error.message,
         });
-        ws.close();
+        ws.close(1011, 'Deepgram connection failed');
       });
     } catch (error) {
       console.error('Error creating Deepgram connection:', error.message);
@@ -379,7 +383,7 @@ export class WebSocketHandler {
 
       if (!user.creditBalance || Number(user.creditBalance.balance) <= 0) {
         this._sendError(ws, { type: 'insufficient_credits', message: 'Please refill your credits' });
-        ws.close();
+        ws.close(4003, 'Insufficient credits');
         return;
       }
 
@@ -406,7 +410,7 @@ export class WebSocketHandler {
             },
             think: {
               provider: { type: 'deepgram' },
-              model: 'llama-3.1-70b-instruct',
+              model: 'llama-3-70b-instruct',
               instructions: 'You are a helpful and friendly AI voice assistant. Keep your responses concise and conversational.'
             },
             speak: {
@@ -583,7 +587,7 @@ export class WebSocketHandler {
       if (result.type === 'end_call') {
         setTimeout(() => {
           this._handleClientDisconnect(ws);
-          ws.close();
+          ws.close(1000, 'Call ended by workflow');
         }, 2000);
       }
     }
