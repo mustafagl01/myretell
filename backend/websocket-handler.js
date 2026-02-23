@@ -3,6 +3,13 @@ import jwt from 'jsonwebtoken';
 import prisma from './config/prisma.js';
 import { DeepgramConnection } from './deepgram-connection.js';
 import { WorkflowExecutor } from './workflow-executor.js';
+import fs from 'fs';
+import path from 'path';
+
+const debugLog = (msg) => {
+  const logMsg = `[${new Date().toISOString()}] ${msg}\n`;
+  fs.appendFileSync('debug_ws.log', logMsg);
+};
 
 /**
  * WebSocketHandler manages WebSocket connections for audio relay.
@@ -80,7 +87,7 @@ export class WebSocketHandler {
     // LLM Provider Logic - Default to Deepgram Native
     let thinkProvider = {
       type: 'deepgram',
-      model: 'llama-3-70b-instruct'
+      model: 'llama-3.1-70b-instruct'
     };
 
     const model = agent.llmModel || 'llama-3-70b-instruct';
@@ -243,6 +250,9 @@ export class WebSocketHandler {
 
       this.deepgramConnections.set(ws, deepgramConn);
 
+      debugLog(`Agent Name: ${agent.name}, LLM: ${thinkProvider.model}, STT: ${listenConfig.model}, TTS: ${speakModel}`);
+      debugLog('Full Deepgram config: ' + JSON.stringify(config, null, 2));
+      console.log(`[DEBUG] Agent Name: ${agent.name}, LLM: ${thinkProvider.model}, STT: ${listenConfig.model}, TTS: ${speakModel}`);
       console.log('[DEBUG] Full Deepgram config being sent:', JSON.stringify(config, null, 2));
       deepgramConn.connect(config).then(() => {
         console.log('[DEBUG] Deepgram connection ready, flushing audio queue');
@@ -391,7 +401,7 @@ export class WebSocketHandler {
             listen: { model: 'nova-2', provider: { type: 'deepgram' } },
             think: {
               provider: { type: 'deepgram' },
-              model: 'llama-3-70b-instruct',
+              model: 'llama-3.1-70b-instruct',
               instructions: 'You are a helpful and friendly AI voice assistant. Keep your responses concise.'
             },
             speak: { provider: { type: 'deepgram' }, model: 'aura-2-thalia-en' }
@@ -475,6 +485,7 @@ export class WebSocketHandler {
 
   _onDeepgramError(ws, error) {
     const errorString = typeof error === 'string' ? error : JSON.stringify(error);
+    debugLog(`[DG ERROR] ${errorString}`);
     console.error('[WS] Deepgram error received:', errorString);
 
     this._sendError(ws, {
