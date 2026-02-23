@@ -283,14 +283,15 @@ export class DeepgramConnection {
 
       const fullConfig = this._pendingConfig || {};
       if (Object.keys(fullConfig).length > 0) {
-        // CRITICAL: SDK's configure() expects ONLY the content of the "Settings" message,
-        // which is usually the 'agent' object. Passing 'audio' here causes 'startsWith' of undefined.
-        const agentSettings = fullConfig.agent ? { agent: fullConfig.agent } : fullConfig;
+        // CRITICAL FIX: The SDK's configure() method automatically wraps the object in an 'agent' field.
+        // If we pass { agent: { ... } }, it becomes { agent: { agent: { ... } } } which crashes.
+        // We must pass ONLY the settings that go inside the agent.
+        const settingsToPulse = fullConfig.agent || fullConfig;
 
-        console.log('[DEEPGRAM] 📤 Sending Settings via SDK configure():', JSON.stringify(agentSettings, null, 2));
+        console.log('[DEEPGRAM] 📤 Dispatching Settings to SDK:', JSON.stringify(settingsToPulse, null, 2));
         try {
           // Use SDK method for protocol safety
-          this.agent.configure(agentSettings);
+          this.agent.configure(settingsToPulse);
           console.log('[DEEPGRAM] ✅ Configuration dispatched via SDK');
         } catch (err) {
           console.error('[DEEPGRAM] ❌ SDK configuration failed:', err.message);
