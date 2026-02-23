@@ -176,9 +176,9 @@ export class WebSocketHandler {
 
     // STT Provider Logic
     const listenConfig = {
-      model: 'nova-2', // Nova-2 is generally more stable for voice agent API
-      provider: { type: 'deepgram' },
-      ...(agent.language && { language: agent.language })
+      model: agent.sttModel || 'nova-2',
+      language: agent.language || 'en',
+      provider: { type: 'deepgram' }
     };
 
     return {
@@ -198,8 +198,8 @@ export class WebSocketHandler {
           ...(agent.greeting && { greeting: agent.greeting }),
         },
         speak: {
-          provider: speakProvider,
-          ...(speakModel && { model: speakModel })
+          model: speakModel,
+          provider: speakProvider
         }
       }
     };
