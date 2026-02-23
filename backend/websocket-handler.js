@@ -70,8 +70,12 @@ export class WebSocketHandler {
 
     // Don't create Deepgram connection yet - wait for authentication
     ws.on('message', (data, isBinary) => {
-      console.log(`[${new Date().toISOString()}] [WS] Message received. isBinary: ${isBinary}, length: ${data?.length || 0}`);
-      this._handleClientMessage(ws, data, isBinary);
+      console.log(`[${new Date().toISOString()}] [WS] === MESSAGE FIRED === isBinary: ${isBinary}, length: ${data?.length || 0}`);
+      try {
+        this._handleClientMessage(ws, data, isBinary);
+      } catch (err) {
+        console.error(`[${new Date().toISOString()}] [WS] MESSAGE HANDLER CRASH:`, err.message, err.stack);
+      }
     });
 
     ws.on('close', (code, reason) => {
@@ -291,7 +295,8 @@ export class WebSocketHandler {
 
   async _handleClientMessage(ws, data, isBinary) {
     const clientIp = ws._socket?.remoteAddress || 'unknown';
-    console.log(`[WS MESSAGE] Data received from ${clientIp}. isBinary: ${isBinary}, length: ${data?.length || 0}`);
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] [WS MESSAGE] === ENTRY === isBinary: ${isBinary}, length: ${data?.length || 0}`);
 
     const deepgramConn = this.deepgramConnections.get(ws);
 
@@ -424,7 +429,18 @@ export class WebSocketHandler {
 
       console.log('[WS AUTH] User found:', user.email);
 
-      if (!user.creditBalance || Number(user.creditBalance.balance) <= 0) {
+      if (!user.creditBalance) {
+        console.error('[WS AUTH] User has no CreditBalance record!');
+        this._sendError(ws, { type: 'insufficient_credits', message: 'No credit record found' });
+        ws.close(1008, 'Credit record missing');
+        return;
+      }
+
+      const balance = Number(user.creditBalance.balance);
+      console.log('[WS AUTH] User balance:', balance);
+
+      if (balance <= 0) {
+        console.warn('[WS AUTH] Insufficient balance for user:', user.email);
         this._sendError(ws, { type: 'insufficient_credits', message: 'Please refill your credits' });
         ws.close(1008, 'Insufficient credits');
         return;

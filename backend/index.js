@@ -12,16 +12,25 @@ import { TwilioHandler, handleTwilioIncoming } from './twilio-handler.js';
 // Load environment variables
 dotenv.config();
 
-// Verify environment variables
-const requiredEnvVars = ['DEEPGRAM_API_KEY'];
-const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-
-if (missingVars.length > 0) {
-  console.error(`Missing required environment variables: ${missingVars.join(', ')}`);
-  // process.exit(1); // Don't exit in development for easier setup
+// Validate and alias database URL
+if (!process.env.DATABASE_URL && process.env.POSTGRES_URL) {
+  console.log('Aliasing POSTGRES_URL to DATABASE_URL for Prisma compatibility');
+  process.env.DATABASE_URL = process.env.POSTGRES_URL;
 }
 
-console.log('Environment loaded successfully');
+// Verify critical environment variables
+const criticalVars = ['DEEPGRAM_API_KEY', 'JWT_SECRET', 'DATABASE_URL'];
+criticalVars.forEach(v => {
+  if (!process.env[v]) {
+    console.error(`[CRITICAL] Missing environment variable: ${v}`);
+  } else {
+    // Only log first/last chars for security
+    const val = process.env[v];
+    console.log(`[ENV] ${v} is set (Length: ${val.length}, starts with: ${val.substring(0, 3)}...)`);
+  }
+});
+
+console.log('Environment validation complete');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
