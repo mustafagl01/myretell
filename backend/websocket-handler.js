@@ -228,15 +228,21 @@ export class WebSocketHandler {
         output: { encoding: 'linear16', sample_rate: 16000, container: 'none' }
       },
       agent: {
-        language: agent.language || 'en', // MOVED to root agent level per official guidance
+        language: agent.language || 'en',
         listen: {
-          model: agent.sttModel || 'nova-2',
+          model: agent.sttModel || 'nova-2'
+        },
+        think: {
+          model: thinkProvider.model || 'llama-3-70b-instruct',
+          instructions: agent.systemPrompt || 'You are a helpful AI voice assistant.',
           provider: {
-            type: 'deepgram'
+            type: thinkProvider.type || 'deepgram',
+            ...(thinkProvider.api_key && { api_key: thinkProvider.api_key })
           }
         },
-        think: finalThinkConfig,
-        speak: finalSpeakConfig,
+        speak: {
+          model: speakModel || 'aura-2-thalia-en'
+        },
         ...(agent.greeting && { greeting: agent.greeting })
       }
     };
