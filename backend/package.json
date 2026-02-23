@@ -7,8 +7,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
-    "build": "node node_modules/prisma/build/index.js generate",
-    "postinstall": "node node_modules/prisma/build/index.js generate"
+    "build": "npx prisma generate",
+    "postinstall": "npx prisma generate"
   },
   "keywords": [
     "voice",
