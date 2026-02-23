@@ -275,23 +275,15 @@ export class DeepgramConnection {
 
       const configObj = this._pendingConfig || {};
       if (Object.keys(configObj).length > 0) {
-        console.log('[DEEPGRAM] 📤 Sending Settings message manually...');
+        console.log('[DEEPGRAM] 📤 Sending Settings via SDK configure()...');
         try {
-          // Manual Settings message as per protocol docs
-          const settingsMsg = {
-            type: 'Settings',
-            ...configObj
-          };
-
-          const payload = JSON.stringify(settingsMsg);
-          console.log('[DEEPGRAM] Settings payload size:', payload.length);
-
-          this.agent.send(payload);
-          console.log('[DEEPGRAM] ✅ Settings message dispatched');
+          // Use SDK method for protocol safety
+          this.agent.configure(configObj);
+          console.log('[DEEPGRAM] ✅ Configuration dispatched via SDK');
         } catch (err) {
-          console.error('[DEEPGRAM] ❌ Failed to dispatch Settings:', err.message);
+          console.error('[DEEPGRAM] ❌ SDK configuration failed:', err.message);
           if (this._connectReject) {
-            this._connectReject(new Error(`Deepgram Settings Send Error: ${err.message}`));
+            this._connectReject(new Error(`Deepgram Config Error: ${err.message}`));
             this._connectReject = null;
           }
         }

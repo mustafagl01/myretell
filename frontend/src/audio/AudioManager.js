@@ -29,11 +29,6 @@ export class AudioManager {
         this.isConversationActive = false;
         this.ws = null;
 
-        /** Call before startConversation() to use latest token (e.g. from localStorage). */
-        setToken(token) {
-            this.token = token;
-        }
-
         // Audio components
         this.capture = new AudioCapture({
             sampleRate: this.sampleRate,
@@ -47,6 +42,11 @@ export class AudioManager {
             onPlaybackEnd: () => { if (this.onAudioStopped) this.onAudioStopped(); },
             onError: (err) => this._handleError(err),
         });
+    }
+
+    /** Call before startConversation() to use latest token (e.g. from localStorage). */
+    setToken(token) {
+        this.token = token;
     }
 
     async startConversation() {
