@@ -51,35 +51,42 @@ export class WebSocketHandler {
 
   _handleConnection(ws, req) {
     const clientIp = req.socket.remoteAddress;
-    console.log(`[WS] Connection attempt from IP: ${clientIp}`);
-    console.log(`[WS] Headers: ${JSON.stringify(req.headers)}`);
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] [WS] Connection attempt from IP: ${clientIp}`);
+    console.log(`[${timestamp}] [WS] URL: ${req.url}`);
 
     // Extract agentId from query params
     const url = new URL(req.url, 'http://localhost');
     const agentId = url.searchParams.get('agentId');
 
-    console.log(`[WS] Handler started. IP: ${clientIp}, AgentId: ${agentId || 'none'}`);
+    console.log(`[${timestamp}] [WS] Handler started. IP: ${clientIp}, AgentId: ${agentId || 'none'}`);
 
     // Store agentId on ws
     ws.agentId = agentId;
+    ws.connectTime = Date.now();
 
     this.audioQueues.set(ws, []);
     this.connectionReady.set(ws, false);
 
     // Don't create Deepgram connection yet - wait for authentication
     ws.on('message', (data, isBinary) => {
+      console.log(`[${new Date().toISOString()}] [WS] Message received. isBinary: ${isBinary}, length: ${data?.length || 0}`);
       this._handleClientMessage(ws, data, isBinary);
     });
 
     ws.on('close', (code, reason) => {
-      console.log(`WebSocket client disconnected: ${clientIp} (code: ${code})`);
+      const duration = ws.connectTime ? `${(Date.now() - ws.connectTime) / 1000}s` : 'unknown';
+      console.log(`[${new Date().toISOString()}] [WS] Client disconnected. IP: ${clientIp}, Code: ${code}, Duration: ${duration}`);
+      console.log(`[${new Date().toISOString()}] [WS] Disconnect reason: ${reason || 'none'}`);
       this._handleClientDisconnect(ws);
     });
 
     ws.on('error', (error) => {
-      console.error(`WebSocket client error: ${clientIp}:`, error.message);
+      console.error(`[${new Date().toISOString()}] [WS] Client error. IP: ${clientIp}:`, error.message);
       this._handleClientDisconnect(ws);
     });
+
+    console.log(`[${timestamp}] [WS] Event handlers registered. Waiting for Authenticate message...`);
   }
 
   /**
