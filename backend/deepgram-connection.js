@@ -283,10 +283,10 @@ export class DeepgramConnection {
 
       const fullConfig = this._pendingConfig || {};
       if (Object.keys(fullConfig).length > 0) {
-        // CRITICAL FIX: The SDK's configure() method automatically wraps the object in an 'agent' field.
-        // If we pass { agent: { ... } }, it becomes { agent: { agent: { ... } } } which crashes.
-        // We must pass ONLY the settings that go inside the agent.
-        const settingsToPulse = fullConfig.agent || fullConfig;
+        // Restoration of the correct nesting: SDK's configure() expects the full Settings message body.
+        const settingsToPulse = {
+          agent: fullConfig.agent || fullConfig
+        };
 
         console.log('[DEEPGRAM] 📤 Dispatching Settings to SDK:', JSON.stringify(settingsToPulse, null, 2));
         try {

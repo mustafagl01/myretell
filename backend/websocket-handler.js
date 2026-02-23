@@ -191,40 +191,34 @@ export class WebSocketHandler {
 
     // --- STT Provider Logic ---
     const listenConfig = {
-      model: agent.sttModel || 'nova-2', // Model is at listen level
-      language: agent.language || 'en', // Language is at listen level
-      provider: {
-        type: 'deepgram'
-      }
+      model: agent.sttModel || 'nova-2',
+      language: agent.language || 'en'
     };
 
     // --- Format Speak Provider ---
-    const finalSpeakConfig = {
-      provider: {
-        type: speakProvider.type
-      }
-    };
-
+    const finalSpeakConfig = {};
     if (speakProvider.type === 'eleven_labs') {
-      finalSpeakConfig.provider.voice_id = speakProvider.voice_id;
-      finalSpeakConfig.provider.model_id = speakProvider.model_id;
-      if (speakProvider.api_key) finalSpeakConfig.provider.api_key = speakProvider.api_key;
+      finalSpeakConfig.provider = {
+        type: 'eleven_labs',
+        voice_id: speakProvider.voice_id,
+        model_id: speakProvider.model_id,
+        ...(speakProvider.api_key && { api_key: speakProvider.api_key })
+      };
     } else {
-      // For Deepgram TTS, model is outside provider
-      finalSpeakConfig.model = speakModel;
+      finalSpeakConfig.model = speakModel || 'aura-2-thalia-en';
     }
 
     // --- Format Think Provider ---
     const finalThinkConfig = {
-      model: thinkProvider.model, // Model is outside provider
-      instructions: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant.', // Use instructions, not prompt
-      provider: {
-        type: thinkProvider.type
-      }
+      model: thinkProvider.model || 'llama-3-70b-instruct',
+      instructions: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant.'
     };
 
-    if (thinkProvider.api_key) {
-      finalThinkConfig.provider.api_key = thinkProvider.api_key;
+    if (thinkProvider.type !== 'deepgram') {
+      finalThinkConfig.provider = {
+        type: thinkProvider.type,
+        ...(thinkProvider.api_key && { api_key: thinkProvider.api_key })
+      };
     }
 
     return {
