@@ -276,6 +276,7 @@ export class WebSocketHandler {
         type: 'initialization_error',
         message: error.message,
       });
+      ws.close(1011, 'Initialization error: ' + error.message);
     }
   }
 
@@ -642,7 +643,7 @@ export class WebSocketHandler {
     this.audioQueues.delete(ws);
     this.connectionReady.delete(ws);
 
-    if (ws.readyState === 1) ws.close();
+    if (ws.readyState === 1) ws.close(1000, 'Session ended safely');
   }
 
   _sendJson(ws, data) {
@@ -666,7 +667,7 @@ export class WebSocketHandler {
     for (const [ws, deepgramConn] of this.deepgramConnections) {
       try {
         deepgramConn.disconnect();
-        ws.close();
+        ws.close(1001, 'Server shutting down');
       } catch (error) {
         // Ignore cleanup errors
       }
