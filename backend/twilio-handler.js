@@ -7,8 +7,8 @@ import { DeepgramConnection } from './deepgram-connection.js';
  * Mulaw (8000Hz) formatındaki ses akışını Deepgram'a (Linear16/8000Hz) dönüştürür.
  */
 export class TwilioHandler {
-  constructor(server) {
-    this.wss = new WebSocketServer({ server, path: '/tw-media-stream' });
+  constructor() {
+    this.wss = new WebSocketServer({ noServer: true });
     this.connections = new Map(); // Twilio stream SID -> Deepgram connection
     this._initialize();
   }
@@ -86,8 +86,8 @@ export class TwilioHandler {
                   }));
                 },
                 onMessage: (dgMsg) => {
-                   // Deepgram mesajlarını (transcript vb.) logla veya DB'ye kaydet
-                   // console.log('[Twilio-DG] Msg:', dgMsg);
+                  // Deepgram mesajlarını (transcript vb.) logla veya DB'ye kaydet
+                  // console.log('[Twilio-DG] Msg:', dgMsg);
                 }
               });
 
@@ -103,8 +103,8 @@ export class TwilioHandler {
           case 'media':
             // Telefondan gelen sesi (user audio) Deepgram'a ilet
             if (dgConn && dgConn.connected) {
-               const audioBuffer = Buffer.from(msg.media.payload, 'base64');
-               dgConn.sendAudio(audioBuffer);
+              const audioBuffer = Buffer.from(msg.media.payload, 'base64');
+              dgConn.sendAudio(audioBuffer);
             }
             break;
 

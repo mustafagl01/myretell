@@ -36,8 +36,7 @@ export class WebSocketHandler {
 
   _initialize() {
     this.wss = new WebSocketServer({
-      server: this.server,
-      path: this.path,
+      noServer: true
     });
 
     this.wss.on('connection', (ws, req) => {

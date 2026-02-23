@@ -193,22 +193,40 @@ let wsHandler = null;
 let twilioHandler = null;
 
 try {
+  // Initialize handlers WITHOUT passing 'server' to auto-attach
   wsHandler = new WebSocketHandler({
-    server: server,
     path: '/ws',
     defaultAgentConfig: buildAgentConfig()
   });
-  console.log('WebSocket ready on /ws');
-} catch (error) {
-  console.error('WebSocket init failed:', error.message);
-}
+  console.log('WebSocketHandler initialized');
 
-try {
-  // Twilio Telephony WebSocket should not block /ws initialization
-  twilioHandler = new TwilioHandler(server);
-  console.log('Twilio Media Stream ready on /tw-media-stream');
+  twilioHandler = new TwilioHandler();
+  console.log('TwilioHandler initialized');
+
+  // CENTRALIZED UPGRADE HANDLER
+  server.on('upgrade', (request, socket, head) => {
+    const pathname = new URL(request.url, `http://${request.headers.host}`).pathname;
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] [UPGRADE] Request for: ${pathname}`);
+
+    if (pathname === '/ws') {
+      console.log(`[${timestamp}] [UPGRADE] Routing /ws to WebSocketHandler`);
+      wsHandler.wss.handleUpgrade(request, socket, head, (ws) => {
+        wsHandler.wss.emit('connection', ws, request);
+      });
+    } else if (pathname === '/tw-media-stream') {
+      console.log(`[${timestamp}] [UPGRADE] Routing /tw-media-stream to TwilioHandler`);
+      twilioHandler.wss.handleUpgrade(request, socket, head, (ws) => {
+        twilioHandler.wss.emit('connection', ws, request);
+      });
+    } else {
+      console.warn(`[${timestamp}] [UPGRADE] No handler for: ${pathname}. Closing socket.`);
+      socket.destroy();
+    }
+  });
+
 } catch (error) {
-  console.error('Twilio init failed:', error.message);
+  console.error('Handler initialization failed:', error.message);
 }
 
 const gracefulShutdown = () => {
