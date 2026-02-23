@@ -271,11 +271,29 @@ export class DeepgramConnection {
       // Configure agent AFTER connection is open
       if (this._pendingConfig && Object.keys(this._pendingConfig).length > 0) {
         console.log('[DEEPGRAM] Applying configuration...');
+        console.log('[DEEPGRAM] Config payload:', JSON.stringify(this._pendingConfig, null, 2));
+
         try {
           this.agent.configure(this._pendingConfig);
-          console.log('[DEEPGRAM] Configuration sent successfully');
+          console.log('[DEEPGRAM] ✅ Configuration sent successfully');
         } catch (err) {
-          console.error('[DEEPGRAM] Configuration failed:', err.message);
+          console.error('[DEEPGRAM] ❌ Configuration failed:', err.message);
+          console.error('[DEEPGRAM] ❌ Stack trace:', err.stack);
+
+          if (this.onError) {
+            this.onError({
+              type: 'configure_error',
+              message: err.message,
+              details: err
+            });
+          }
+
+          // Reject the connect promise if config fails during initial connection
+          if (this._connectReject) {
+            this._connectReject(new Error(`Deepgram Config Error: ${err.message}`));
+            this._connectReject = null;
+            return;
+          }
         }
         this._pendingConfig = null;
       }
