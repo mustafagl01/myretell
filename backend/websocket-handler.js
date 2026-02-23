@@ -203,9 +203,9 @@ export class WebSocketHandler {
         think: {
           provider: {
             type: thinkProvider.type,
-            model: thinkProvider.model,
             ...(thinkProvider.api_key && { api_key: thinkProvider.api_key })
           },
+          model: thinkProvider.model,
           prompt: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant.'
         },
         speak: {
