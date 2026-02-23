@@ -99,7 +99,7 @@ const buildAgentConfig = () => ({
     },
     think: {
       provider: { type: 'deepgram' },
-      model: 'llama-3.1-70b-instruct',
+      model: 'llama-3-70b-instruct',
       instructions: 'You are a helpful and friendly AI voice assistant. Keep your responses concise and conversational.'
     },
     speak: {
@@ -114,27 +114,32 @@ const server = app.listen(PORT, () => {
 });
 
 let wsHandler = null;
+let twilioHandler = null;
+
 try {
   wsHandler = new WebSocketHandler({
     server: server,
     path: '/ws',
     defaultAgentConfig: buildAgentConfig()
   });
-  console.log(`WebSocket ready on /ws`);
-
-  // Twilio Telephony WebSocket
-  const twHandler = new TwilioHandler(server);
-  console.log(`Twilio Media Stream ready on /tw-media-stream`);
+  console.log('WebSocket ready on /ws');
 } catch (error) {
   console.error('WebSocket init failed:', error.message);
 }
 
-process.on('SIGTERM', () => {
-  if (wsHandler) wsHandler.close();
-  server.close(() => process.exit(0));
-});
+try {
+  // Twilio Telephony WebSocket should not block /ws initialization
+  twilioHandler = new TwilioHandler(server);
+  console.log('Twilio Media Stream ready on /tw-media-stream');
+} catch (error) {
+  console.error('Twilio init failed:', error.message);
+}
 
-process.on('SIGINT', () => {
+const gracefulShutdown = () => {
   if (wsHandler) wsHandler.close();
+  if (twilioHandler) twilioHandler.close();
   server.close(() => process.exit(0));
-});
+};
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);

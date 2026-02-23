@@ -13,6 +13,18 @@ export class TwilioHandler {
     this._initialize();
   }
 
+  close() {
+    try {
+      for (const [, dgConn] of this.connections) {
+        dgConn.disconnect();
+      }
+      this.connections.clear();
+      if (this.wss) this.wss.close();
+    } catch (error) {
+      console.error('[Twilio] Error during shutdown:', error.message);
+    }
+  }
+
   _initialize() {
     this.wss.on('connection', (ws) => {
       console.log('[Twilio] New Media Stream connection');
