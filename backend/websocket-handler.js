@@ -230,23 +230,23 @@ export class WebSocketHandler {
       agent: {
         language: agent.language || 'en',
         listen: {
-          model: agent.sttModel || 'nova-3',
           provider: {
-            type: 'deepgram'
+            type: 'deepgram',
+            model: agent.sttModel || 'nova-3'
           }
         },
         think: {
-          model: thinkProvider.model || 'athena',
           instructions: agent.systemPrompt || 'You are a helpful AI voice assistant.',
           provider: {
             type: thinkProvider.type || 'deepgram',
+            model: thinkProvider.model || 'athena',
             ...(thinkProvider.api_key && { api_key: thinkProvider.api_key })
           }
         },
         speak: {
-          model: speakModel || 'aura-asteria-en',
           provider: {
-            type: 'deepgram'
+            type: 'deepgram',
+            model: speakModel || 'aura-asteria-en'
           }
         },
         ...(agent.greeting && { greeting: agent.greeting })
