@@ -230,7 +230,7 @@ export class WebSocketHandler {
       agent: {
         language: agent.language || 'en',
         listen: {
-          model: agent.sttModel || 'nova-2',
+          model: agent.sttModel || 'nova-3',
           provider: {
             type: 'deepgram'
           }
