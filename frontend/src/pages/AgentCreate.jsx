@@ -29,7 +29,8 @@ const LLM_OPTIONS = [
 ];
 
 const STT_OPTIONS = [
-    { value: 'nova-3', label: 'Deepgram Nova-3 (Winner - 200ms)', provider: 'deepgram' },
+    { value: 'nova-2', label: 'Deepgram Nova-2 (Latest & Stable)', provider: 'deepgram' },
+    { value: 'nova-3', label: 'Deepgram Nova-3 (Beta - 200ms)', provider: 'deepgram' },
     { value: 'whisper-1', label: 'OpenAI Whisper v3 (Alternatif: 99 Dil)', provider: 'openai' },
     { value: 'azure-speech', label: 'Azure Speech Neural (Coming Soon)', provider: 'azure' },
     { value: 'assembly-ai', label: 'AssemblyAI Best (Coming Soon)', provider: 'assembly' },
@@ -74,7 +75,7 @@ export const AgentCreate = ({ user, onLogout }) => {
         systemPrompt: 'Sen yardımcı bir asistansın.',
         llmModel: 'gpt-4o-mini',
         voice: 'aura-2-thalia-en',
-        sttModel: 'nova-3',
+        sttModel: 'nova-2',
         ttsModel: 'deepgram',
         language: 'tr',
         greeting: '',

@@ -2,7 +2,7 @@ services:
   - type: web
     name: myvoiceagent-backend
     env: node
-    buildCommand: cd backend && npm install && npx prisma generate && npx prisma db push
+    buildCommand: cd backend && npm install && npx prisma generate && npx prisma db push --accept-data-loss
     startCommand: cd backend && npm start
     healthCheckPath: /api/health
     nodeVersion: 18

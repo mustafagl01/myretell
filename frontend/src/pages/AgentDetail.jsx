@@ -120,7 +120,7 @@ export const AgentDetail = ({ user, onLogout }) => {
                     llmModel: data.llmModel,
                     voice: data.voice,
                     language: data.language || 'en',
-                    sttModel: data.sttModel || 'nova-3',
+                    sttModel: data.sttModel || 'nova-2',
                     ttsModel: data.ttsModel || 'eleven_turbo_v3',
                     greeting: data.greeting || '',
                     phoneNumber: data.phoneNumber || '',

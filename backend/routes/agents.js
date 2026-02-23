@@ -59,7 +59,7 @@ router.post('/', async (req, res) => {
                 name: name.trim(),
                 systemPrompt: systemPrompt.trim(),
                 voice: voice || 'aura-2-thalia-en',
-                sttModel: sttModel || 'nova-3',
+                sttModel: sttModel || 'nova-2',
                 ttsModel: ttsModel || 'eleven_multilingual_v2',
                 llmModel: llmModel || 'gpt-4o-mini',
                 language: language || 'en',
