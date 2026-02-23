@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.js';
 import stripeRoutes from './routes/stripe.js';
 import checkoutRoutes from './routes/checkout.js';
 import agentRoutes from './routes/agents.js';
+import telephonyRoutes from './routes/telephony.js';
 import { TwilioHandler, handleTwilioIncoming } from './twilio-handler.js';
 
 // Load environment variables
@@ -65,6 +66,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/agents', agentRoutes);
+app.use('/api/telephony', telephonyRoutes);
 
 // Twilio Incoming Call Webhook (Retell-style)
 app.post('/api/twilio/incoming', handleTwilioIncoming);

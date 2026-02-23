@@ -71,6 +71,7 @@ export const AgentDetail = ({ user, onLogout }) => {
     const [deleting, setDeleting] = useState(false);
     const [editForm, setEditForm] = useState({});
     const [activeTab, setActiveTab] = useState('config');
+    const [availableNumbers, setAvailableNumbers] = useState([]);
 
     const {
         isActive,
@@ -83,7 +84,22 @@ export const AgentDetail = ({ user, onLogout }) => {
 
     useEffect(() => {
         fetchAgent();
+        fetchAvailableNumbers();
     }, [id]);
+
+    const fetchAvailableNumbers = async () => {
+        try {
+            const res = await fetch('/api/telephony/numbers', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setAvailableNumbers(data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch numbers:', err);
+        }
+    };
 
     const fetchAgent = async () => {
         try {
@@ -102,6 +118,7 @@ export const AgentDetail = ({ user, onLogout }) => {
                     sttModel: data.sttModel || 'nova-3',
                     ttsModel: data.ttsModel || 'eleven_turbo_v3',
                     greeting: data.greeting || '',
+                    phoneNumber: data.phoneNumber || '',
                 });
             } else {
                 navigate('/agents');
@@ -289,6 +306,16 @@ export const AgentDetail = ({ user, onLogout }) => {
                             <select className="form-select" value={editForm.language} onChange={(e) => setEditForm(p => ({ ...p, language: e.target.value }))}>
                                 {LANGUAGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
+                        </div>
+                        <div className="form-card">
+                            <h3 className="form-card-title">Phone Number (Inbound)</h3>
+                            <select className="form-select" value={editForm.phoneNumber} onChange={(e) => setEditForm(p => ({ ...p, phoneNumber: e.target.value }))}>
+                                <option value="">No number assigned</option>
+                                {availableNumbers.map(n => (
+                                    <option key={n.id} value={n.phoneNumber}>{n.phoneNumber} ({n.name || 'Untitled'})</option>
+                                ))}
+                            </select>
+                            <p className="form-card-desc" style={{marginTop: '0.5rem', fontSize: '0.75rem'}}>Connect numbers in the <b>Telephony</b> section.</p>
                         </div>
                         <div className="form-card">
                             <div className="agent-meta-info">

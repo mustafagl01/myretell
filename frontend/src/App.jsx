@@ -5,6 +5,7 @@ import { Register } from './pages/Auth/Register';
 import { AgentList } from './pages/AgentList';
 import { AgentCreate } from './pages/AgentCreate';
 import { AgentDetail } from './pages/AgentDetail';
+import { Telephony } from './pages/Telephony';
 import { WorkflowEditor } from './pages/WorkflowEditor';
 import { CallHistory } from './pages/CallHistory';
 import { Analytics } from './pages/Analytics';
@@ -64,6 +65,7 @@ function App() {
                     <Route path="/agents/:id" element={user ? <AgentDetail user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
                     <Route path="/workflow/:agentId" element={user ? <WorkflowEditor user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
                     <Route path="/history" element={user ? <CallHistory user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+                    <Route path="/telephony" element={user ? <Telephony user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
                     <Route path="/analytics" element={user ? <Analytics user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
                     <Route path="/pricing" element={user ? <Pricing user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
                     <Route path="/settings" element={user ? <Settings user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
