@@ -37,6 +37,8 @@ model Agent {
   language        String         @default("en")
   greeting        String?
   status          String         @default("active")
+  phoneNumber     String?        @unique
+  twilioSid       String?        @unique
   workflowJson    Json?
   workflowEnabled Boolean        @default(false)
   workflowVersion Int            @default(1)

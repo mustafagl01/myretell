@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.js';
 import stripeRoutes from './routes/stripe.js';
 import checkoutRoutes from './routes/checkout.js';
 import agentRoutes from './routes/agents.js';
+import { TwilioHandler, handleTwilioIncoming } from './twilio-handler.js';
 
 // Load environment variables
 dotenv.config();
@@ -65,6 +66,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/agents', agentRoutes);
 
+// Twilio Incoming Call Webhook (Retell-style)
+app.post('/api/twilio/incoming', handleTwilioIncoming);
+
 app.get('/api/health', (req, res) => {
   res.status(200).send('OK');
 });
@@ -112,6 +116,10 @@ try {
     defaultAgentConfig: buildAgentConfig()
   });
   console.log(`WebSocket ready on /ws`);
+
+  // Twilio Telephony WebSocket
+  twHandler = new TwilioHandler(server);
+  console.log(`Twilio Media Stream ready on /tw-media-stream`);
 } catch (error) {
   console.error('WebSocket init failed:', error.message);
 }
