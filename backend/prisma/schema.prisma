@@ -31,7 +31,7 @@ model Agent {
   name            String
   systemPrompt    String?        @db.Text
   voice           String         @default("aura-2-thalia-en")
-  sttModel        String         @default("nova-3")
+  sttModel        String         @default("nova-2")
   ttsModel        String         @default("deepgram")
   llmModel        String         @default("gpt-4o-mini")
   language        String         @default("en")
