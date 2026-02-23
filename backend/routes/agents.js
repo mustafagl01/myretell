@@ -43,8 +43,8 @@ router.post('/', async (req, res) => {
         if (name.trim().length < 3 || name.trim().length > 50) {
             return res.status(400).json({ error: 'Name must be 3-50 characters' });
         }
-        if (systemPrompt.trim().length < 20) {
-            return res.status(400).json({ error: 'System prompt must be at least 20 characters' });
+        if (systemPrompt.trim().length < 10) {
+            return res.status(400).json({ error: 'System prompt must be at least 10 characters' });
         }
 
         // Rate limit: max 10 agents per user
