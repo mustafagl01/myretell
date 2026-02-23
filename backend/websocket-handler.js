@@ -17,13 +17,8 @@ const debugLog = (msg) => {
  */
 export class WebSocketHandler {
   constructor(options = {}) {
-    const { server, path = '/ws', defaultAgentConfig = null } = options;
+    const { path = '/ws', defaultAgentConfig = null } = options;
 
-    if (!server) {
-      throw new Error('HTTP server is required for WebSocket attachment');
-    }
-
-    this.server = server;
     this.path = path;
     this.wss = null;
     this.deepgramConnections = new Map();
