@@ -97,7 +97,7 @@ export class WebSocketHandler {
       model: 'llama-3-70b-instruct'
     };
 
-    const model = agent.llmModel || 'llama-3-70b-instruct';
+    const model = (agent.llmModel || '').toLowerCase() || 'llama-3-70b-instruct';
 
     if (model.includes('gemini') || model.includes('google')) {
       // Map to actual Gemini API model names
@@ -163,11 +163,12 @@ export class WebSocketHandler {
 
     // --- TTS Provider Logic ---
     let speakProvider;
-    let speakModel = (agent.voice && agent.voice.startsWith('aura')) ? agent.voice : 'aura-2-thalia-en';
+    const voiceId = agent.voice || '';
+    let speakModel = voiceId.startsWith('aura') ? voiceId : 'aura-2-thalia-en';
 
     if (agent.ttsModel === 'deepgram') {
       speakProvider = { type: 'deepgram' };
-    } else if (agent.voice && agent.voice.length > 15 && !agent.voice.startsWith('aura')) {
+    } else if (voiceId && voiceId.length > 15 && !voiceId.startsWith('aura')) {
       const elModel = (agent.ttsModel === 'eleven_multilingual_v2') ? 'eleven_multilingual_v2' : 'eleven_turbo_v2_5';
       speakProvider = {
         type: 'eleven_labs',
