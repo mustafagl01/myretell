@@ -2,10 +2,10 @@ services:
   - type: web
     name: myvoiceagent-backend
     env: node
-    buildCommand: cd backend && npm install && npx prisma generate
+    buildCommand: cd backend && npm install
     startCommand: cd backend && npm start
     healthCheckPath: /api/health
-    nodeVersion: 18
+    nodeVersion: 20
     envVars:
       - key: DEEPGRAM_API_KEY
         sync: false
