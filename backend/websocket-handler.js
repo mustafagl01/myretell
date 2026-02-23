@@ -51,12 +51,14 @@ export class WebSocketHandler {
 
   _handleConnection(ws, req) {
     const clientIp = req.socket.remoteAddress;
+    console.log(`[WS] Connection attempt from IP: ${clientIp}`);
+    console.log(`[WS] Headers: ${JSON.stringify(req.headers)}`);
 
     // Extract agentId from query params
-    const url = new URL(req.url, `http://${req.headers.host}`);
+    const url = new URL(req.url, 'http://localhost');
     const agentId = url.searchParams.get('agentId');
 
-    console.log(`WebSocket client connected: ${clientIp}, agentId: ${agentId || 'default'}`);
+    console.log(`[WS] Handler started. IP: ${clientIp}, AgentId: ${agentId || 'none'}`);
 
     // Store agentId on ws
     ws.agentId = agentId;
@@ -281,42 +283,62 @@ export class WebSocketHandler {
   }
 
   async _handleClientMessage(ws, data, isBinary) {
+    const clientIp = ws._socket?.remoteAddress || 'unknown';
+    console.log(`[WS MESSAGE] Data received from ${clientIp}. isBinary: ${isBinary}, length: ${data?.length || 0}`);
+
     const deepgramConn = this.deepgramConnections.get(ws);
 
     try {
       if (isBinary) {
+        console.log(`[WS AUDIO] Receiving binary data (${data.length} bytes)`);
         if (!deepgramConn) {
+          console.log(`[WS AUDIO] Deepgram connection not ready, queuing chunk. Queue size: ${this.audioQueues.get(ws)?.length || 0}`);
           // Queue audio until connected
           const queue = this.audioQueues.get(ws);
           if (queue) {
             queue.push(data);
-            if (queue.length > 100) queue.shift();
+            if (queue.length > 200) {
+              console.warn('[WS AUDIO] Queue overflow, dropping oldest chunk');
+              queue.shift();
+            }
           }
           return;
         }
 
         const isReady = this.connectionReady.get(ws);
-
         if (isReady) {
           deepgramConn.sendAudio(data);
         } else {
+          console.log('[WS AUDIO] Connection not ready status, queuing chunk');
           const queue = this.audioQueues.get(ws);
           if (queue) {
             queue.push(data);
-            if (queue.length > 100) queue.shift();
+            if (queue.length > 200) queue.shift();
           }
         }
       } else {
-        const message = JSON.parse(data.toString());
+        const textData = data.toString();
+        console.log(`[WS JSON] Raw text received: ${textData.substring(0, 200)}${textData.length > 200 ? '...' : ''}`);
+
+        let message;
+        try {
+          message = JSON.parse(textData);
+        } catch (parseErr) {
+          console.error('[WS JSON] Parse failed:', parseErr.message);
+          this._sendError(ws, { type: 'invalid_json', message: 'Invalid JSON format' });
+          return;
+        }
+
+        console.log(`[WS JSON] Parsed type: ${message.type}`);
         await this._handleJsonMessage(ws, message, deepgramConn);
       }
     } catch (error) {
-      console.error('Error handling client message:', error.message);
+      console.error('[WS CRITICAL] Error in _handleClientMessage:', error.message);
+      console.error(error.stack);
       this._sendError(ws, {
-        type: 'invalid_message',
-        message: 'Failed to process message: ' + error.message
+        type: 'internal_error',
+        message: 'Internal server error processing message'
       });
-      // Don't close immediately on parse error, just log it
     }
   }
 
@@ -341,9 +363,11 @@ export class WebSocketHandler {
 
   async _handleJsonMessage(ws, message, deepgramConn) {
     const { type, data } = message;
+    console.log(`[WS JSON] Handling message type: ${type}`);
 
     switch (type) {
       case 'Authenticate':
+        console.log('[WS AUTH] Processing Authentication request...');
         await this._handleAuthentication(ws, data);
         break;
 
@@ -368,19 +392,30 @@ export class WebSocketHandler {
 
   async _handleAuthentication(ws, data) {
     const { token } = data;
+    console.log('[WS AUTH] Token received? ' + (token ? 'Yes (length: ' + token.length + ')' : 'No'));
+
     if (!token) {
+      console.error('[WS AUTH] Missing token in Authenticate message');
       this._sendError(ws, { type: 'auth_error', message: 'Token required' });
       return;
     }
 
     try {
+      console.log('[WS AUTH] Verifying JWT...');
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('[WS AUTH] JWT Verified. User ID:', decoded.userId);
+
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
         include: { creditBalance: true }
       });
 
-      if (!user) throw new Error('User not found');
+      if (!user) {
+        console.error('[WS AUTH] User not found in database for ID:', decoded.userId);
+        throw new Error('User not found');
+      }
+
+      console.log('[WS AUTH] User found:', user.email);
 
       if (!user.creditBalance || Number(user.creditBalance.balance) <= 0) {
         this._sendError(ws, { type: 'insufficient_credits', message: 'Please refill your credits' });
