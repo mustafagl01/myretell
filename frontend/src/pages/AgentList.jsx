@@ -1,5 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+    Plus,
+    Search,
+    Mic,
+    Bot,
+    Cpu,
+    Waves,
+    Phone,
+    Share2,
+    Save,
+    ChevronRight,
+    Zap,
+    Globe
+} from 'lucide-react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import './AgentList.css';
 
@@ -10,6 +24,7 @@ export const AgentList = ({ user, onLogout }) => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('model');
     const [saveStatus, setSaveStatus] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         fetchAgents();
@@ -21,14 +36,12 @@ export const AgentList = ({ user, onLogout }) => {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             const data = await res.json();
-            
-            // Defensive check: Ensure data is an array
             const agentList = Array.isArray(data) ? data : [];
             setAgents(agentList);
-            if (agentList.length > 0) setSelectedAgent(agentList[0]);
+            if (agentList.length > 0 && !selectedAgent) setSelectedAgent(agentList[0]);
         } catch (err) {
             console.error(err);
-            setAgents([]); // Reset to empty array on error
+            setAgents([]);
         } finally {
             setLoading(false);
         }
@@ -45,231 +58,273 @@ export const AgentList = ({ user, onLogout }) => {
                 },
                 body: JSON.stringify(selectedAgent)
             });
-            if (res.ok) setSaveStatus('Saved!');
-            else setSaveStatus('Error saving');
+            if (res.ok) {
+                setSaveStatus('Success! 🎉');
+                fetchAgents();
+            } else {
+                setSaveStatus('Error ❌');
+            }
             setTimeout(() => setSaveStatus(''), 2000);
         } catch (err) {
             setSaveStatus('Error');
         }
     };
 
+    const filteredAgents = agents.filter(a =>
+        a.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const getProviderName = (model) => {
+        if (!model) return 'deepgram';
+        const m = model.toLowerCase();
+        if (m.includes('gpt')) return 'OpenAI';
+        if (m.includes('claude')) return 'Anthropic';
+        if (m.includes('gemini')) return 'Google';
+        if (m.includes('llama')) return 'Meta';
+        return 'Deepgram';
+    };
+
     return (
         <DashboardLayout user={user} onLogout={onLogout} title="Assistants" hideContentPadding={true}>
             <div className="agents-page-layout">
-                {/* MIDDLE COLUMN: Assistants List */}
+                {/* MASTER COLUMN: Assistants List */}
                 <div className="agents-sidebar">
-                <div className="agents-sidebar-header">
-                    <button className="btn-save-vapi" style={{ width: '100%' }} onClick={() => navigate('/agents/create')}>
-                        Create Assistant +
-                    </button>
-                    <div className="search-container">
-                        <input type="text" className="search-input" placeholder="Search Assistants..." />
+                    <div className="agents-sidebar-header">
+                        <button className="btn-save-vapi" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} onClick={() => navigate('/agents/create')}>
+                            <Plus size={18} /> Create Assistant
+                        </button>
+                        <div className="search-container">
+                            <Search size={16} style={{ color: '#4a4a5a', marginRight: '0.75rem' }} />
+                            <input
+                                type="text"
+                                className="search-input"
+                                placeholder="Search assistants..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <div className="agent-list-scroll">
+                        {loading ? (
+                            <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                                <div className="loading-spinner"></div>
+                            </div>
+                        ) : filteredAgents.length === 0 ? (
+                            <div style={{ padding: '2rem', textAlign: 'center', color: '#4a4a5a', fontSize: '0.875rem' }}>
+                                No assistants found
+                            </div>
+                        ) : (
+                            filteredAgents.map((a, index) => (
+                                <div
+                                    key={a.id}
+                                    className={`agent-list-item ${selectedAgent?.id === a.id ? 'selected' : ''}`}
+                                    onClick={() => setSelectedAgent(a)}
+                                    style={{ animationDelay: `${index * 0.05}s` }}
+                                >
+                                    <span className="item-name">{a.name}</span>
+                                    <div className="item-meta">
+                                        <Bot size={12} />
+                                        <span>{getProviderName(a.llmModel)} · {a.language === 'tr' ? 'Turkish' : 'English'}</span>
+                                    </div>
+                                    {selectedAgent?.id === a.id && <ChevronRight size={16} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }} />}
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
-                <div className="agent-list-scroll">
-                    {loading ? <div className="loading-spinner"></div> :
-                        agents.map(a => (
-                            <div
-                                key={a.id}
-                                className={`agent-list-item ${selectedAgent?.id === a.id ? 'selected' : ''}`}
-                                onClick={() => setSelectedAgent(a)}
-                            >
-                                <span className="item-name">{a.name}</span>
-                                <span className="item-meta">
-                                    {a.llmModel.startsWith('gpt') ? 'openai' :
-                                        a.llmModel.startsWith('claude') ? 'anthropic' :
-                                            a.llmModel.startsWith('gemini') ? 'google' :
-                                                a.llmModel.startsWith('llama') ? 'groq' : 'deepgram'} · {a.sttModel === 'whisper-1' ? 'openai' : 'deepgram'}
-                                </span>
-                            </div>
-                        ))}
-                </div>
-            </div>
 
-                {/* RIGHT COLUMN: Detail View */}
+                {/* DETAIL COLUMN: Configuration */}
                 <div className="agent-detail-view">
-                {selectedAgent ? (
-                    <>
-                        <div className="detail-view-header">
-                            <div className="agent-title-info">
-                                <h2>{selectedAgent.name}</h2>
-                                <span className="agent-id-tag">{selectedAgent.id}</span>
+                    {selectedAgent ? (
+                        <>
+                            <div className="detail-view-header">
+                                <div className="agent-title-info">
+                                    <h2>{selectedAgent.name}</h2>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <span className="agent-id-tag">{selectedAgent.id}</span>
+                                        <span style={{ fontSize: '0.65rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }}></div>
+                                            Active
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="header-actions">
+                                    <button className="btn-test" onClick={() => navigate(`/agents/${selectedAgent.id}`)}>
+                                        <Phone size={16} /> Test Assistant
+                                    </button>
+                                    <button className="btn-save-vapi" onClick={handleSave} disabled={!!saveStatus}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            {saveStatus ? <span>{saveStatus}</span> : (
+                                                <>
+                                                    <Save size={16} />
+                                                    <span>Publish Changes</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    </button>
+                                </div>
                             </div>
-                            <div className="header-actions">
-                                <button className="btn-test" onClick={() => navigate(`/agents/${selectedAgent.id}`)}>
-                                    Talk to Assistant 📞
+
+                            <div className="vapi-tabs">
+                                <button className={`vapi-tab ${activeTab === 'model' ? 'active' : ''}`} onClick={() => setActiveTab('model')}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <Cpu size={16} /> Model
+                                    </div>
                                 </button>
-                                <button className="btn-save-vapi" onClick={handleSave}>
-                                    {saveStatus || 'Publish'}
+                                <button className={`vapi-tab ${activeTab === 'voice' ? 'active' : ''}`} onClick={() => setActiveTab('voice')}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <Waves size={16} /> Voice
+                                    </div>
+                                </button>
+                                <button className={`vapi-tab ${activeTab === 'advanced' ? 'active' : ''}`} onClick={() => setActiveTab('advanced')}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <Globe size={16} /> Transcriber
+                                    </div>
                                 </button>
                             </div>
-                        </div>
 
-                        <div className="vapi-tabs">
-                            <button className={`vapi-tab ${activeTab === 'model' ? 'active' : ''}`} onClick={() => setActiveTab('model')}>Model</button>
-                            <button className={`vapi-tab ${activeTab === 'voice' ? 'active' : ''}`} onClick={() => setActiveTab('voice')}>Voice</button>
-                            <button className={`vapi-tab ${activeTab === 'advanced' ? 'active' : ''}`} onClick={() => setActiveTab('advanced')}>Transcriber</button>
-                        </div>
-
-                        <div className="detail-pannel">
-                            <div className="vapi-stats-grid">
-                                <div className="vapi-stat-card">
-                                    <div className="stat-header">
-                                        <span>Cost</span>
-                                        <span>~$0.16/min</span>
+                            <div className="detail-pannel">
+                                <div className="vapi-stats-grid">
+                                    <div className="vapi-stat-card">
+                                        <div className="stat-header">
+                                            <span>Efficiency Score</span>
+                                            <span>94%</span>
+                                        </div>
+                                        <div className="stat-bar-bg">
+                                            <div className="stat-bar-fill" style={{ width: '94%', background: 'linear-gradient(90deg, #10b981, #6366f1)' }}></div>
+                                        </div>
                                     </div>
-                                    <div className="stat-bar-bg">
-                                        <div className="stat-bar-fill" style={{ width: '40%', background: 'linear-gradient(90deg, #f59e0b, #6366f1)' }}></div>
+                                    <div className="vapi-stat-card">
+                                        <div className="stat-header">
+                                            <span>Avg. Latency</span>
+                                            <span>420ms</span>
+                                        </div>
+                                        <div className="stat-bar-bg">
+                                            <div className="stat-bar-fill" style={{ width: '30%', background: 'linear-gradient(90deg, #34d399, #10b981)' }}></div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="vapi-stat-card">
-                                    <div className="stat-header">
-                                        <span>Latency</span>
-                                        <span>~800ms</span>
+
+                                {activeTab === 'model' && (
+                                    <div className="vapi-form-section">
+                                        <div className="vapi-field">
+                                            <label>First Message (Greeting)</label>
+                                            <input
+                                                className="vapi-input"
+                                                placeholder="Hello! How can I help you today?"
+                                                value={selectedAgent.greeting || ''}
+                                                onChange={(e) => setSelectedAgent({ ...selectedAgent, greeting: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="vapi-field">
+                                            <label>Intelligence Provider (LLM)</label>
+                                            <select
+                                                className="vapi-input"
+                                                value={selectedAgent.llmModel}
+                                                onChange={(e) => setSelectedAgent({ ...selectedAgent, llmModel: e.target.value })}
+                                            >
+                                                <optgroup label="⚡ Google Gemini">
+                                                    <option value="gemini-2.0-flash">Gemini 2.0 Flash (Recommended)</option>
+                                                    <option value="gemini-1.5-pro">Gemini 1.5 Pro (Powerful)</option>
+                                                </optgroup>
+                                                <optgroup label="🏆 OpenAI">
+                                                    <option value="gpt-4o">GPT-4o (Standard)</option>
+                                                    <option value="gpt-4o-mini">GPT-4o Mini (Economic)</option>
+                                                </optgroup>
+                                                <optgroup label="✨ Anthropic Claude">
+                                                    <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+                                                    <option value="claude-3-haiku">Claude 3 Haiku</option>
+                                                </optgroup>
+                                                <optgroup label="🆓 Deepgram Native">
+                                                    <option value="llama-3.1-70b-instruct">Deepgram Llama 3.1 (Free Tier)</option>
+                                                </optgroup>
+                                            </select>
+                                        </div>
+                                        <div className="vapi-field">
+                                            <label>System Instructions (Prompt)</label>
+                                            <textarea
+                                                className="vapi-textarea"
+                                                placeholder="Define how the assistant should behave..."
+                                                value={selectedAgent.systemPrompt}
+                                                onChange={(e) => setSelectedAgent({ ...selectedAgent, systemPrompt: e.target.value })}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="stat-bar-bg">
-                                        <div className="stat-bar-fill" style={{ width: '60%', background: 'linear-gradient(90deg, #ef4444, #10b981)' }}></div>
+                                )}
+
+                                {activeTab === 'voice' && (
+                                    <div className="vapi-form-section">
+                                        <div className="vapi-field">
+                                            <label>Voice Synthesis Engine</label>
+                                            <select
+                                                className="vapi-input"
+                                                value={selectedAgent.ttsModel || 'deepgram'}
+                                                onChange={(e) => setSelectedAgent({ ...selectedAgent, ttsModel: e.target.value })}
+                                            >
+                                                <option value="deepgram">Deepgram Aura (Ultra Low Latency)</option>
+                                                <option value="eleven_turbo_v3">ElevenLabs Turbo v3 (High Quality)</option>
+                                                <option value="eleven_multilingual_v2">ElevenLabs Multilingual v2</option>
+                                            </select>
+                                        </div>
+                                        <div className="vapi-field">
+                                            <label>Active Voice Persona</label>
+                                            <select
+                                                className="vapi-input"
+                                                value={selectedAgent.voice}
+                                                onChange={(e) => setSelectedAgent({ ...selectedAgent, voice: e.target.value })}
+                                            >
+                                                <optgroup label="Deepgram Aura">
+                                                    <option value="aura-2-thalia-en">Thalia (Default)</option>
+                                                    <option value="aura-2-orion-en">Orion (Confident)</option>
+                                                </optgroup>
+                                                <optgroup label="ElevenLabs Premium">
+                                                    <option value="cgS8vJhk66vDX8O6m62a">Serena (Natural Female)</option>
+                                                    <option value="nPczCAnBy9noDW9As69E">Brian (Professional Male)</option>
+                                                </optgroup>
+                                            </select>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
+
+                                {activeTab === 'advanced' && (
+                                    <div className="vapi-form-section">
+                                        <div className="vapi-field">
+                                            <label>STT Provider (Transcription)</label>
+                                            <select
+                                                className="vapi-input"
+                                                value={selectedAgent.sttModel}
+                                                onChange={(e) => setSelectedAgent({ ...selectedAgent, sttModel: e.target.value })}
+                                            >
+                                                <option value="nova-2">Deepgram Nova-2 (Stable & Fast)</option>
+                                                <option value="whisper-1">OpenAI Whisper (Turkish Support)</option>
+                                            </select>
+                                        </div>
+                                        <div className="vapi-field">
+                                            <label>Primary Language</label>
+                                            <select
+                                                className="vapi-input"
+                                                value={selectedAgent.language}
+                                                onChange={(e) => setSelectedAgent({ ...selectedAgent, language: e.target.value })}
+                                            >
+                                                <option value="tr">Turkish (TR)</option>
+                                                <option value="en">English (US)</option>
+                                                <option value="es">Spanish</option>
+                                                <option value="fr">French</option>
+                                                <option value="de">German</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-
-                            {activeTab === 'model' && (
-                                <div className="vapi-form-section">
-                                    <div className="vapi-field">
-                                        <label>First Message</label>
-                                        <input
-                                            className="vapi-input"
-                                            value={selectedAgent.greeting || ''}
-                                            onChange={(e) => setSelectedAgent({ ...selectedAgent, greeting: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="vapi-field">
-                                        <label>LLM Model</label>
-                                        <select
-                                            className="vapi-input"
-                                            value={selectedAgent.llmModel}
-                                            onChange={(e) => setSelectedAgent({ ...selectedAgent, llmModel: e.target.value })}
-                                        >
-                                            <optgroup label="⚡ Google Gemini">
-                                                <option value="gemini-3.0-flash">Gemini 3.0 Flash (En Hızlı)</option>
-                                                <option value="gemini-2.5-pro">Gemini 2.5 Pro (Güçlü)</option>
-                                                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Dengeli)</option>
-                                                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Ekonomik)</option>
-                                            </optgroup>
-                                            <optgroup label="🏆 OpenAI">
-                                                <option value="gpt-5.2">GPT-5.2 (En Gelişmiş)</option>
-                                                <option value="gpt-5.1">GPT-5.1 (Premium)</option>
-                                                <option value="gpt-4.1">GPT-4.1 (Stabil)</option>
-                                                <option value="gpt-4o">GPT-4o (Standard)</option>
-                                                <option value="gpt-4o-mini">GPT-4o Mini (Ekonomik)</option>
-                                            </optgroup>
-                                            <optgroup label="✨ Anthropic Claude">
-                                                <option value="claude-sonnet-4.6">Claude Sonnet 4.6 (En İyi Kalite)</option>
-                                                <option value="claude-sonnet-4.5">Claude Sonnet 4.5 (Premium)</option>
-                                                <option value="claude-haiku-4">Claude Haiku 4 (Hızlı & Ucuz)</option>
-                                                <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Klasik)</option>
-                                            </optgroup>
-                                            <optgroup label="🦙 Meta Llama (Groq)">
-                                                <option value="llama-4-scout">Llama 4 Scout (Ultra Hızlı)</option>
-                                                <option value="llama-3.3-70b">Llama 3.3 70B</option>
-                                                <option value="llama-3.1-70b-versatile">Llama 3.1 70B (Klasik)</option>
-                                            </optgroup>
-                                            <optgroup label="🆓 Deepgram">
-                                                <option value="deepgram-default">Deepgram Default (Ücretsiz Test)</option>
-                                            </optgroup>
-                                        </select>
-                                    </div>
-                                    <div className="vapi-field">
-                                        <label>System Prompt</label>
-                                        <textarea
-                                            className="vapi-textarea"
-                                            value={selectedAgent.systemPrompt}
-                                            onChange={(e) => setSelectedAgent({ ...selectedAgent, systemPrompt: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                            {activeTab === 'voice' && (
-                                <div className="vapi-form-section">
-                                    <div className="vapi-field">
-                                        <label>TTS Engine (Premium Marketplace)</label>
-                                        <select
-                                            className="vapi-input"
-                                            value={selectedAgent.ttsModel || 'deepgram'}
-                                            onChange={(e) => setSelectedAgent({ ...selectedAgent, ttsModel: e.target.value })}
-                                        >
-                                            <optgroup label="Deepgram (Stable & Fast)">
-                                                <option value="deepgram">Deepgram Aura 2 (Recommended)</option>
-                                            </optgroup>
-                                            <optgroup label="ElevenLabs (Premium)">
-                                                <option value="eleven_turbo_v3">Turbo v3 (Best - 250ms)</option>
-                                                <option value="eleven_multilingual_v2">Multilingual v2 (Natural)</option>
-                                            </optgroup>
-                                            <optgroup label="Specialty Providers (Coming Soon)">
-                                                <option value="playht_2_turbo" disabled>PlayHT 2.0 Turbo (Fast)</option>
-                                                <option value="azure-neural" disabled>Azure Speech Neural</option>
-                                            </optgroup>
-                                        </select>
-                                    </div>
-                                    <div className="vapi-field">
-                                        <label>Select Voice</label>
-                                        <select
-                                            className="vapi-input"
-                                            value={selectedAgent.voice}
-                                            onChange={(e) => setSelectedAgent({ ...selectedAgent, voice: e.target.value })}
-                                        >
-                                            <optgroup label="ElevenLabs">
-                                                <option value="cgS8vJhk66vDX8O6m62a">Serena (Female)</option>
-                                                <option value="nPczCAnBy9noDW9As69E">Brian (Male)</option>
-                                                <option value="pFZP5JQG7iQjIQuC4Bku">Lily (Female)</option>
-                                            </optgroup>
-                                            <optgroup label="Deepgram (Economy)">
-                                                <option value="aura-2-thalia-en">Thalia</option>
-                                                <option value="aura-2-orion-en">Orion</option>
-                                            </optgroup>
-                                        </select>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'advanced' && (
-                                <div className="vapi-form-section">
-                                    <div className="vapi-field">
-                                        <label>Transcriber Engine (STT)</label>
-                                        <select
-                                            className="vapi-input"
-                                            value={selectedAgent.sttModel}
-                                            onChange={(e) => setSelectedAgent({ ...selectedAgent, sttModel: e.target.value })}
-                                        >
-                                            <option value="nova-3">Deepgram Nova-3 (Winner - 200ms)</option>
-                                            <option value="whisper-1">OpenAI Whisper v3 (Accuracy - 500ms)</option>
-                                            <option value="azure-speech" disabled>Azure Speech (Coming Soon)</option>
-                                            <option value="assembly-ai" disabled>AssemblyAI (Coming Soon)</option>
-                                        </select>
-                                    </div>
-                                    <div className="vapi-field">
-                                        <label>Language Detection</label>
-                                        <select
-                                            className="vapi-input"
-                                            value={selectedAgent.language}
-                                            onChange={(e) => setSelectedAgent({ ...selectedAgent, language: e.target.value })}
-                                        >
-                                            <option value="tr">Turkish (TR)</option>
-                                            <option value="en">English (US)</option>
-                                            <option value="es">Spanish</option>
-                                            <option value="fr">French</option>
-                                            <option value="de">German</option>
-                                            <option value="it">Italian</option>
-                                            <option value="pt">Portuguese</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            )}
+                        </>
+                    ) : (
+                        <div className="empty-state">
+                            <div style={{ textAlign: 'center' }}>
+                                <Zap size={48} style={{ color: '#4a4a5a', marginBottom: '1.5rem', opacity: 0.5 }} />
+                                <p>Select an assistant from the list to begin configuration</p>
+                            </div>
                         </div>
-                    </>
-                ) : (
-                    <div className="empty-state">Select an assistant to configure</div>
-                )}
+                    )}
                 </div>
             </div>
         </DashboardLayout>
