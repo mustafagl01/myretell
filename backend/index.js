@@ -30,6 +30,39 @@ criticalVars.forEach(v => {
   }
 });
 
+// Log buffer for remote debugging
+const logBuffer = [];
+const originalLog = console.log;
+const originalError = console.error;
+
+const addLog = (type, args) => {
+  const msg = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
+  logBuffer.push(`[${new Date().toISOString()}] [${type}] ${msg}`);
+  if (logBuffer.length > 100) logBuffer.shift();
+};
+
+console.log = (...args) => {
+  addLog('LOG', args);
+  originalLog.apply(console, args);
+};
+
+console.error = (...args) => {
+  addLog('ERROR', args);
+  originalError.apply(console, args);
+};
+
+app.get('/api/logs', (req, res) => {
+  res.send(`
+    <html>
+      <body style="background:#1a1a1a;color:#00ff00;font-family:monospace;padding:20px;">
+        <h3>🚀 Backend Live Logs (Last 100 lines)</h3>
+        <pre style="white-space:pre-wrap;">${logBuffer.join('\n')}</pre>
+        <script>setTimeout(() => location.reload(), 3000);</script>
+      </body>
+    </html>
+  `);
+});
+
 console.log('Environment validation complete');
 
 const app = express();
