@@ -17,11 +17,11 @@ const VOICE_OPTIONS = [
 ];
 
 const TTS_MODEL_OPTIONS = [
-    { value: 'eleven_turbo_v3', label: 'ElevenLabs Turbo v3 (Winner)' },
+    { value: 'deepgram', label: 'Deepgram Aura (Default)' },
+    { value: 'eleven_turbo_v3', label: 'ElevenLabs Turbo v3 (High Quality)' },
     { value: 'eleven_multilingual_v2', label: 'ElevenLabs Multilingual v2' },
     { value: 'playht_2_turbo', label: 'PlayHT 2.0 Turbo (Soon)', disabled: true },
     { value: 'azure-neural', label: 'Azure Neural (Soon)', disabled: true },
-    { value: 'deepgram', label: 'Deepgram Aura (Default)' },
 ];
 
 const STT_OPTIONS = [

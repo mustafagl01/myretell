@@ -37,10 +37,10 @@ const STT_OPTIONS = [
 ];
 
 const STACK_TTS_OPTIONS = [
-    { value: 'eleven_turbo_v3', label: 'ElevenLabs Turbo v3 (Seçim: En Doğal)', provider: 'elevenlabs' },
+    { value: 'deepgram', label: 'Deepgram Aura (Default)', provider: 'deepgram' },
+    { value: 'eleven_turbo_v3', label: 'ElevenLabs Turbo v3 (High Quality)', provider: 'elevenlabs' },
     { value: 'eleven_multilingual_v2', label: 'ElevenLabs Multilingual v2', provider: 'elevenlabs' },
     { value: 'playht_2_turbo', label: 'PlayHT 2.0 Turbo (Coming Soon)', provider: 'playht' },
-    { value: 'aura-2-thalia-en', label: 'Deepgram Aura 2 (Economy)', provider: 'deepgram' },
     { value: 'azure-neural', label: 'Azure Neural (Coming Soon)', provider: 'azure' },
 ];
 
