@@ -205,22 +205,38 @@ try {
 
   // CENTRALIZED UPGRADE HANDLER
   server.on('upgrade', (request, socket, head) => {
-    const pathname = new URL(request.url, `http://${request.headers.host}`).pathname;
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] [UPGRADE] Request for: ${pathname}`);
+    try {
+      const timestamp = new Date().toISOString();
+      const pathname = request.url.split('?')[0];
 
-    if (pathname === '/ws') {
-      console.log(`[${timestamp}] [UPGRADE] Routing /ws to WebSocketHandler`);
-      wsHandler.wss.handleUpgrade(request, socket, head, (ws) => {
-        wsHandler.wss.emit('connection', ws, request);
-      });
-    } else if (pathname === '/tw-media-stream') {
-      console.log(`[${timestamp}] [UPGRADE] Routing /tw-media-stream to TwilioHandler`);
-      twilioHandler.wss.handleUpgrade(request, socket, head, (ws) => {
-        twilioHandler.wss.emit('connection', ws, request);
-      });
-    } else {
-      console.warn(`[${timestamp}] [UPGRADE] No handler for: ${pathname}. Closing socket.`);
+      console.log(`[${timestamp}] [UPGRADE] Incoming request for: ${pathname}`);
+
+      if (pathname === '/ws') {
+        if (!wsHandler) {
+          console.error(`[${timestamp}] [UPGRADE] WebSocketHandler not initialized yet!`);
+          socket.destroy();
+          return;
+        }
+        console.log(`[${timestamp}] [UPGRADE] Routing /ws to WebSocketHandler`);
+        wsHandler.wss.handleUpgrade(request, socket, head, (ws) => {
+          wsHandler.wss.emit('connection', ws, request);
+        });
+      } else if (pathname === '/tw-media-stream') {
+        if (!twilioHandler) {
+          console.error(`[${timestamp}] [UPGRADE] TwilioHandler not initialized yet!`);
+          socket.destroy();
+          return;
+        }
+        console.log(`[${timestamp}] [UPGRADE] Routing /tw-media-stream to TwilioHandler`);
+        twilioHandler.wss.handleUpgrade(request, socket, head, (ws) => {
+          twilioHandler.wss.emit('connection', ws, request);
+        });
+      } else {
+        console.warn(`[${timestamp}] [UPGRADE] No handler for: ${pathname}. Closing socket.`);
+        socket.destroy();
+      }
+    } catch (err) {
+      console.error(`[UPGRADE CRITICAL ERROR] ${err.message}`);
       socket.destroy();
     }
   });
