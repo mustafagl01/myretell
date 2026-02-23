@@ -81,7 +81,41 @@ app.use('/api/telephony', telephonyRoutes);
 app.post('/api/twilio/incoming', handleTwilioIncoming);
 
 app.get('/api/health', (req, res) => {
-  res.status(200).send('OK');
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/api/health-test', async (req, res) => {
+  const diagnostics = {
+    database: 'unknown',
+    deepgram: 'unknown',
+    env: {
+      DEEPGRAM_API_KEY: process.env.DEEPGRAM_API_KEY ? 'Present' : 'MISSING',
+      JWT_SECRET: process.env.JWT_SECRET ? 'Present' : 'MISSING',
+      DATABASE_URL: process.env.DATABASE_URL ? 'Present' : 'MISSING'
+    }
+  };
+
+  try {
+    const { default: prisma } = await import('./config/prisma.js');
+    const userCount = await prisma.user.count();
+    diagnostics.database = `Connected (Users: ${userCount})`;
+  } catch (err) {
+    diagnostics.database = `Error: ${err.message}`;
+  }
+
+  try {
+    const dg = createClient(process.env.DEEPGRAM_API_KEY);
+    const { result, error } = await dg.manage.getProjects();
+    if (error) {
+      diagnostics.deepgram = `Invalid Key/Error: ${error.message}`;
+    } else {
+      diagnostics.deepgram = `Connected (Projects: ${result?.projects?.length || 0})`;
+    }
+  } catch (err) {
+    diagnostics.deepgram = `SDK Error: ${err.message}`;
+  }
+
+  res.json(diagnostics);
 });
 
 app.get('/', (req, res) => {
@@ -153,45 +187,6 @@ const gracefulShutdown = () => {
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// Diagnostic endpoint to check dependencies
-app.get('/api/health-test', async (req, res) => {
-  const diagnostics = {
-    database: 'unknown',
-    deepgram: 'unknown',
-    env: {
-      DEEPGRAM_API_KEY: process.env.DEEPGRAM_API_KEY ? 'Present' : 'MISSING',
-      JWT_SECRET: process.env.JWT_SECRET ? 'Present' : 'MISSING',
-      DATABASE_URL: process.env.DATABASE_URL ? 'Present' : 'MISSING'
-    }
-  };
-
-  try {
-    const userCount = await prisma.user.count();
-    diagnostics.database = `Connected (Users: ${userCount})`;
-  } catch (err) {
-    diagnostics.database = `Error: ${err.message}`;
-  }
-
-  try {
-    const dg = createClient(process.env.DEEPGRAM_API_KEY);
-    // Simple test: list projects or similar (might fail on some keys, but tests connectivity)
-    const { result, error } = await dg.manage.getProjects();
-    if (error) {
-      diagnostics.deepgram = `Invalid Key/Error: ${error.message}`;
-    } else {
-      diagnostics.deepgram = `Connected (Projects: ${result?.projects?.length || 0})`;
-    }
-  } catch (err) {
-    diagnostics.deepgram = `SDK Error: ${err.message}`;
-  }
-
-  res.json(diagnostics);
-});
 
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
