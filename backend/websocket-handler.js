@@ -294,7 +294,6 @@ export class WebSocketHandler {
   }
 
   async _handleClientMessage(ws, data, isBinary) {
-    const clientIp = ws._socket?.remoteAddress || 'unknown';
     const timestamp = new Date().toISOString();
     console.log(`[${timestamp}] [WS MESSAGE] === ENTRY === isBinary: ${isBinary}, length: ${data?.length || 0}`);
 
