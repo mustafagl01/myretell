@@ -239,6 +239,27 @@
     box-shadow: 0 8px 30px rgba(99, 102, 241, 0.5);
 }
 
+.btn-delete-vapi {
+    padding: 0.75rem;
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-delete-vapi:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+    color: #ef4444;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+}
+
 .vapi-tabs {
     display: flex;
     padding: 0 3rem;

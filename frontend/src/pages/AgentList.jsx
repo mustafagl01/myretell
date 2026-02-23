@@ -12,7 +12,8 @@ import {
     Save,
     ChevronRight,
     Zap,
-    Globe
+    Globe,
+    Trash2
 } from 'lucide-react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import './AgentList.css';
@@ -25,6 +26,7 @@ export const AgentList = ({ user, onLogout }) => {
     const [activeTab, setActiveTab] = useState('model');
     const [saveStatus, setSaveStatus] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
+    const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
         fetchAgents();
@@ -67,6 +69,32 @@ export const AgentList = ({ user, onLogout }) => {
             setTimeout(() => setSaveStatus(''), 2000);
         } catch (err) {
             setSaveStatus('Error');
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!selectedAgent) return;
+        if (!window.confirm(`Are you sure you want to delete "${selectedAgent.name}"? This cannot be undone.`)) return;
+
+        setDeleting(true);
+        try {
+            const res = await fetch(`/api/agents/${selectedAgent.id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+
+            if (res.ok) {
+                const updatedList = agents.filter(a => a.id !== selectedAgent.id);
+                setAgents(updatedList);
+                setSelectedAgent(updatedList.length > 0 ? updatedList[0] : null);
+            } else {
+                alert('Failed to delete agent');
+            }
+        } catch (err) {
+            console.error('Delete error:', err);
+            alert('An error occurred while deleting');
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -161,6 +189,9 @@ export const AgentList = ({ user, onLogout }) => {
                                                 </>
                                             )}
                                         </div>
+                                    </button>
+                                    <button className="btn-delete-vapi" onClick={handleDelete} disabled={deleting} title="Delete Assistant">
+                                        <Trash2 size={16} />
                                     </button>
                                 </div>
                             </div>
