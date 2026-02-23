@@ -105,14 +105,33 @@ export class AudioManager {
                     console.log('[AudioManager] WebSocket connected');
                     if (this.onConnectionChange) this.onConnectionChange('connected');
 
-                    // Send auth token
+                    // Send auth token with slight robustness delay
                     console.log('[AudioManager] WebSocket open. Token present:', !!this.token);
+
                     if (this.token) {
-                        this.ws.send(JSON.stringify({ type: 'Authenticate', data: { token: this.token } }));
+                        const sendAuth = () => {
+                            if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+                                console.warn('[AudioManager] WebSocket closed before auth could be sent');
+                                return;
+                            }
+
+                            try {
+                                const authMsg = JSON.stringify({ type: 'Authenticate', data: { token: this.token } });
+                                this.ws.send(authMsg);
+                                console.log('[AudioManager] ✅ Authenticate message dispatched to network');
+                                resolve();
+                            } catch (err) {
+                                console.error('[AudioManager] ❌ Failed to send Authenticate:', err.message);
+                                reject(err);
+                            }
+                        };
+
+                        // 100ms delay to ensure underlying TCP/TLS is completely settled
+                        setTimeout(sendAuth, 100);
                     } else {
-                        console.warn('[AudioManager] No token found! Connection might be rejected by backend.');
+                        console.warn('[AudioManager] No token found! Connection will likely fail.');
+                        resolve();
                     }
-                    resolve();
                 };
 
                 this.ws.onmessage = (event) => this._handleMessage(event);
