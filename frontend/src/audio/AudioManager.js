@@ -90,11 +90,15 @@ export class AudioManager {
     _connectWebSocket() {
         return new Promise((resolve, reject) => {
             try {
+                console.log('[AudioManager] Connecting to WebSocket:', this.wsUrl);
                 this.ws = new WebSocket(this.wsUrl);
 
                 const timeout = setTimeout(() => {
+                    console.error('[AudioManager] WebSocket connection TIMEOUT after 20s');
                     reject(new Error('WebSocket connection timeout'));
-                }, 10000);
+                }, 20000); // 10s -> 20s
+
+                console.log('[AudioManager] WebSocket object created, readyState:', this.ws.readyState);
 
                 this.ws.onopen = () => {
                     clearTimeout(timeout);
@@ -114,7 +118,9 @@ export class AudioManager {
                 this.ws.onmessage = (event) => this._handleMessage(event);
 
                 this.ws.onerror = (err) => {
-                    console.error('[AudioManager] WebSocket error:', err);
+                    console.error('[AudioManager] WebSocket error event:', err);
+                    console.error('[AudioManager] WebSocket readyState:', this.ws?.readyState);
+                    console.error('[AudioManager] WebSocket URL:', this.wsUrl);
                     if (this.onConnectionChange) this.onConnectionChange('error');
                 };
 

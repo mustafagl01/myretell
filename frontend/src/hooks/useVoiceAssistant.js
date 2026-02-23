@@ -19,10 +19,14 @@ const getWsUrl = (agentId) => {
 const wakeBackend = async () => {
     if (typeof window === 'undefined' || window.location.hostname === 'localhost') return;
     try {
+        console.log('[WakeBackend] Pinging health endpoint...');
         await fetch(BACKEND_HEALTH_URL, { method: 'GET', mode: 'cors' });
-        // Give backend ~1s to be ready for WebSocket upgrade (Render cold start)
-        await new Promise((r) => setTimeout(r, 1000));
-    } catch (_) { /* ignore */ }
+        // Give backend ~3s to be ready for WebSocket upgrade (Render cold start)
+        console.log('[WakeBackend] Health check OK, waiting 3s for warmup...');
+        await new Promise((r) => setTimeout(r, 3000));
+    } catch (err) {
+        console.warn('[WakeBackend] Health check failed:', err);
+    }
 };
 
 export const useVoiceAssistant = (options = {}) => {
