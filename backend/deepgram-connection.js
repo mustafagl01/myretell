@@ -281,12 +281,16 @@ export class DeepgramConnection {
     this.agent.on(AgentEvents.Welcome, (data) => {
       console.log('[DEEPGRAM] 📩 Welcome received! Request ID:', data?.request_id);
 
-      const configObj = this._pendingConfig || {};
-      if (Object.keys(configObj).length > 0) {
-        console.log('[DEEPGRAM] 📤 Sending Settings via SDK configure()...');
+      const fullConfig = this._pendingConfig || {};
+      if (Object.keys(fullConfig).length > 0) {
+        // CRITICAL: SDK's configure() expects ONLY the content of the "Settings" message,
+        // which is usually the 'agent' object. Passing 'audio' here causes 'startsWith' of undefined.
+        const agentSettings = fullConfig.agent ? { agent: fullConfig.agent } : fullConfig;
+
+        console.log('[DEEPGRAM] 📤 Sending Settings via SDK configure():', JSON.stringify(agentSettings, null, 2));
         try {
           // Use SDK method for protocol safety
-          this.agent.configure(configObj);
+          this.agent.configure(agentSettings);
           console.log('[DEEPGRAM] ✅ Configuration dispatched via SDK');
         } catch (err) {
           console.error('[DEEPGRAM] ❌ SDK configuration failed:', err.message);
