@@ -263,40 +263,36 @@ export class DeepgramConnection {
   _setupEventHandlers() {
     if (!this.agent) return;
 
-    // Connection opened
+    // 1. Connection opened (waiting for Welcome)
     this.agent.on(AgentEvents.Open, () => {
-      console.log('[DEEPGRAM] WebSocket connection opened successfully');
-      this.isConnected = true;
+      console.log('[DEEPGRAM] WebSocket connection opened. Waiting for Welcome message...');
+    });
 
-      // Configure agent AFTER connection is open
+    // 2. Welcome received -> Send Settings (Configuration)
+    this.agent.on(AgentEvents.Welcome, (data) => {
+      console.log('[DEEPGRAM] Welcome received. Request ID:', data?.request_id);
+
       if (this._pendingConfig && Object.keys(this._pendingConfig).length > 0) {
-        console.log('[DEEPGRAM] Applying configuration...');
-        console.log('[DEEPGRAM] Config payload:', JSON.stringify(this._pendingConfig, null, 2));
-
+        console.log('[DEEPGRAM] Sending configuration (Settings)...');
         try {
+          // In SDK v3, configure() sends the Settings message
           this.agent.configure(this._pendingConfig);
-          console.log('[DEEPGRAM] ✅ Configuration sent successfully');
+          console.log('[DEEPGRAM] Configuration message sent');
         } catch (err) {
-          console.error('[DEEPGRAM] ❌ Configuration failed:', err.message);
-          console.error('[DEEPGRAM] ❌ Stack trace:', err.stack);
-
-          if (this.onError) {
-            this.onError({
-              type: 'configure_error',
-              message: err.message,
-              details: err
-            });
-          }
-
-          // Reject the connect promise if config fails during initial connection
+          console.error('[DEEPGRAM] Failed to send configuration:', err.message);
           if (this._connectReject) {
-            this._connectReject(new Error(`Deepgram Config Error: ${err.message}`));
+            this._connectReject(new Error(`Deepgram Config Send Error: ${err.message}`));
             this._connectReject = null;
-            return;
           }
         }
         this._pendingConfig = null;
       }
+    });
+
+    // 3. SettingsApplied received -> Connection is now READY
+    this.agent.on(AgentEvents.SettingsApplied, (data) => {
+      console.log('[DEEPGRAM] ✅ SettingsApplied received. Connection is READY for audio.');
+      this.isConnected = true;
 
       if (this.onOpen) {
         this.onOpen();

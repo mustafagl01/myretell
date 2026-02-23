@@ -268,7 +268,7 @@ export class WebSocketHandler {
           type: 'connection_failed',
           message: 'Failed to connect to Deepgram service: ' + error.message,
         });
-        ws.close(1011, 'Deepgram connection failed');
+        ws.close(1011, 'Deepgram connection failed: ' + error.message);
       });
     } catch (error) {
       console.error('Error creating Deepgram connection:', error.message);
@@ -383,7 +383,7 @@ export class WebSocketHandler {
 
       if (!user.creditBalance || Number(user.creditBalance.balance) <= 0) {
         this._sendError(ws, { type: 'insufficient_credits', message: 'Please refill your credits' });
-        ws.close(4003, 'Insufficient credits');
+        ws.close(1008, 'Insufficient credits');
         return;
       }
 
@@ -454,6 +454,7 @@ export class WebSocketHandler {
         message: error.message || 'Authentication failed',
         details: error.stack
       });
+      ws.close(1008, error.message || 'Authentication failed');
     }
   }
 

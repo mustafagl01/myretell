@@ -116,6 +116,12 @@ export class AudioManager {
                 this.ws.onclose = (event) => {
                     console.log('[AudioManager] WebSocket closed:', event.code, event.reason);
                     if (this.onConnectionChange) this.onConnectionChange('disconnected');
+
+                    // If closed with an error code/reason, notify user
+                    if (event.code !== 1000 && event.code !== 1001 && event.reason) {
+                        this._handleError(new Error(event.reason));
+                    }
+
                     if (this.isConversationActive) this.stopConversation();
                 };
             } catch (err) {
@@ -148,9 +154,8 @@ export class AudioManager {
             if (type === 'Audio') {
                 this._handleAudioData(data);
             } else if (type === 'Error') {
-                const serverMessage = data?.message || 'Unknown websocket error';
-                console.error('[AudioManager] Server error:', data);
-                this._handleError(new Error(serverMessage));
+                console.error('[AudioManager] Backend Error:', data?.message);
+                this._handleError(new Error(data?.message || 'Server error'));
             } else {
                 console.log('[AudioManager] WS Message:', type, data ? JSON.stringify(data).substring(0, 100) : '');
             }
