@@ -97,8 +97,11 @@ export class AudioManager {
                     if (this.onConnectionChange) this.onConnectionChange('connected');
 
                     // Send auth token
+                    console.log('[AudioManager] WebSocket open. Token present:', !!this.token);
                     if (this.token) {
                         this.ws.send(JSON.stringify({ type: 'Authenticate', data: { token: this.token } }));
+                    } else {
+                        console.warn('[AudioManager] No token found! Connection might be rejected by backend.');
                     }
                     resolve();
                 };

@@ -308,9 +308,10 @@ export class WebSocketHandler {
     } catch (error) {
       console.error('Error handling client message:', error.message);
       this._sendError(ws, {
-        type: 'message_error',
-        message: error.message,
+        type: 'invalid_message',
+        message: 'Failed to process message: ' + error.message
       });
+      // Don't close immediately on parse error, just log it
     }
   }
 
@@ -398,13 +399,20 @@ export class WebSocketHandler {
             output: { encoding: 'linear16', sample_rate: 16000, container: 'none' }
           },
           agent: {
-            listen: { model: 'nova-2', provider: { type: 'deepgram' } },
+            listen: {
+              model: 'nova-2',
+              language: 'en',
+              provider: { type: 'deepgram' }
+            },
             think: {
               provider: { type: 'deepgram' },
               model: 'llama-3.1-70b-instruct',
-              instructions: 'You are a helpful and friendly AI voice assistant. Keep your responses concise.'
+              instructions: 'You are a helpful and friendly AI voice assistant. Keep your responses concise and conversational.'
             },
-            speak: { provider: { type: 'deepgram' }, model: 'aura-2-thalia-en' }
+            speak: {
+              model: 'aura-2-thalia-en',
+              provider: { type: 'deepgram' }
+            }
           }
         };
       }

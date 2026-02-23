@@ -93,15 +93,18 @@ const buildAgentConfig = () => ({
   },
   agent: {
     listen: {
-      provider: { type: 'deepgram', model: 'nova-2', language: 'en' }
+      model: 'nova-2',
+      language: 'en',
+      provider: { type: 'deepgram' }
     },
     think: {
       provider: { type: 'deepgram' },
-      model: 'llama-3-70b-instruct',
-      prompt: 'You are a helpful and friendly AI voice assistant. Keep your responses concise and conversational.'
+      model: 'llama-3.1-70b-instruct',
+      instructions: 'You are a helpful and friendly AI voice assistant. Keep your responses concise and conversational.'
     },
     speak: {
-      provider: { type: 'deepgram', model: 'aura-2-thalia-en' }
+      model: 'aura-2-thalia-en',
+      provider: { type: 'deepgram' }
     }
   }
 });
@@ -120,7 +123,7 @@ try {
   console.log(`WebSocket ready on /ws`);
 
   // Twilio Telephony WebSocket
-  twHandler = new TwilioHandler(server);
+  const twHandler = new TwilioHandler(server);
   console.log(`Twilio Media Stream ready on /tw-media-stream`);
 } catch (error) {
   console.error('WebSocket init failed:', error.message);
