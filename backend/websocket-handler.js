@@ -250,6 +250,14 @@ export class WebSocketHandler {
           }
         },
         ...(agent.greeting && { greeting: agent.greeting })
+      },
+      context: {
+        messages: [
+          {
+            role: 'assistant',
+            content: agent.greeting || 'Hello! How can I help you today?'
+          }
+        ]
       }
     };
   }
