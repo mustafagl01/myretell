@@ -288,7 +288,7 @@ export class DeepgramConnection {
         // We send the JSON directly to bypass this problematic SDK check.
         const settingsPayload = {
           type: 'Settings',
-          agent: fullConfig.agent || fullConfig
+          ...fullConfig
         };
 
         console.log('[DEEPGRAM] 📤 Dispatching RAW Settings (Bypassing SDK configure):', JSON.stringify(settingsPayload, null, 2));
