@@ -179,10 +179,15 @@ const buildAgentConfig = () => ({
     },
     think: {
       provider: {
-        type: 'deepgram',
-        model: 'llama-3-70b-instruct'
+        type: 'open_ai',
+        model: 'gpt-4o-mini',
+        api_key: process.env.OPENAI_API_KEY
       },
-      instructions: 'You are a helpful and friendly AI voice assistant. Keep your responses concise and conversational.'
+      prompt: 'You are a helpful and friendly AI voice assistant. Keep your responses concise and conversational.',
+      endpoint: {
+        url: 'https://api.openai.com/v1/chat/completions',
+        headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` }
+      }
     },
     speak: {
       provider: {

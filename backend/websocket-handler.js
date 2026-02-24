@@ -91,13 +91,14 @@ export class WebSocketHandler {
    * Build Deepgram agent config from a database Agent record.
    */
   _buildAgentConfigFromAgent(agent, user = null) {
-    // LLM Provider Logic - Default to Deepgram Native
+    // Default to system-wide OpenAI GPT-4o-Mini if user keys are missing
     let thinkProvider = {
-      type: 'deepgram',
-      model: 'llama-3-70b-instruct'
+      type: 'open_ai',
+      model: 'gpt-4o-mini',
+      api_key: process.env.OPENAI_API_KEY
     };
 
-    const model = (agent.llmModel || '').toLowerCase() || 'llama-3-70b-instruct';
+    const model = (agent.llmModel || '').toLowerCase() || 'gpt-4o-mini';
 
     if (model.includes('gemini') || model.includes('google')) {
       // Map to actual Gemini API model names
@@ -213,7 +214,7 @@ export class WebSocketHandler {
       prompt: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant.',
       provider: {
         type: thinkProvider.type || 'deepgram',
-        model: thinkProvider.model || 'llama-3-70b-instruct',
+        model: thinkProvider.model || 'gpt-4o-mini',
         ...(thinkProvider.api_key && { api_key: thinkProvider.api_key })
       }
     };
