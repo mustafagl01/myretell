@@ -190,19 +190,15 @@ export class WebSocketHandler {
     }
 
     // --- STT Provider Logic ---
-    const listenConfig = {
-      model: agent.sttModel || 'nova-2',
-      language: agent.language || 'en',
-      provider: {
-        type: 'deepgram'
-      }
-    };
+    // Deepgram V1 API: model MUST be inside listen.provider, not at listen level
+    const sttModel = agent.sttModel || 'nova-3';
+    const sttVersion = (sttModel && sttModel.startsWith('flux')) ? 'v2' : 'v1';
 
     // --- Format Speak Provider ---
     const finalSpeakConfig = {
-      model: speakModel || 'aura-2-thalia-en',
       provider: {
-        type: speakProvider.type || 'deepgram'
+        type: speakProvider.type || 'deepgram',
+        ...(speakModel && { model: speakModel })
       }
     };
 
@@ -214,50 +210,60 @@ export class WebSocketHandler {
 
     // --- Format Think Provider ---
     const finalThinkConfig = {
-      model: thinkProvider.model || 'llama-3-70b-instruct',
-      instructions: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant.',
+      prompt: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant.',
       provider: {
         type: thinkProvider.type || 'deepgram',
+        model: thinkProvider.model || 'llama-3-70b-instruct',
         ...(thinkProvider.api_key && { api_key: thinkProvider.api_key })
       }
     };
+    
+    // Add endpoint configuration for OpenAI models (if it's not a native Deepgram model)
+    if (thinkProvider.type === 'open_ai') {
+      finalThinkConfig.endpoint = {
+        url: 'https://api.openai.com/v1/chat/completions',
+        headers: {
+          'Authorization': `Bearer ${thinkProvider.api_key || process.env.OPENAI_API_KEY}`
+        }
+      };
+    } else if (thinkProvider.type === 'anthropic') {
+      finalThinkConfig.endpoint = {
+        url: 'https://api.anthropic.com/v1/messages',
+        headers: {
+          'x-api-key': `${thinkProvider.api_key || process.env.ANTHROPIC_API_KEY}`,
+          'anthropic-version': '2023-06-01'
+        }
+      };
+    } else if (thinkProvider.type === 'google') {
+      finalThinkConfig.endpoint = {
+        url: `https://generativelanguage.googleapis.com/v1beta/models/${thinkProvider.model}:generateContent?key=${thinkProvider.api_key || process.env.GOOGLE_API_KEY}`
+      };
+    } else if (thinkProvider.type === 'groq') {
+       finalThinkConfig.endpoint = {
+        url: 'https://api.groq.com/openai/v1/chat/completions',
+        headers: {
+          'Authorization': `Bearer ${thinkProvider.api_key || process.env.GROQ_API_KEY}`
+        }
+      };
+    }
 
+    // Simplified Precision Config for Deepgram Voice Agent / Converse API
+    // Verified working structure from debug_dg.js (2026-02-23)
     return {
+      type: 'Settings',
       audio: {
         input: { encoding: 'linear16', sample_rate: 16000 },
         output: { encoding: 'linear16', sample_rate: 16000, container: 'none' }
       },
       agent: {
-        language: agent.language || 'en',
         listen: {
           provider: {
             type: 'deepgram',
-            model: agent.sttModel || 'nova-3'
+            model: sttModel
           }
         },
-        think: {
-          instructions: agent.systemPrompt || 'You are a helpful AI voice assistant.',
-          provider: {
-            type: thinkProvider.type || 'deepgram',
-            model: thinkProvider.model || 'athena',
-            ...(thinkProvider.api_key && { api_key: thinkProvider.api_key })
-          }
-        },
-        speak: {
-          provider: {
-            type: 'deepgram',
-            model: speakModel || 'aura-asteria-en'
-          }
-        },
-        ...(agent.greeting && { greeting: agent.greeting })
-      },
-      context: {
-        messages: [
-          {
-            role: 'assistant',
-            content: agent.greeting || 'Hello! How can I help you today?'
-          }
-        ]
+        think: finalThinkConfig,
+        speak: finalSpeakConfig
       }
     };
   }
@@ -281,8 +287,8 @@ export class WebSocketHandler {
 
       const agentName = ws.agentRecord?.name || 'Default';
       const llmModel = config?.agent?.think?.model || 'unknown';
-      const sttModel = config?.agent?.listen?.model || 'unknown';
-      const ttsModel = config?.agent?.speak?.model || config?.agent?.speak?.provider?.type || 'unknown';
+      const sttModel = config?.agent?.listen?.provider?.model || 'unknown';
+      const ttsModel = config?.agent?.speak?.provider?.model || config?.agent?.speak?.provider?.type || 'unknown';
       debugLog(`Agent Name: ${agentName}, LLM: ${llmModel}, STT: ${sttModel}, TTS: ${ttsModel}`);
       debugLog('Full Deepgram config: ' + JSON.stringify(config, null, 2));
       console.log(`[DEBUG] Agent Name: ${agentName}, LLM: ${llmModel}, STT: ${sttModel}, TTS: ${ttsModel}`);
@@ -478,18 +484,23 @@ export class WebSocketHandler {
           },
           agent: {
             listen: {
-              model: 'nova-2',
-              language: 'en',
-              provider: { type: 'deepgram' }
+              provider: {
+                type: 'deepgram',
+                model: 'nova-3',
+                version: 'v1',
+                language: 'en'
+              }
             },
             think: {
-              provider: { type: 'deepgram' },
-              model: 'llama-3-70b-instruct',
-              instructions: 'You are a helpful and friendly AI voice assistant. Keep your responses concise and conversational.'
+              prompt: 'You are a helpful and friendly AI voice assistant. Keep your responses concise and conversational.',
+              provider: { type: 'open_ai', model: 'gpt-4o-mini' },
+              endpoint: {
+                url: 'https://api.openai.com/v1/chat/completions',
+                headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` }
+              }
             },
             speak: {
-              model: 'aura-2-thalia-en',
-              provider: { type: 'deepgram' }
+              provider: { type: 'deepgram', model: 'aura-asteria-en' }
             }
           }
         };

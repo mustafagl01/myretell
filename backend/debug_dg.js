@@ -6,45 +6,50 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '.env') });
 
-async function finalTest() {
-    const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
-    const agent = deepgram.agent();
+async function findWorkingConfig() {
+    const dg = createClient(process.env.DEEPGRAM_API_KEY);
+    console.log(`\n--- Testing OPENAI with CORRECT UNDERSCORE ---`);
+    const agent = dg.agent();
 
-    agent.on('open', () => { console.log('✅ WS Open'); });
-    agent.on('welcome', () => {
-        console.log('📩 Welcome. Sending Getting Started Config...');
-        // EXACTLY AS IN DOCS
-        const config = {
-            type: "Settings",
-            audio: {
-                input: { encoding: "linear16", sample_rate: 16000 },
-                output: { encoding: "linear16", sample_rate: 16000, container: "none" }
-            },
-            agent: {
-                listen: { model: "nova-2" },
-                think: {
-                    model: "gpt-4o",
-                    provider: { type: "open_ai" },
-                    instructions: "You are a helpful assistant."
+    const result = await new Promise((resolve) => {
+        agent.on('Open', () => console.log('  [DG] Connection open'));
+        agent.on('Welcome', () => {
+            console.log('  [DG] Welcome received');
+            const payload = {
+                type: "Settings",
+                audio: {
+                    input: { encoding: "linear16", sample_rate: 16000 },
+                    output: { encoding: "linear16", sample_rate: 16000, container: "none" }
                 },
-                speak: { model: "aura-asteria-en" }
-            }
-        };
-        agent.send(JSON.stringify(config));
+                agent: {
+                    listen: { provider: { type: "deepgram", model: "nova-2" } },
+                    think: {
+                        provider: {
+                            type: "open_ai",
+                            model: "gpt-4o"
+                        },
+                        prompt: "Be helpful.",
+                        endpoint: {
+                            url: "https://api.openai.com/v1/chat/completions",
+                            headers: {
+                                "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+                            }
+                        }
+                    },
+                    speak: { provider: { type: "deepgram", model: "aura-asteria-en" } }
+                }
+            };
+            agent.send(JSON.stringify(payload));
+        });
+        agent.on('SettingsApplied', () => resolve('SUCCESS'));
+        agent.on('Error', (err) => resolve(`FAIL: ${err.description || err.message || JSON.stringify(err)}`));
+
+        agent.setupConnection();
+        setTimeout(() => resolve('TIMEOUT'), 10000);
     });
 
-    agent.on('settings_applied', (data) => {
-        console.log('⚡ SUCCESS: Settings Applied!', JSON.stringify(data));
-        process.exit(0);
-    });
-
-    agent.on('error', (err) => {
-        console.error('❌ FAILED:', err.description || err.message || JSON.stringify(err));
-        process.exit(1);
-    });
-
-    agent.setupConnection();
-    setTimeout(() => { console.log('⏰ Timeout'); process.exit(1); }, 15000);
+    console.log(`  Result: ${result}`);
+    process.exit(0);
 }
 
-finalTest();
+findWorkingConfig();

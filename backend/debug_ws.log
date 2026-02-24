@@ -1,0 +1,225 @@
+[2026-02-23T14:18:58.342Z] Agent Name: dsadsadsads, LLM: unknown, STT: nova-3, TTS: aura-2-thalia-en
+[2026-02-23T14:18:58.344Z] Full Deepgram config: {
+  "audio": {
+    "input": {
+      "encoding": "linear16",
+      "sample_rate": 16000
+    },
+    "output": {
+      "encoding": "linear16",
+      "sample_rate": 16000,
+      "container": "none"
+    }
+  },
+  "agent": {
+    "listen": {
+      "provider": {
+        "type": "deepgram",
+        "model": "nova-3",
+        "version": "v1",
+        "language": "en"
+      }
+    },
+    "think": {
+      "prompt": "Sen yardımcı bir asistansın.",
+      "provider": {
+        "type": "deepgram",
+        "model": "llama-3-70b-instruct"
+      }
+    },
+    "speak": {
+      "provider": {
+        "type": "deepgram",
+        "model": "aura-2-thalia-en"
+      }
+    }
+  }
+}
+[2026-02-23T14:20:03.600Z] Agent Name: dsadsadsads, LLM: unknown, STT: nova-3, TTS: aura-asteria-en
+[2026-02-23T14:20:03.602Z] Full Deepgram config: {
+  "type": "Settings",
+  "audio": {
+    "input": {
+      "encoding": "linear16",
+      "sample_rate": 16000
+    },
+    "output": {
+      "encoding": "linear16",
+      "sample_rate": 16000,
+      "container": "none"
+    }
+  },
+  "agent": {
+    "language": "en",
+    "listen": {
+      "provider": {
+        "type": "deepgram",
+        "model": "nova-3"
+      }
+    },
+    "think": {
+      "instructions": "Sen yardımcı bir asistansın.",
+      "provider": {
+        "type": "openai",
+        "model": "gpt-4o",
+        "api_key": "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"
+      }
+    },
+    "speak": {
+      "provider": {
+        "type": "deepgram",
+        "model": "aura-asteria-en"
+      }
+    }
+  },
+  "context": {
+    "messages": [
+      {
+        "role": "assistant",
+        "content": "Hello! How can I help you today?"
+      }
+    ]
+  }
+}
+[2026-02-23T14:22:06.508Z] Agent Name: dsadsadsads, LLM: unknown, STT: nova-3, TTS: aura-asteria-en
+[2026-02-23T14:22:06.509Z] Full Deepgram config: {
+  "type": "Settings",
+  "audio": {
+    "input": {
+      "encoding": "linear16",
+      "sample_rate": 16000
+    },
+    "output": {
+      "encoding": "linear16",
+      "sample_rate": 16000,
+      "container": "none"
+    }
+  },
+  "agent": {
+    "language": "en",
+    "listen": {
+      "provider": {
+        "type": "deepgram",
+        "model": "nova-3"
+      }
+    },
+    "think": {
+      "instructions": "Sen yardımcı bir asistansın.",
+      "provider": {
+        "type": "openai",
+        "model": "gpt-4o",
+        "api_key": "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"
+      }
+    },
+    "speak": {
+      "provider": {
+        "type": "deepgram",
+        "model": "aura-asteria-en"
+      }
+    }
+  },
+  "context": {
+    "messages": [
+      {
+        "role": "assistant",
+        "content": "Hello! How can I help you today?"
+      }
+    ]
+  }
+}
+[2026-02-23T14:22:56.369Z] Agent Name: dsadsadsads, LLM: unknown, STT: nova-3, TTS: aura-asteria-en
+[2026-02-23T14:22:56.371Z] Full Deepgram config: {
+  "type": "Settings",
+  "audio": {
+    "input": {
+      "encoding": "linear16",
+      "sample_rate": 16000
+    },
+    "output": {
+      "encoding": "linear16",
+      "sample_rate": 16000,
+      "container": "none"
+    }
+  },
+  "agent": {
+    "language": "en",
+    "listen": {
+      "provider": {
+        "type": "deepgram",
+        "model": "nova-3"
+      }
+    },
+    "think": {
+      "instructions": "Sen yardımcı bir asistansın.",
+      "provider": {
+        "type": "openai",
+        "model": "gpt-4o",
+        "api_key": "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"
+      }
+    },
+    "speak": {
+      "provider": {
+        "type": "deepgram",
+        "model": "aura-asteria-en"
+      }
+    }
+  },
+  "context": {
+    "messages": [
+      {
+        "role": "assistant",
+        "content": "Hello! How can I help you today?"
+      }
+    ]
+  }
+}
+[2026-02-23T17:10:25.713Z] Agent Name: dsadsadsads, LLM: unknown, STT: nova-3, TTS: aura-asteria-en
+[2026-02-23T17:10:25.714Z] Full Deepgram config: {
+  "type": "Settings",
+  "audio": {
+    "input": {
+      "encoding": "linear16",
+      "sample_rate": 16000
+    },
+    "output": {
+      "encoding": "linear16",
+      "sample_rate": 16000,
+      "container": "none"
+    }
+  },
+  "agent": {
+    "listen": {
+      "provider": {
+        "type": "deepgram",
+        "model": "nova-3"
+      }
+    },
+    "think": {
+      "prompt": "Sen yardımcı bir asistansın.",
+      "provider": {
+        "type": "open_ai",
+        "model": "gpt-4o"
+      },
+      "endpoint": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "headers": {
+          "Authorization": "Bearer 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"
+        }
+      }
+    },
+    "speak": {
+      "provider": {
+        "type": "deepgram",
+        "model": "aura-asteria-en"
+      }
+    }
+  },
+  "context": {
+    "messages": [
+      {
+        "role": "assistant",
+        "content": "Hello! How can I help you today?"
+      }
+    ]
+  }
+}

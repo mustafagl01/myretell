@@ -171,18 +171,24 @@ const buildAgentConfig = () => ({
   },
   agent: {
     listen: {
-      model: 'nova-2',
-      language: 'en',
-      provider: { type: 'deepgram' }
+      provider: {
+        type: 'deepgram',
+        model: 'nova-2',
+        language: 'en'
+      }
     },
     think: {
-      provider: { type: 'deepgram' },
-      model: 'llama-3-70b-instruct',
+      provider: {
+        type: 'deepgram',
+        model: 'llama-3-70b-instruct'
+      },
       instructions: 'You are a helpful and friendly AI voice assistant. Keep your responses concise and conversational.'
     },
     speak: {
-      model: 'aura-2-thalia-en',
-      provider: { type: 'deepgram' }
+      provider: {
+        type: 'deepgram',
+        model: 'aura-2-thalia-en'
+      }
     }
   }
 });

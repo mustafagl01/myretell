@@ -63,13 +63,12 @@ export class TwilioHandler {
                   output: { encoding: 'mulaw', sample_rate: 8000, container: 'none' }
                 },
                 agent: {
-                  listen: { model: 'nova-2', provider: { type: 'deepgram' } },
+                  listen: { provider: { type: 'deepgram', model: 'nova-2' } },
                   think: {
-                    provider: { type: 'deepgram' },
-                    model: agent.llmModel || 'llama-3-70b-instruct',
+                    provider: { type: 'deepgram', model: agent.llmModel || 'llama-3-70b-instruct' },
                     instructions: agent.systemPrompt
                   },
-                  speak: { provider: { type: 'deepgram' }, model: agent.voice || 'aura-2-thalia-en' }
+                  speak: { provider: { type: 'deepgram', model: agent.voice || 'aura-2-thalia-en' } }
                 },
                 ...(agent.greeting && { greeting: agent.greeting })
               };
