@@ -91,13 +91,15 @@ export class WebSocketHandler {
    * Build Deepgram agent config from a database Agent record.
    */
   _buildAgentConfigFromAgent(agent, user = null) {
-    // Default to Deepgram Native LLM (uses Deepgram credits, no extra OpenAI cost)
+    // Default to system-wide OpenAI (gpt-4o-mini) if user hasn't provided a key.
+    // This is 'free' for the user as it uses the platform's credits.
     let thinkProvider = {
-      type: 'deepgram',
-      model: 'llama-3-8b-instruct'
+      type: 'open_ai',
+      model: 'gpt-4o-mini',
+      api_key: process.env.OPENAI_API_KEY
     };
 
-    const model = (agent.llmModel || '').toLowerCase() || 'llama-3-8b-instruct';
+    const model = (agent.llmModel || '').toLowerCase() || 'gpt-4o-mini';
 
     if (model.includes('gemini') || model.includes('google')) {
       // Map to actual Gemini API model names
@@ -210,20 +212,16 @@ export class WebSocketHandler {
 
     // --- Format Think Provider ---
     const finalThinkConfig = {
-      instructions: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant.',
+      prompt: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant.',
       provider: {
-        type: thinkProvider.type || 'deepgram',
-        model: thinkProvider.model || 'llama-3-8b-instruct',
+        type: thinkProvider.type || 'open_ai',
+        model: thinkProvider.model || 'gpt-4o-mini',
         ...(thinkProvider.api_key && { api_key: thinkProvider.api_key })
       }
     };
     
     // Add endpoint configuration for OpenAI models (if it's not a native Deepgram model)
     if (thinkProvider.type === 'open_ai') {
-      // OpenAI uses 'prompt' instead of 'instructions'
-      finalThinkConfig.prompt = finalThinkConfig.instructions;
-      delete finalThinkConfig.instructions;
-
       finalThinkConfig.endpoint = {
         url: 'https://api.openai.com/v1/chat/completions',
         headers: {
@@ -231,10 +229,6 @@ export class WebSocketHandler {
         }
       };
     } else if (thinkProvider.type === 'anthropic') {
-      // Anthropic uses 'prompt'
-      finalThinkConfig.prompt = finalThinkConfig.instructions;
-      delete finalThinkConfig.instructions;
-
       finalThinkConfig.endpoint = {
         url: 'https://api.anthropic.com/v1/messages',
         headers: {
@@ -247,10 +241,6 @@ export class WebSocketHandler {
         url: `https://generativelanguage.googleapis.com/v1beta/models/${thinkProvider.model}:generateContent?key=${thinkProvider.api_key || process.env.GOOGLE_API_KEY}`
       };
     } else if (thinkProvider.type === 'groq') {
-       // Groq uses 'prompt'
-       finalThinkConfig.prompt = finalThinkConfig.instructions;
-       delete finalThinkConfig.instructions;
-
        finalThinkConfig.endpoint = {
         url: 'https://api.groq.com/openai/v1/chat/completions',
         headers: {
