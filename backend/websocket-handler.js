@@ -210,16 +210,20 @@ export class WebSocketHandler {
 
     // --- Format Think Provider ---
     const finalThinkConfig = {
-      prompt: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant.',
+      instructions: agent.systemPrompt || 'You are a helpful and friendly AI voice assistant.',
       provider: {
         type: thinkProvider.type || 'deepgram',
-        model: thinkProvider.model || 'gpt-4o-mini',
+        model: thinkProvider.model || 'llama-3-8b-instruct',
         ...(thinkProvider.api_key && { api_key: thinkProvider.api_key })
       }
     };
     
     // Add endpoint configuration for OpenAI models (if it's not a native Deepgram model)
     if (thinkProvider.type === 'open_ai') {
+      // OpenAI uses 'prompt' instead of 'instructions'
+      finalThinkConfig.prompt = finalThinkConfig.instructions;
+      delete finalThinkConfig.instructions;
+
       finalThinkConfig.endpoint = {
         url: 'https://api.openai.com/v1/chat/completions',
         headers: {
@@ -227,6 +231,10 @@ export class WebSocketHandler {
         }
       };
     } else if (thinkProvider.type === 'anthropic') {
+      // Anthropic uses 'prompt'
+      finalThinkConfig.prompt = finalThinkConfig.instructions;
+      delete finalThinkConfig.instructions;
+
       finalThinkConfig.endpoint = {
         url: 'https://api.anthropic.com/v1/messages',
         headers: {
@@ -239,6 +247,10 @@ export class WebSocketHandler {
         url: `https://generativelanguage.googleapis.com/v1beta/models/${thinkProvider.model}:generateContent?key=${thinkProvider.api_key || process.env.GOOGLE_API_KEY}`
       };
     } else if (thinkProvider.type === 'groq') {
+       // Groq uses 'prompt'
+       finalThinkConfig.prompt = finalThinkConfig.instructions;
+       delete finalThinkConfig.instructions;
+
        finalThinkConfig.endpoint = {
         url: 'https://api.groq.com/openai/v1/chat/completions',
         headers: {
