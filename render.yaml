@@ -2,7 +2,7 @@ services:
   - type: web
     name: myvoiceagent-backend
     env: node
-    buildCommand: cd backend && npm install
+    buildCommand: cd backend && npm install && npm run build
     startCommand: cd backend && npm start
     healthCheckPath: /api/health
     nodeVersion: 20
